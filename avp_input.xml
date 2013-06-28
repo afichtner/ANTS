@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<input_parameters>
+    <!--download-->
+    <datadownload>0</datadownload>
+    <!--save preprocessed data?-->
+    <saveprep>1</saveprep>
+    
+    <!--onebit normalization-->
+    <onebit>0</onebit>
+    <!--Clipping to the daily rms amplitude-->
+    <clip>0</clip>
+    <!--running average normalization:-->
+    <ram_normal>0</ram_normal>
+    <!-- You have to specify the window length for moving average normalization. Choose half the maximum period of interest-->
+    <winlength>20</winlength>
+    <!--water-level normalization-->
+    <waterlevel>1</waterlevel>
+    <level>6</level>
+    
+    
+    <!--whitening-->
+    <whitening>1</whitening>
+    <!--Smoothing width for whitening. Set to 1 for no smoothing-->
+    <whitesmooth>1</whitesmooth>
+
+    
+</input_parameters>
