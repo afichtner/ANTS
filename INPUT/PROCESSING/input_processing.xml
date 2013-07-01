@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<processing_parameters>
+
+    <!--print screen output-->
+    <verbose>1</verbose>
+
+    <!--*************************************************************************************************-->
+    <!--input and output directories-->
+    <!--*************************************************************************************************-->
+
+    <directories>
+        <!--list of input directories separated by spaces-->
+        <indirs>./testdata/2013-01-01_2013-01-01_5.5_9.9/continuous0/BH_RAW</indirs>
+        <!--output directory for processed data-->
+        <outdir>./testdata_G</outdir>
+    </directories>
+
+   
+    <!--*************************************************************************************************-->
+    <!--preprocessing-->
+    <!--*************************************************************************************************-->
+
+    <!--preprocessing on individual seismograms-->
+    <!--The order corresponds to the actual order of execution-->
+    <processing>
+        <!--remove averag and linear trend-->
+        <detrend>1</detrend>
+        <!--taper edges of seismogram for better filtering-->
+        <taper>
+            <doit>1</doit>
+            <taper_width>0.05</taper_width>
+        </taper>
+        <!--bandpass filter before response removal-->
+        <bandpass_1>
+            <doit>1</doit>
+            <f_min>0.03</f_min>
+            <f_max>1.00</f_max>
+            <corners>3</corners>
+        </bandpass_1>
+        <!--downsampling-->
+        <decimation>
+            <doit>1</doit>
+            <new_sampling_rate>1</new_sampling_rate>
+        </decimation>
+        <!--remove instrument response-->
+        <instrument_response>
+            <doit>1</doit>
+            <unit>DIS</unit>
+            <respdir>./testdata/2013-01-01_2013-01-01_5.5_9.9/continuous0/Resp</respdir>
+        </instrument_response>
+        <!--bandpass after response removal-->
+        <bandpass_2>
+            <doit>1</doit>
+            <f_min>0.03</f_min>
+            <f_max>1.00</f_max>
+            <corners>3</corners>
+        </bandpass_2>
+    </processing>
+
+
+    <!--*************************************************************************************************-->
+    <!--normalisation-->
+    <!--*************************************************************************************************-->
+
+    <!--time- and frequency-domain normalisations-->
+    <normalisation>
+        <!--onebit normalization-->
+        <onebit>0</onebit>
+        <!--clip at rms of the trace-->
+        <rms_clipping>0</rms_clipping>
+        <!--running average normalisation-->
+        <ram_normal>
+            <doit>0</doit>
+            <!--window length in seconds-->
+            <window_length>10.0</window_length>
+        </ram_normal>
+        <!--iterative clipping at rms multiple-->
+        <waterlevel>
+            <doit>0</doit>
+            <!--multiple of the rms above which to clip-->
+            <level>2.0</level>
+        </waterlevel>
+        <!--spectral whitening-->
+        <whitening>
+            <doit>1</doit>
+            <!--ObsPy: number of past/future values to calculate moving average. Setto 1 for no smoothing.-->
+            <smoothing>5</smoothing>
+        </whitening>
+    </normalisation>
+
+
+    <!--*************************************************************************************************-->
+    <!--storage-->
+    <!--*************************************************************************************************-->
+
+    <!--rename files to network.station.location.channel_starttime_endtime_samplingrate_format-->
+    <rename>1</rename>
+    <!--save preprocessed data-->
+    <saveprep>1</saveprep>
+    
+    
+    
+</processing_parameters>

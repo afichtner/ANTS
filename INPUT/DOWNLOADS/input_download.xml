@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<data_download>
+
+    <!--data centre and user identity-->
+    <centre>iris</centre>
+    <user>laura.ermert@derdw.ethz.ch</user>
+
+    <!--networks, channels, stations, locations, etc.-->
+    <data>
+        <!--list of networks (separated by blanks) from which data are requested-->
+        <networks>G IU</networks>
+        <!--list of channels, separated by blanks-->
+        <channels>BH* LH*</channels>
+        <location>*</location>
+        <!--Download stations specified in this file. Set to * to download all stations.-->
+        <stations>*</stations>
+    </data>
+
+    <!--time window where data are requested-->
+    <time>
+        <starttime>2013-01-01T00:00:00</starttime>
+        <endtime>2013-01-01T01:00:00</endtime>
+    </time>
+
+    <!--geographic area where stations are considered-->
+    <region>
+        <lat_min>40.0</lat_min>
+        <lat_max>60.0</lat_max>
+        <lon_min>-180.0</lon_min>
+        <lon_max>180.0</lon_max>
+    </region>
+
+    <processing>
+        <!--downsampling-->
+        <rundown>1</rundown>
+        <downs>10</downs>
+        <!--Give the desired new sampling rate in Hz-->
+    </processing>
+    
+    <!--saving data-->
+    <storage>
+        <format>mseed</format>
+        <downloadloc>./testdata</downloadloc>
+    </storage>
+    
+</data_download>
