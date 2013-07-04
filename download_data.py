@@ -85,8 +85,8 @@ def download_data(inputfile):
         
                 # open the station file
                 f=open(stafile, 'r')
-                stations=f.read().split('\n')
-        
+                stations=f.read().split('\n')[:-1]
+                print stations        
                 # loop through all the stations
                 for station in stations:           
                     identity = ' --identity ' + network + '.'+station+'.'+location + '.' + channel 
