@@ -61,8 +61,7 @@ def download_data(inputfile):
      
     # storage of the data
     targetloc=dat1['storage']['downloadloc']
-    dataloc=targetloc+'/data'
-    resploc=targetloc+'/resp'
+    respfileloc=dat1['storage']['respfileloc']
     
     if os.path.isdir(targetloc)==False:
         cmd='mkdir '+targetloc
@@ -133,7 +132,15 @@ def download_data(inputfile):
         stream=obs.read(file)
         renamer.rename_seismic_data(stream[0], targetloc, False, v)
     
-    #-Need to find a way to rename also resp files
+    #-Move all the resp files to the respfileloc folder
+    cmd='bash general/save_resp.sh download_temp/* '+respfileloc
+    os.system(cmd)
+    if v:
+        print '===================================================================='
+        print 'Moved Response files.'
     
     #- Remove temporary directory ====================================
     os.system('rm -rf download_temp')
+    if v:
+        print 'Removed temporary download folder.'
+        print 'Done.'
