@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<correlation_parameters>
+
+    <!--print screen output-->
+    <verbose>1</verbose>
+
+    <!--*************************************************************************************************-->
+    <!--input and output directories-->
+    <!--*************************************************************************************************-->
+
+    <directories>
+        <!--so far just one input dir, add list later-->
+        <indir>./testdata/example_5min</indir>
+        <!--output directory for processed data-->
+        <outdir>./test1</outdir>
+    </directories>
+
+   
+    <!--*************************************************************************************************-->
+    <!--Correlations-->
+    <!--*************************************************************************************************-->
+
+    <!--Types of correlations-->
+    <!--The order corresponds to the actual order of execution-->
+    <correlations>
+        <!--Maximum lag in seconds-->
+        <max_lag>10</max_lag>
+        <!--classical crosscorrelation performed in time domain-->
+        <cc_td>1</cc_td>
+
+        <!--classical crosscorrelation performed in frequency domain-->
+        <cc_fd>1</cc_fd>
+        <!--phase cross correlation-->
+        <pcc>
+            <doit>1</doit>
+            <nu>1</nu>
+        </pcc>
+    </correlations>   
+
+
+    <!--*************************************************************************************************-->
+    <!--storage-->
+    <!--*************************************************************************************************-->
+    
+    <!--save (unstacked) correlations-->
+    <savecorr>1</savecorr>
+    
+    
+    
+</correlation_parameters>
