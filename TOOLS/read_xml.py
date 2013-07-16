@@ -1,4 +1,4 @@
-from lxml import etree
+import xml.etree.ElementTree as et
 
 def read_xml(filename):
     
@@ -7,6 +7,6 @@ def read_xml(filename):
             dict(map(recursive_dict, element)) or element.text
     
     
-    doc = etree.parse(filename)
+    doc = et.parse(filename)
     
     return recursive_dict(doc.getroot())
