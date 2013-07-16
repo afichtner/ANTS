@@ -15,7 +15,9 @@ ls $datapath | grep 'continuous' > av_daylist.txt
             
             dataday=` awk "NR==$i" av_daylist.txt `
             
-            find $datapath/$dataday/BH/ -type f >> channellist.txt
+            find $datapath/$dataday/BH_RAW/ -type f >> channellist.txt
+            find $datapath/$dataday/Resp/ -type f >> resplist.txt
+            
             
         done
 

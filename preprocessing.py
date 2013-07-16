@@ -53,7 +53,8 @@ def preprocessing(processing_input):
         
             if verbose==True:
                 print '\nopening file: '+filepath
-
+                
+            #obtain trace containing this file's data
             data=read(filepath)[0]
 
             data_original=data.copy()

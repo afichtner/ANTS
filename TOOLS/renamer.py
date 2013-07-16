@@ -27,12 +27,12 @@ def rename_seismic_data(data,targetdir,processed,verbose):
     t2=endtime.strftime('%Y%m%d%H%M%S')
 
     #- new filename
-    filepathnew=targetdir+'/'+network+'.'+station+'.'+location+'.'+channel+'_' + t1 + '_' +t2 + '_' + str(int(samplerate))+'_'+ format
+    filepathnew=targetdir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2 + '.' + str(int(samplerate))+'.'+ format
         
     if processed==True:
-        filepathnew=filepathnew+'_prep'
+        filepathnew=filepathnew+'.prep'
 
-    if verbose==True: print '* renamed file: '+filepathnew   
-
+    
     #- write to file
     data.write(filepathnew,format)
+    if verbose==True: print '* renamed file: '+filepathnew   
