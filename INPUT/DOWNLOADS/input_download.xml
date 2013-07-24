@@ -23,8 +23,8 @@
 
     <!--time window where data are requested-->
     <time>
-        <starttime>2013-01-05T00:00:00</starttime>
-        <endtime>2013-01-06T00:00:00</endtime>
+        <starttime>2013-01-09T00:00:00</starttime>
+        <endtime>2013-01-10T00:00:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->
@@ -45,8 +45,8 @@
     <!--saving data-->
     <storage>
         <format>mseed</format>
-        <downloadloc>./testdata_update</downloadloc>
-        <respfileloc>./testresp</respfileloc>
+        <downloadloc>./DATA/testdata_update</downloadloc>
+        <respfileloc>./DATA/testresp</respfileloc>
     </storage>
     
 </data_download>

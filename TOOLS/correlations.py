@@ -14,8 +14,8 @@ def xcorrelation_fd(dat1, dat2):
 #Remove mean
     dat1.detrend('demean')
     dat2.detrend('demean')
-    spec1=fft.fft(dat1)
-    spec2=fft.fft(dat2)
+    spec1=fft.fft(dat1.data)
+    spec2=fft.fft(dat2.data)
     
     if len(spec1)>len(spec2): 
         print 'Warning: Different length arrays. First array is longer by nr. of samples:'
@@ -40,12 +40,55 @@ def xcorrelation_fd(dat1, dat2):
 def xcorrelation_td(dat1, dat2, max_lag):
     from obspy.signal import cross_correlation
     
-    numsamples=int(max_lag*dat1.stats.sampling_rate)
+    numsamples=int(max_lag)*dat1.stats.sampling_rate
     xcorr=cross_correlation.xcorr(dat1.data, dat2.data, numsamples,True)[2]
 
-    return xcorr
+    return xcorr, numsamples
     
+
+
+#==================================================================================================
+# Time domain cross-correlation II - only implemented to control my phase cross correlation script
+#==================================================================================================
+def xcorrelation_td2(dat1, dat2, max_lag):
     
+#Max lag in sec --> convert to sample numbers
+    Fs=dat1.stats.sampling_rate
+    max_lag=int(max_lag)*Fs
+    
+    s1=dat1.data
+    s2=dat2.data
+    
+    #Correlation window length (in samples)
+    T=min(len(s1), len(s2))-2*max_lag
+
+    if T<=0:
+        print 'Not enough samples available to calculate correlation at maximum lag.'
+        return ()
+    
+    #Array for the phase crosscorrelation
+    xcorr_td2=np.zeros((2*max_lag+1, 1))
+
+    #Summation
+    ind=0
+
+    for lag in range(1, max_lag+1):
+        lag=abs(lag-(max_lag+1))
+        for k in range(max_lag, len(s1)-max_lag):
+            xcorr_td2[ind]+=s1[k]*s2[k+lag]
+        ind+=1
+
+    for lag in range(0, max_lag+1):
+        for k in range(max_lag, len(s1)-max_lag):
+            xcorr_td2[ind]+=s1[k+lag]*s2[k]
+        ind+=1
+
+    #Normalization
+    xcorr_td2/=(2*T)
+    xcorr_td2/=np.std(s1)*np.std(s2)
+    
+    return xcorr_td2, max_lag
+
 #==================================================================================================
 # Phase cross correlation (Schimmel 1999)
 #==================================================================================================    
@@ -66,7 +109,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10.0, nu=1):
     
     #Max lag in sec --> convert to sample numbers
     Fs=dat1.stats.sampling_rate
-    max_lag=int(max_lag*Fs)
+    max_lag=int(max_lag)*Fs
     
     #Correlation window length (in samples)
     T=min(len(s1), len(s2))-2*max_lag
@@ -95,7 +138,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10.0, nu=1):
     #Normalization
     pxc/=(2*T)
     
-    return pxc
+    return pxc, max_lag
 
 
 

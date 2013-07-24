@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<data_download>
+
+    <!--verbose-->
+    <verbose>1</verbose>
+    
+    
+    <!--user identity-->
+    <user>laura.ermert@derdw.ethz.ch</user>
+
+    <!--networks, channels, stations, locations, etc.-->
+    <data>
+        <!--list of networks (separated by blanks) from which data are requested-->
+        <networks>G CH</networks>
+        <!--list of channels, separated by blanks-->
+        <channels>BHE BHN BHZ</channels>
+        <location>*</location>
+        <!--List of stations separated by blanks Set to * to download all stations.-->
+        <stations>TAM CCD INU HASLI ZUR</stations>
+    </data>
+
+    <!--time window where data are requested-->
+    <!--Format: YYYY-MM-DD,HH:MM:SS-->
+    <time>
+        <starttime>2013-01-09,00:00:00</starttime>
+        <endtime>2013-01-10,00:00:00</endtime>
+    </time>
+
+    <!--geographic area where stations are considered-->
+    <region>
+        <lat_min>-90.0</lat_min>
+        <lat_max>90.0</lat_max>
+        <lon_min>-180.0</lon_min>
+        <lon_max>180.0</lon_max>
+    </region>
+
+    <!--saving data-->
+    <storage>
+        <downloadloc>./DATA/test_fetchdata</downloadloc>
+        <respfileloc>./DATA/test_fetchresp</respfileloc>
+    </storage>
+    
+</data_download>

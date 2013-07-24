@@ -57,7 +57,8 @@ def download_data(inputfile):
     region=' --station_rect '+lon_min+'/'+lon_max+'/'+lat_min+'/'+lat_max
     
     # format
-    format=' --'+dat1['storage']['format']+' '
+    if (dat1['storage']['format']=='mseed' or dat1['storage']['format']=='MSEED'):
+        format=' --mseed'
      
     # storage of the data
     targetloc=dat1['storage']['downloadloc']
@@ -92,6 +93,7 @@ def download_data(inputfile):
                 identity=' --identity '+network+'.*.'+location+'.'+channel
                 if upd==0:
                     cmd='obspyDMT --continuous --datapath download_temp --ic_no '+identity+t1+t2+region+centre+format
+                    print cmd
                     upd=1
                 else:
                     cmd='obspyDMT ' +update+' download_temp '+identity
@@ -104,7 +106,7 @@ def download_data(inputfile):
                 # open the station file
                 f=open(stafile, 'r')
                 stations=f.read().split('\n')
-                print stations        
+                   
                 # loop through all the stations
                 for station in stations: 
                     if station=='':
@@ -113,6 +115,7 @@ def download_data(inputfile):
                     
                     if upd==0:
                         cmd='obspyDMT --continuous --datapath download_temp  --ic_no '+identity+t1+t2+region+centre+format
+                        print cmd
                         upd=1
                     else:
                         cmd='obspyDMT ' +update+' download_temp '+identity
