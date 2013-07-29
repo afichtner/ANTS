@@ -28,7 +28,7 @@ def download_fetchdata(xmlinput):
     networks=dat1['data']['networks'].strip().split(' ')
     channels=dat1['data']['channels'].strip().split(' ')
     locations=dat1['data']['location'].strip().split(' ')
-    stations=dat1['data']['stations'].strip().split(' ')
+    #stations=dat1['data']['stations'].strip().split(' ')
 
     print networks
     print channels
@@ -61,13 +61,19 @@ def download_fetchdata(xmlinput):
     
     
     for network in networks:
+        #Open a station list file that has the name sta<Networkcode>.txt, e. g. staG.txt, and is located in INPUT/STATION_LISTS
+        stafilename='INPUT/STATION_LISTS/sta'+network+'.txt'
+        fh=open(stafilename, 'r')
+        stations=fh.read().split('\n')
+        
         for station in stations:
+            if station=='': continue
             for location in locations:
                 for channel in channels:
                     print network + station + location + channel
                     #-Formulate a polite request
                     filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' -o '+filename+' -rd '+respfileloc
+                    reqstring='./FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
                     print reqstring
                     os.system(reqstring)
                     

@@ -48,7 +48,8 @@ def preprocessing(processing_input):
 
         #- loop through input files
         for filename in content:
-        
+            if filename=='.DS_Store': continue
+            
             filepath=indir+'/'+filename
         
             if verbose==True:
@@ -62,6 +63,10 @@ def preprocessing(processing_input):
             #======================================================================================
             # processing (detrending, filtering, response removal, decimation)
             #======================================================================================
+            #- trim ================================================================================
+            
+            if inp1['processing']['trim']=='1':
+                data=proc.trim_next_sec(data)
 
             #- detrend ============================================================================
 
@@ -139,26 +144,20 @@ def preprocessing(processing_input):
             #======================================================================================
             # store results
             #======================================================================================
-
+            
+            if inp1['saveprep']=='1':
+                rn.rename_seismic_data(data, outdir, True, verbose)
+                
+                
             #- rename files =======================================================================
 
-            if inp1['rename']=='1':
-                if inp1['saveprep']=='1':
-                    #- write processed seismograms
-                    rn.rename_seismic_data(data, outdir, True, verbose)
-                    
-                #- write original seismograms
-                rn.rename_seismic_data(data_original, outdir, False, verbose)
-            else:
-                #- write processed seismograms
-                data.write(filepath+'_prep',data.stats._format)
-
-
-            #- test spectral whitening
-        
-            #(freq, spec)=fourier_spectrum(data[0].data, Fs)
-            #plt.plot(freq[1000:5000], abs(spec[1000:5000]))
-            #plt.xlabel('Amplitude [?]')    
-            #plt.xlabel('Frequency [Hz]')
-            #plt.show()
-            #psdplot(data[0].data, Fs)
+#            if inp1['rename']=='1':
+#                if inp1['saveprep']=='1':
+#                    #- write processed seismograms
+#                    rn.rename_seismic_data(data, outdir, True, verbose)
+#                    
+#                #- write original seismograms
+#                rn.rename_seismic_data(data_original, outdir, False, verbose)
+#            else:
+#                #- write processed seismograms
+#                data.write(filepath+'_prep',data.stats._format)

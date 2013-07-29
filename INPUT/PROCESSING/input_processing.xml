@@ -11,9 +11,9 @@
 
     <directories>
         <!--list of input directories separated by spaces-->
-        <indirs>./testdata/example_1hr</indirs>
+        <indirs>./DATA/test_fetchdata</indirs>
         <!--output directory for processed data-->
-        <outdir>./testdata/example_1hr</outdir>
+        <outdir>./DATA/fetchdata_1Hz</outdir>
     </directories>
 
    
@@ -24,6 +24,8 @@
     <!--preprocessing on individual seismograms-->
     <!--The order corresponds to the actual order of execution-->
     <processing>
+        <!--trim to nearest second-->
+        <trim>1</trim>
         <!--remove averag and linear trend-->
         <detrend>1</detrend>
         <!--taper edges of seismogram for better filtering-->
@@ -33,21 +35,21 @@
         </taper>
         <!--bandpass filter before response removal-->
         <bandpass_1>
-            <doit>0</doit>
-            <f_min>0.003</f_min>
+            <doit>1</doit>
+            <f_min>0.01</f_min>
             <f_max>1.00</f_max>
             <corners>4</corners>
         </bandpass_1>
         <!--downsampling-->
         <decimation>
             <doit>1</doit>
-            <new_sampling_rate>10.0</new_sampling_rate>
+            <new_sampling_rate>1.0</new_sampling_rate>
         </decimation>
         <!--remove instrument response-->
         <instrument_response>
-            <doit>1</doit>
+            <doit>0</doit>
             <unit>DIS</unit>
-            <respdir>./testdata/2013-01-01_2013-01-02_5.5_9.9/continuous0/Resp</respdir>
+            <respdir>./DATA/test_fetchresp</respdir>
         </instrument_response>
         <!--bandpass after response removal-->
         <bandpass_2>

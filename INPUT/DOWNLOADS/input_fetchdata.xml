@@ -12,19 +12,19 @@
     <!--networks, channels, stations, locations, etc.-->
     <data>
         <!--list of networks (separated by blanks) from which data are requested-->
-        <networks>G CH</networks>
+        <networks>G</networks>
         <!--list of channels, separated by blanks-->
         <channels>BHE BHN BHZ</channels>
         <location>*</location>
-        <!--List of stations separated by blanks Set to * to download all stations.-->
-        <stations>TAM CCD INU HASLI ZUR</stations>
+        <!--station list has to be provided in a separate file!-->
+        <!--station list files must be located in INPUT/STATION_LISTS and called sta(network code).txt, e. g. staCH.txt-->
     </data>
 
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
-        <starttime>2013-01-09,00:00:00</starttime>
-        <endtime>2013-01-10,00:00:00</endtime>
+        <starttime>2012-01-01,00:00:00</starttime>
+        <endtime>2012-02-01,00:00:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->

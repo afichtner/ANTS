@@ -1,8 +1,7 @@
 import os as os
 import numpy as np
 from obspy.core import read
-from obspy.core import trace
-import matplotlib.pyplot as plt
+from obspy.core import trace, stream, UTCDateTime
 
 
 #==================================================================================================
@@ -82,6 +81,30 @@ def remove_response(data,respdir,unit,verbose):
 		success=0
 
 	return success, data
+
+
+
+#==================================================================================================
+# TRIM TO NEXT FULL SECOND
+#==================================================================================================
+def trim_next_sec(data):
+    
+    """ 
+    A short script that trims data to the nearest full second. Afterwards, the offset from the full second will be less than the sampling rate. Important before downsampling.
+    Data: Is an obspy stream or trace. The returned stream/trace is a bit shorter.
+    """
+    
+    try:
+        starttime=data.stats.starttime
+    except AttributeError:        
+        starttime=data[0].stats.starttime
+    
+    fullsecondtime=starttime.strftime('%Y%m%d%H%M%S')
+    fullsecondtime=UTCDateTime(fullsecondtime)+1
+    data.trim(starttime=fullsecondtime)
+    
+    return data
+    
 
 
 #==================================================================================================
