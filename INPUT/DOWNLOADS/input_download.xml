@@ -7,24 +7,24 @@
     
     
     <!--data centre and user identity-->
-    <centre>iris</centre>
-    <user>laura.ermert@derdw.ethz.ch</user>
+    <centre>arclink</centre>
+    <user>laura.ermert@erdw.ethz.ch</user>
 
     <!--networks, channels, stations, locations, etc.-->
     <data>
         <!--list of networks (separated by blanks) from which data are requested-->
-        <networks>G</networks>
+        <networks>CH</networks>
         <!--list of channels, separated by blanks-->
         <channels>BH*</channels>
         <location>*</location>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>INPUT/STATION_LISTS/staG.txt</stations>
+        <stations>INPUT/STATION_LISTS/staCH1.txt</stations>
     </data>
 
     <!--time window where data are requested-->
     <time>
-        <starttime>2013-01-09T00:00:00</starttime>
-        <endtime>2013-01-10T00:00:00</endtime>
+        <starttime>2013-01-01T00:00:00</starttime>
+        <endtime>2013-02-01T00:00:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->
@@ -45,7 +45,7 @@
     <!--saving data-->
     <storage>
         <format>mseed</format>
-        <downloadloc>./DATA/testdata_update</downloadloc>
+        <downloadloc>./DATA/onemonth_CH</downloadloc>
         <respfileloc>./DATA/testresp</respfileloc>
     </storage>
     

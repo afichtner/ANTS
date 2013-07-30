@@ -12,9 +12,9 @@ import TOOLS.correlations as corr
 #==================================================================================================
 # Initialize
 #==================================================================================================
-def stack(stack_input):
+def stack(xmlinput):
     #Read the input
-    inp1=rxml.read_xml(stack_input)
+    inp1=rxml.read_xml(xmlinput)
     inp1=inp1[1]
 
     indir=inp1['directories']['indir']
@@ -25,6 +25,9 @@ def stack(stack_input):
     verbose=bool(int(inp1['verbose']))
     plotting=bool(int(inp1['plotting']))
     
+    save_lin=inp1['stacks']['save_linstack']
+    save_pws=inp1['stacks']['save_pwstack']
+    pws_nu=int(inp1['stacks']['pws_nu'])
     
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
@@ -41,7 +44,7 @@ def stack(stack_input):
     corr_type=inp1['correlations']['corr_type']
     #Force maximum lag to be integer. In seconds:
     maxlag=int(inp1['correlations']['max_lag'])
-    nu=int(inp1['correlations']['pcc_nu'])
+    pcc_nu=int(inp1['correlations']['pcc_nu'])
     
     #Get rid of annoyances
     if os.path.exists(indir+'/.DS_Store'):
@@ -77,38 +80,48 @@ def stack(stack_input):
         if Fs!=dat2.stats.sampling_rate:
             if verbose: print 'Unequal sampling rates. Skipping this correlation.'
             continue
-            
-        #test if the starting times are the same, otherwise apply a correction
-        st1=dat1.stats.starttime
-        st2=dat2.stats.starttime
-
-        if st1!=st2:
-            offset=(st1-st2)*int(Fs)
-            if verbose: print 'Warning: Unequal start times.\nOffset of', offset,'samples'
     
-    
+#-Step 1: Get the phase stack=======================================================================
+        phase=True
+        (cps, n, n_skip)=stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag, pcc_nu,  phase, verbose)
+        
 #-Get the stacked correlation========================================================================
-
-        (xcorrstack, n, n_skip)=stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag, nu, verbose)
+        phase=False
+        (xcorrstack, n, n_skip)=stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag, pcc_nu, phase, verbose)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
         
+        pwstack=xcorrstack*abs(cps)**pws_nu
         
         if plotting:
             x=np.linspace(-maxlag*dat1.stats.sampling_rate,maxlag*dat1.stats.sampling_rate, len(xcorrstack))
-            plt.plot(x, xcorrstack, linewidth=1.8)
+            plt.figure(1)
+            plt.subplot(211)
+            plt.plot(x, xcorrstack,linewidth=1)
+            plt.plot(x, pwstack, linewidth=1.8)
+            plt.subplot(212)
+            plt.plot(x, abs(cps))
             plt.show()
             
 #-Write it to a file=================================================================================
         #Create a trace object
-        tr=trace.Trace()
-        tr.stats.sampling_rate=Fs
-        tr.data=xcorrstack
+        tr1=trace.Trace()
+        tr1.stats.sampling_rate=Fs
+        tr1.data=xcorrstack
         
-        fileid=outdir+'/'+chpair[0]+'.'+chpair[1]
+        fileid=outdir+'/'+chpair[0]+'.'+chpair[1]+'.lin_stack'
         #append start and end date to fileid?
-        tr.write(fileid, format="MSEED")
+        tr1.write(fileid, format="MSEED")
+        
+        #Create a trace object
+        tr2=trace.Trace()
+        tr2.stats.sampling_rate=Fs
+        tr2.data=xcorrstack
+        
+        fileid=outdir+'/'+chpair[0]+'.'+chpair[1]+'.pw_stack'
+        #append start and end date to fileid?
+        tr2.write(fileid, format="MSEED")
         
 
 
@@ -125,6 +138,7 @@ def matchchannels2(channels):
             if i<j: continue
             inf1=channels[i].split('.')
             inf2=channels[j].split('.')
+    
             #station
             sta1=inf1[1]
             sta2=inf2[1]
@@ -142,9 +156,13 @@ def matchchannels2(channels):
     return ccpairs
     
     
-def stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag, nu, verbose):
-        #Prepare stacking loop
-        xcorrstack=np.zeros((2*maxlag*int(dat1.stats.sampling_rate)+1, ))
+def stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag, pcc_nu, phase, verbose):
+        #Prepare stack
+        if phase:
+            stack=np.zeros((2*maxlag*int(dat1.stats.sampling_rate)+1, ), dtype=complex)
+        else:
+            stack=np.zeros((2*maxlag*int(dat1.stats.sampling_rate)+1, ))
+            
         
         #Counter for days
         n=0
@@ -166,8 +184,6 @@ def stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag
             
             #At this point, check for nodata (we dont want to correlate data gaps)
             if len(tr1.data)!=len(tr2.data) or len(tr1.data)==0:
-               
-                if verbose: print 'Data gap found in this time window, skipping correlation.'
                 t1=t2-olap
                 t2=t1+win_len-1
                 n_skip+=1
@@ -175,11 +191,11 @@ def stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag
             
             #Obtain correlation
             if corr_type=='1':
-                xcorrstack+=corr.xcorrelation_td(tr1, tr2, maxlag)
+                stack+=corr.xcorrelation_td(tr1, tr2, maxlag, phase)
             elif corr_type=='2':
-                xcorrstack+=corr.xcorrelation_fd(tr1, tr2)
+                stack+=corr.xcorrelation_fd(tr1, tr2, phase)
             elif corr_type=='3':
-                xcorrstack+=corr.phase_xcorrelation(tr1, tr2, maxlag, nu)[0]
+                stack+=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu, phase)[0]
             else: 
                 if verbose: print 'Invalid Correlation type in input file.'
                 return()
@@ -191,8 +207,8 @@ def stack_windows(dat1, dat2, startday, win_len, olap, endday, corr_type, maxlag
             t2=t1+win_len-1
             
         #Linear stack is easy, what about phase weighted stack? Complicated....
-        xcorrstack/=n
+        stack/=n
         
         
-        return(xcorrstack, n, n_skip)
+        return(stack, n, n_skip)
         

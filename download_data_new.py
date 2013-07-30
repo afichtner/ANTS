@@ -123,7 +123,7 @@ def download_data(inputfile):
                         
         
     #- Get a list of the nice data that was just downloaded====================================
-    os.system('bash general/get_datalist.sh download_temp/*')
+    os.system('bash TOOLS/get_datalist.sh download_temp/*')
     
     #- Rename data ====================================
     fh=open('channellist.txt', 'r')
@@ -136,14 +136,16 @@ def download_data(inputfile):
         renamer.rename_seismic_data(stream[0], targetloc, False, v)
     
     #-Move all the resp files to the respfileloc folder
-    cmd='bash general/save_resp.sh download_temp/* '+respfileloc
+    cmd='bash TOOLS/save_resp.sh download_temp/* '+respfileloc
     os.system(cmd)
     if v:
         print '===================================================================='
         print 'Moved Response files.'
     
     #- Remove temporary directory ====================================
-    os.system('rm -rf download_temp')
-    if v:
-        print 'Removed temporary download folder.'
-        print 'Done.'
+    #os.system('rm -rf download_temp')
+    #if v:
+     #   print 'Removed temporary download folder.'
+     #   print 'Done.'
+   
+    
