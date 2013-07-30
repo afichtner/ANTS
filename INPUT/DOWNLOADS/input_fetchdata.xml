@@ -11,13 +11,13 @@
 
     <!--networks, channels, stations, locations, etc.-->
     <data>
-        <!--list of networks (separated by blanks) from which data are requested-->
+        <!--list of networks (separated by blanks) from which data are requested, can be virtual networks-->
         <networks>G</networks>
         <!--list of channels, separated by blanks-->
         <channels>BHE BHN BHZ</channels>
-        <location>*</location>
-        <!--station list has to be provided in a separate file!-->
-        <!--station list files must be located in INPUT/STATION_LISTS and called sta(network code).txt, e. g. staCH.txt-->
+        <locations>*</locations>
+        <!--Download stations specified in this file. Set to * to download all stations.-->
+        <stations>*</stations>
     </data>
 
     <!--time window where data are requested-->

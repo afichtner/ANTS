@@ -27,11 +27,8 @@ def download_fetchdata(xmlinput):
     # network, channel, location and station list
     networks=dat1['data']['networks'].strip().split(' ')
     channels=dat1['data']['channels'].strip().split(' ')
-    locations=dat1['data']['location'].strip().split(' ')
-    #stations=dat1['data']['stations'].strip().split(' ')
-
-    print networks
-    print channels
+    locations=dat1['data']['locations'].strip().split(' ')
+    stafile=dat1['data']['stations']
 
     # time interval of request
     t1=dat1['time']['starttime']
@@ -44,8 +41,6 @@ def download_fetchdata(xmlinput):
     lat_max=dat1['region']['lat_max']
     lon_min=dat1['region']['lon_min']
     lon_max=dat1['region']['lon_max']
-    
-    # format can only be miniseed
      
     # storage of the data
     targetloc=dat1['storage']['downloadloc']
@@ -61,19 +56,23 @@ def download_fetchdata(xmlinput):
     
     
     for network in networks:
-        #Open a station list file that has the name sta<Networkcode>.txt, e. g. staG.txt, and is located in INPUT/STATION_LISTS
-        stafilename='INPUT/STATION_LISTS/sta'+network+'.txt'
-        fh=open(stafilename, 'r')
-        stations=fh.read().split('\n')
-        
-        for station in stations:
-            if station=='': continue
+        for channel in channels:
             for location in locations:
-                for channel in channels:
-                    print network + station + location + channel
-                    #-Formulate a polite request
-                    filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+
+                if stafile=="*":
+                    filename=targetloc+'/'+network+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
+                    reqstring='./FetchData '+vfetchdata+' -N '+network+' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
                     print reqstring
                     os.system(reqstring)
-                    
+
+                else:
+                    fh=open(stafile, 'r')
+                    stations=fh.read().split('\n')
+                    for station in stations:
+                        if station=='': continue
+                        print network + station + location + channel
+                        #-Formulate a polite request
+                        filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
+                        reqstring='./FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                        print reqstring
+                        os.system(reqstring)
