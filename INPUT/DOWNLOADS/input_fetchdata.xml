@@ -18,7 +18,7 @@
         <!-- list of locations, separated by blanks-->
         <locations>*</locations>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>./INPUT/STATION_LISTS/staG.txt</stations>
+        <stations>./INPUT/STATION_LISTS/staG_short.txt</stations>
     </data>
 
     <!--time window where data are requested-->

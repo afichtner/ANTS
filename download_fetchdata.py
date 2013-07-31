@@ -30,11 +30,11 @@ def download_fetchdata(xmlinput):
     locations=dat1['data']['locations'].strip().split(' ')
     stafile=dat1['data']['stations']
 
-    # time interval of request (add a little buffer to make sure we get everything)
+    # time interval of request
     t1=dat1['time']['starttime']
-    t1str=(UTCDateTime(t1)-60.0).strftime('%Y%m%d%H%M%S')
+    t1str=UTCDateTime(t1).strftime('%Y%m%d%H%M%S')
     t2=dat1['time']['endtime']
-    t2str=(UTCDateTime(t2)+60.0).strftime('%Y%m%d%H%M%S')
+    t2str=UTCDateTime(t2).strftime('%Y%m%d%H%M%S')
 
     # geographical region
     lat_min=dat1['region']['lat_min']
