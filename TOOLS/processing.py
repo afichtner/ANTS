@@ -71,13 +71,13 @@ def remove_response(data,respdir,unit,verbose):
 		try:
 			data.simulate(seedresp=resp_dict)
 		except ValueError:
-			if verbose==True: print '* could not find correct RESP file, recording rejected'
+			if verbose==True: print '** could not remove instrument response'
 			success=0
 
 	#- response cannot be removed because RESP file does not exist
 
 	else:
-		if verbose==True: print '* could not find correct RESP file, recording rejected'
+		if verbose==True: print '** could not find correct RESP file'
 		success=0
 
 	return success, data
@@ -130,22 +130,7 @@ def downsample(data, Fsnew, verbose):
     	dec=int(Fs/Fsnew)
     	data_new.decimate(dec, no_filter=True)
     	if verbose==True: 
-			print '* Downsampling by factor '+str(dec)
-
-    # Plotting if wanted ==========================================================================
-
-    #if plot==True:
-    	#data.plot()
-    	#data_new.plot()
-
-    	#t = np.arange(0, data.stats.npts / data.stats.sampling_rate, data.stats.delta)
-    	#t_new = np.arange(0, data_new.stats.npts / data_new.stats.sampling_rate, data_new.stats.delta)
-    
-    	#plt.plot(t[1:20000], data[0].data[1:20000], 'g', label='Raw', alpha=0.9)
-    	#plt.plot(t_new[1:20000/dec], data_new[0].data[1:20000/dec], 'r--', label='Downsampled', alpha=0.9)
-    
-    	#plt.show()
-   
+			print '* downsampling by factor '+str(dec)
    
     return data_new
     

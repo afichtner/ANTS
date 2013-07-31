@@ -15,9 +15,10 @@
         <networks>G</networks>
         <!--list of channels, separated by blanks-->
         <channels>BHE BHN BHZ</channels>
+        <!-- list of locations, separated by blanks-->
         <locations>*</locations>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>*</stations>
+        <stations>./INPUT/STATION_LISTS/staG.txt</stations>
     </data>
 
     <!--time window where data are requested-->
@@ -37,8 +38,8 @@
 
     <!--saving data-->
     <storage>
-        <downloadloc>./DATA/test_fetchdata</downloadloc>
-        <respfileloc>./DATA/test_fetchresp</respfileloc>
+        <downloadloc>./DATA/G.2012.01.data</downloadloc>
+        <respfileloc>./DATA/G.2012.01.resp</respfileloc>
     </storage>
     
 </data_download>

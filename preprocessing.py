@@ -28,6 +28,7 @@ def preprocessing(processing_input):
     outdir=inp1['directories']['outdir']
 
     verbose=bool(int(inp1['verbose']))
+    plot=bool(int(inp1['plot']))
 
     #- make target directory if it does not exist =================================================
     
@@ -36,17 +37,12 @@ def preprocessing(processing_input):
     
     #- loop through all files =====================================================================
 
-    # number of successfully processed seismograms
-    count_success=0
-    # number of seismograms where processing failed
-    count_fail=0
-
-    #- loop through input directories
+    #- loop through input directories -------------------------------------------------------------
     for indir in indirs:
 
         content=os.listdir(indir)
 
-        #- loop through input files
+        #- loop through input files ---------------------------------------------------------------
         for filename in content:
             if filename=='.DS_Store': continue
             
@@ -55,109 +51,135 @@ def preprocessing(processing_input):
             if verbose==True:
                 print '\nopening file: '+filepath
                 
-            #obtain trace containing this file's data
-            data=read(filepath)[0]
+            #- read data
+            try:
+                data=read(filepath)
+            except TypeError:
+                if verbose==True: print 'file could not be opened, abort'
+                continue
+
+            n_traces=len(data)
+
+            if verbose==True:
+                print 'contains '+str(n_traces)+' trace(s)'
 
             data_original=data.copy()
 
-            #======================================================================================
-            # processing (detrending, filtering, response removal, decimation)
-            #======================================================================================
-            #- trim ================================================================================
+            #- loop through traces ----------------------------------------------------------------
+            for k in np.arange(n_traces):
+
+                trace=data[k]
+
+                if plot==True:
+                    print '* trace before processing'
+                    trace.plot()
+
+                #==================================================================================
+                # basic quality checks
+                #==================================================================================
+                    
+                #- minimum length (currently 60 s)
+                if (trace.stats.endtime-trace.stats.starttime)<60.0:
+                    if verbose==True: print '** trace too short, discarded'
+                    continue
+
+                #- check NaN
+                if True in np.isnan(trace.data):
+                    if verbose==True: print '** trace contains NaN, discarded'
+                    continue
+
+                #- check infinity
+                if True in np.isinf(trace.data):
+                    if verbose==True: print '** trace contains infinity, discarded'
+                    continue
+
+                #==================================================================================
+                # processing (detrending, filtering, response removal, decimation)
+                #==================================================================================
+                #- trim ===========================================================================
             
-            if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data)
+                if inp1['processing']['trim']=='1':
+                    trace=proc.trim_next_sec(trace)
 
-            #- detrend ============================================================================
+                #- detrend ============================================================================
 
-            if inp1['processing']['detrend']=='1':
+                if inp1['processing']['detrend']=='1':
 
-                data=proc.detrend(data,verbose)
+                    trace=proc.detrend(trace,verbose)
 
-            #- taper edges ========================================================================
+                #- taper edges ========================================================================
 
-            if inp1['processing']['taper']['doit']=='1':
+                if inp1['processing']['taper']['doit']=='1':
 
-                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
+                    trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
 
-            #- bandpass, first stage ==============================================================
+                #- bandpass, first stage ==============================================================
 
-            if inp1['processing']['bandpass_1']['doit']=='1':
+                if inp1['processing']['bandpass_1']['doit']=='1':
 
-                data=proc.bandpass(data,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
+                    trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
 
-            #- downsampling =======================================================================
+                #- downsampling =======================================================================
 
-            if inp1['processing']['decimation']['doit']=='1':
+                if inp1['processing']['decimation']['doit']=='1':
 
-               data=proc.downsample(data,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
 
-            #- remove instrument response =========================================================
+                #- remove instrument response =========================================================
 
-            if inp1['processing']['instrument_response']['doit']=='1':
+                if inp1['processing']['instrument_response']['doit']=='1':
 
-                success,data=proc.remove_response(data,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],verbose)
-                count_success=count_success+success
-                count_fail=count_fail+1-success
+                    removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],verbose)
 
-            #- bandpass, second stage =============================================================
+                #- bandpass, second stage =============================================================
 
-            if inp1['processing']['bandpass_2']['doit']=='1':
+                if inp1['processing']['bandpass_2']['doit']=='1':
 
-                data=proc.bandpass(data,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose)
+                    trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose)
 
 
-            #======================================================================================
-            # normalisations (whitening, averages, ...)
-            #======================================================================================
+                #======================================================================================
+                # normalisations (whitening, averages, ...)
+                #======================================================================================
 
-            #- one-bit normalisation ==============================================================
+                #- one-bit normalisation ==============================================================
 
-            if inp1['normalisation']['onebit']=='1':
+                if inp1['normalisation']['onebit']=='1':
                 
-                data=nrm.onebit(data,verbose)
+                    trace=nrm.onebit(trace,verbose)
 
-            #- rms clipping =======================================================================
+                #- rms clipping =======================================================================
 
-            if inp1['normalisation']['rms_clipping']=='1':
+                if inp1['normalisation']['rms_clipping']=='1':
                 
-                data=nrm.clip(data,verbose)
+                    trace=nrm.clip(trace,verbose)
 
-            #- running average normalisation ======================================================
+                #- running average normalisation ======================================================
 
-            if inp1['normalisation']['ram_normal']['doit']=='1':
+                if inp1['normalisation']['ram_normal']['doit']=='1':
 
-                data=nrm.ram_normal(data,float(inp1['normalisation']['ram_normal']['window_length']),verbose)
+                    trace=nrm.ram_normal(trace,float(inp1['normalisation']['ram_normal']['window_length']),verbose)
 
-            #- iterative clipping above a multiple of the rma (waterlevel normalisation) ==========
+                #- iterative clipping above a multiple of the rma (waterlevel normalisation) ==========
 
-            if inp1['normalisation']['waterlevel']['doit']=='1':
+                if inp1['normalisation']['waterlevel']['doit']=='1':
 
-                data=nrm.waterlevel(data,float(inp1['normalisation']['waterlevel']['level']),verbose)
+                    trace=nrm.waterlevel(trace,float(inp1['normalisation']['waterlevel']['level']),verbose)
 
-            #- spectral whitening =================================================================
+                #- spectral whitening =================================================================
 
-            if inp1['normalisation']['whitening']['doit']=='1':
+                if inp1['normalisation']['whitening']['doit']=='1':
 
-                data=nrm.whiten(data,float(inp1['normalisation']['whitening']['smoothing']),verbose)
+                    trace=nrm.whiten(trace,float(inp1['normalisation']['whitening']['smoothing']),verbose)
 
-            #======================================================================================
-            # store results
-            #======================================================================================
+                #======================================================================================
+                # plot and store results
+                #======================================================================================
             
-            if inp1['saveprep']=='1':
-                rn.rename_seismic_data(data, outdir, True, verbose)
+                if plot==True:
+                    print '* trace after processing'
+                    trace.plot()
+                    
+                if (inp1['saveprep']=='1') & (removed==1):
+                    rn.rename_seismic_data(trace, outdir, True, verbose)
                 
-                
-            #- rename files =======================================================================
-
-#            if inp1['rename']=='1':
-#                if inp1['saveprep']=='1':
-#                    #- write processed seismograms
-#                    rn.rename_seismic_data(data, outdir, True, verbose)
-#                    
-#                #- write original seismograms
-#                rn.rename_seismic_data(data_original, outdir, False, verbose)
-#            else:
-#                #- write processed seismograms
-#                data.write(filepath+'_prep',data.stats._format)

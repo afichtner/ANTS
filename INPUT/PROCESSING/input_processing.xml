@@ -2,8 +2,9 @@
 
 <processing_parameters>
 
-    <!--print screen output-->
+    <!--print screen output and plot-->
     <verbose>1</verbose>
+    <plot>1</plot>
 
     <!--*************************************************************************************************-->
     <!--input and output directories-->
@@ -13,7 +14,7 @@
         <!--list of input directories separated by spaces-->
         <indirs>./DATA/test_fetchdata</indirs>
         <!--output directory for processed data-->
-        <outdir>./DATA/fetchdata_1Hz</outdir>
+        <outdir>./DATA/fetchdata_5s</outdir>
     </directories>
 
    
@@ -37,7 +38,7 @@
         <bandpass_1>
             <doit>1</doit>
             <f_min>0.01</f_min>
-            <f_max>1.00</f_max>
+            <f_max>0.1</f_max>
             <corners>4</corners>
         </bandpass_1>
         <!--downsampling-->
@@ -47,15 +48,15 @@
         </decimation>
         <!--remove instrument response-->
         <instrument_response>
-            <doit>0</doit>
+            <doit>1</doit>
             <unit>DIS</unit>
             <respdir>./DATA/test_fetchresp</respdir>
         </instrument_response>
         <!--bandpass after response removal-->
         <bandpass_2>
-            <doit>0</doit>
-            <f_min>0.003</f_min>
-            <f_max>1.00</f_max>
+            <doit>1</doit>
+            <f_min>0.01</f_min>
+            <f_max>0.1</f_max>
             <corners>4</corners>
         </bandpass_2>
     </processing>
