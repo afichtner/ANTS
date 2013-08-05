@@ -12,9 +12,9 @@
 
     <directories>
         <!--Input directory containing all the day folders-->
-        <indir>./DATA/testcosines</indir>
+        <indir>./DATA/G.2012.01.data.processed</indir>
         <!--output directory for stacked crosscorrelation functions-->
-        <outdir>./DATA/testcosines</outdir>
+        <outdir>./DATA/G.2012.01.correlations</outdir>
     </directories>
 
      
@@ -23,17 +23,14 @@
     <!--*************************************************************************************************-->
     <timethings>
         <!--Start date. Loop will start with this directory-->
-        <startdate>19700101</startdate>
+        <startdate>20120101</startdate>
         <!--End date. Loop will end AFTER processing this directory-->
-        <enddate>19700102</enddate>
-        <!--Window length in seconds-->
-        <winlen>10</winlen>
+        <enddate>20120201</enddate>
+        <!--Length of the time windows to be correlated, in seconds-->
+        <winlen>20000</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
-        <olap>2</olap>
-        
-        
-        
+        <olap>0</olap>
     </timethings>
     
    
@@ -41,13 +38,20 @@
     <!--Correlations-->
     <!--*************************************************************************************************-->
 
+    <channels>
+        <!-- list of channels considered, separated by spaces, no wildcarding -->
+        <channel_list>BHE BHZ</channel_list>
+        <!-- compute correlations between channels, 0=no, 1=yes -->
+        <mix_channels>1</mix_channels>
+    </channels>
+
     <!--Types of correlations-->
     <!--The order corresponds to the actual order of execution-->
     <correlations>
         <!--Maximum lag in seconds-->
-        <max_lag>2</max_lag>
-        <!--1 - td classical xcorrelation, 2 - fd classical xcorrelation, 3 - phase correlation, any other value should raise an error-->
-        <corr_type>1</corr_type>
+        <max_lag>1500</max_lag>
+        <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
+        <corr_type>td_classic</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
     </correlations>  

@@ -99,7 +99,7 @@ def preprocessing(processing_input):
                 #- trim ===========================================================================
             
                 if inp1['processing']['trim']=='1':
-                    trace=proc.trim_next_sec(trace)
+                    trace=proc.trim_next_sec(trace,verbose)
 
                 #- detrend ============================================================================
 

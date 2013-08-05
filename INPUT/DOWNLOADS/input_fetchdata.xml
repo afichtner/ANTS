@@ -18,14 +18,14 @@
         <!-- list of locations, separated by blanks-->
         <locations>*</locations>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>./INPUT/STATION_LISTS/staG_short.txt</stations>
+        <stations>./INPUT/STATION_LISTS/staG.txt</stations>
     </data>
 
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
-        <starttime>2012-01-01,00:00:00</starttime>
-        <endtime>2012-02-01,00:00:00</endtime>
+        <starttime>2011-12-31,23:59:00</starttime>
+        <endtime>2012-02-01,00:01:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->

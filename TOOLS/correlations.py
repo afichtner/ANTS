@@ -1,22 +1,22 @@
-from scipy.signal import hilbert
 
-#different types of cross-correlations and similar (e. g. phase cross-correlation) are collected here
+from obspy.core import trace
+import numpy as np
+
+# different types of cross-correlations and similar (e. g. phase cross-correlation) are collected here
 # the idea is to compare the different correlation approaches - - both their timing and their results
 # Only two traces of the same length may be used as input
-
-import numpy as np
-from obspy.core import trace
 
 
 #==================================================================================================
 # Frequency domain cross-correlation
 #==================================================================================================
-def xcorrelation_fd(dat1, dat2, phase):
+def xcorrelation_fd(dat1, dat2):
     import scipy.fftpack as fft
     
-#Remove mean
+    # Remove mean
     dat1.detrend('demean')
     dat2.detrend('demean')
+
     spec1=fft.fft(dat1.data)
     spec2=fft.fft(dat2.data)
     
@@ -24,30 +24,20 @@ def xcorrelation_fd(dat1, dat2, phase):
     crosscorr=np.real(fft.ifft(specx))
     crosscorr/=max(crosscorr)
     
-    if phase:
-        s1=np.ndarray(len(crosscorr), dtype=complex)
-        s1=hilbert(crosscorr)
-        s1=s1/abs(s1)
-        return s1
-    else:
-        return crosscorr
+    return crosscorr
 
 
 #==================================================================================================
 # Time domain cross-correlation
 #==================================================================================================
-def xcorrelation_td(dat1, dat2, max_lag, phase):
+def xcorrelation_td(dat1, dat2, max_lag):
     from obspy.signal import cross_correlation
     
-    numsamples=int(max_lag)*int(dat1.stats.sampling_rate)
-    xcorr=cross_correlation.xcorr(dat1.data, dat2.data, numsamples,True)[2]
-    if phase:
-        s1=np.ndarray(len(xcorr), dtype=complex)
-        s1=hilbert(xcorr)
-        s1=s1/abs(s1)
-        return s1
-    else:
-        return xcorr
+    numsamples=int(float(max_lag)*dat1.stats.sampling_rate)
+
+    xcorr=cross_correlation.xcorr(dat1.data, dat2.data, numsamples ,True)[2]
+
+    return xcorr
    
 
 
@@ -97,7 +87,7 @@ def xcorrelation_td2(dat1, dat2, max_lag, phase):
 # Phase cross correlation (Schimmel 1999)
 #==================================================================================================    
 
-def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1, phase=False):
+def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
     # Initialize as complex arrays
     s1=np.zeros((len(dat1), ),  dtype=np.complex)
     s2=np.zeros((len(dat1), ),  dtype=np.complex)
@@ -146,13 +136,13 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1, phase=False):
     #Normalization
     pxc/=(2*T)
     
-    if phase:
-        s1=np.ndarray(len(pxc), dtype=complex)
-        s1=hilbert(pxc)
-        s1=s1/abs(s1)
-        return s1
-    else:
-        return pxc
+#    if phase:
+#        s1=np.ndarray(len(pxc), dtype=complex)
+#        s1=hilbert(pxc)
+#        s1=s1/abs(s1)
+#        return s1
+#    else:
+    return pxc
 
 
 

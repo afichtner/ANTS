@@ -4,7 +4,7 @@
 
     <!--print screen output and plot-->
     <verbose>1</verbose>
-    <plot>1</plot>
+    <plot>0</plot>
 
     <!--*************************************************************************************************-->
     <!--input and output directories-->
@@ -12,9 +12,9 @@
 
     <directories>
         <!--list of input directories separated by spaces-->
-        <indirs>./DATA/test_fetchdata</indirs>
+        <indirs>./DATA/G.2012.01.data</indirs>
         <!--output directory for processed data-->
-        <outdir>./DATA/fetchdata_5s</outdir>
+        <outdir>./DATA/G.2012.01.data.processed</outdir>
     </directories>
 
    
@@ -27,7 +27,7 @@
     <processing>
         <!--trim to nearest second-->
         <trim>1</trim>
-        <!--remove averag and linear trend-->
+        <!--remove average and linear trend-->
         <detrend>1</detrend>
         <!--taper edges of seismogram for better filtering-->
         <taper>
@@ -38,19 +38,19 @@
         <bandpass_1>
             <doit>1</doit>
             <f_min>0.01</f_min>
-            <f_max>0.1</f_max>
+            <f_max>0.03</f_max>
             <corners>4</corners>
         </bandpass_1>
         <!--downsampling-->
         <decimation>
             <doit>1</doit>
-            <new_sampling_rate>1.0</new_sampling_rate>
+            <new_sampling_rate>0.5</new_sampling_rate>
         </decimation>
         <!--remove instrument response-->
         <instrument_response>
             <doit>1</doit>
             <unit>DIS</unit>
-            <respdir>./DATA/test_fetchresp</respdir>
+            <respdir>./DATA/G.2012.01.resp</respdir>
         </instrument_response>
         <!--bandpass after response removal-->
         <bandpass_2>
@@ -69,7 +69,7 @@
     <!--time- and frequency-domain normalisations-->
     <normalisation>
         <!--onebit normalization-->
-        <onebit>0</onebit>
+        <onebit>1</onebit>
         <!--clip at rms of the trace-->
         <rms_clipping>0</rms_clipping>
         <!--running average normalisation-->
