@@ -88,53 +88,65 @@ def xcorrelation_td2(dat1, dat2, max_lag, phase):
 #==================================================================================================    
 
 def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
-    # Initialize as complex arrays
-    s1=np.zeros((len(dat1), ),  dtype=np.complex)
-    s2=np.zeros((len(dat1), ),  dtype=np.complex)
+
+    from scipy.signal import hilbert
+
+    # Initialize phase correlation as complex array
+    n=len(dat1.data)
+    print n
+    pxc=np.ones(n, dtype=np.complex)
     
-    #Obtain analytic signal
+    #- Obtain analytic signal
     s1=hilbert(dat1.data)
     s2=hilbert(dat2.data)
     
-    #Normalization
-    s1=s1/abs(s1)
-    s2=s2/abs(s2)
-    
-    #Max lag in sec --> convert to sample numbers
-    Fs=dat1.stats.sampling_rate
-    max_lag=int(max_lag)*int(Fs)
+    #- Normalization
+    tol1=np.mean(np.abs(s1))/10.0
+    tol2=np.mean(np.abs(s2))/10.0
+    s1=s1/(np.abs(s1)+tol1)
+    s2=s2/(np.abs(s2)+tol2)
+
+    #- loop over time lags
+    for k in range(n):
+        s1[k:]
+
+    #- Max lag in sec --> convert to sample numbers
+#    Fs=dat1.stats.sampling_rate
+#    max_lag=int(max_lag*Fs)
+
+
    
     #Correlation window length (in samples)
-    T=min(len(s1), len(s2))-2*max_lag
+#    T=min(len(s1), len(s2))-2*max_lag
 
-    if T<=0:
-        print 'Not enough samples available to calculate correlation at maximum lag.'
-        return ()
+#    if T<=0:
+#        print 'Not enough samples available to calculate correlation at maximum lag.'
+#        return ()
     
     #Array for the phase crosscorrelation
-    pxc=np.zeros((2*max_lag+1, ))
+#    pxc=np.zeros((2*max_lag+1, ))
 
     #Summation
-    ind=0
+#    ind=0
 
-    for lag in range(1, max_lag):
-        lag=abs(lag-(max_lag+1))
-        for k in range(max_lag, len(s1)-max_lag-1):
-            pxc[ind]+=abs(s1[k]+s2[k+lag])**nu-abs(s1[k]-s2[k+lag])**nu
-        ind+=1
+#    for lag in range(1, max_lag):
+#        lag=abs(lag-(max_lag+1))
+#        for k in range(max_lag, len(s1)-max_lag-1):
+#            pxc[ind]+=abs(s1[k]+s2[k+lag])**nu-abs(s1[k]-s2[k+lag])**nu
+#        ind+=1
     
     #zero lag
-    for k in range(max_lag, len(s1)-max_lag-1):
-        pxc[ind]+=abs(s1[k]+s2[k])**nu-abs(s1[k]-s2[k])**nu
-    ind+=1
+#    for k in range(max_lag, len(s1)-max_lag-1):
+#        pxc[ind]+=abs(s1[k]+s2[k])**nu-abs(s1[k]-s2[k])**nu
+#    ind+=1
 
-    for lag in range(1, max_lag):
-        for k in range(max_lag, len(s1)-max_lag-1):
-            pxc[ind]+=abs(s1[k+lag]+s2[k])**nu-abs(s1[k+lag]-s2[k])**nu
-        ind+=1
+#    for lag in range(1, max_lag):
+#        for k in range(max_lag, len(s1)-max_lag-1):
+#            pxc[ind]+=abs(s1[k+lag]+s2[k])**nu-abs(s1[k+lag]-s2[k])**nu
+#        ind+=1
 
     #Normalization
-    pxc/=(2*T)
+#    pxc/=(2*T)
     
 #    if phase:
 #        s1=np.ndarray(len(pxc), dtype=complex)
@@ -142,7 +154,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
 #        s1=s1/abs(s1)
 #        return s1
 #    else:
-    return pxc
+    return np.abs(pxc)
 
 
 

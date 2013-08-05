@@ -27,7 +27,7 @@
         <!--End date. Loop will end AFTER processing this directory-->
         <enddate>20120201</enddate>
         <!--Length of the time windows to be correlated, in seconds-->
-        <winlen>20000</winlen>
+        <winlen>3600</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
         <olap>0</olap>
@@ -49,9 +49,9 @@
     <!--The order corresponds to the actual order of execution-->
     <correlations>
         <!--Maximum lag in seconds-->
-        <max_lag>1500</max_lag>
+        <max_lag>100</max_lag>
         <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
-        <corr_type>td_classic</corr_type>
+        <corr_type>pcc</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
     </correlations>  
