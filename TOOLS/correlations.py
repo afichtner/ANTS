@@ -93,8 +93,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
 
     # Initialize phase correlation as complex array
     n=len(dat1.data)
-    print n
-    pxc=np.ones(n, dtype=np.complex)
+    pxc=np.zeros(2*n+1,dtype=float)
     
     #- Obtain analytic signal
     s1=hilbert(dat1.data)
@@ -106,9 +105,14 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
     s1=s1/(np.abs(s1)+tol1)
     s2=s2/(np.abs(s2)+tol2)
 
-    #- loop over time lags
+    #- loop over positive time lags
     for k in range(n):
-        s1[k:]
+        s=np.abs(s1[k:]+s2[:(n-k)])**nu - np.abs(s1[k:]-s2[:(n-k)])**nu
+        pxc[n+k]=np.sum(s)
+    #- loop over negative time lags
+    for k in range(1,n):
+        s=np.abs(s2[k:]+s1[:(n-k)])**nu - np.abs(s2[k:]-s1[:(n-k)])**nu
+        pxc[n-k]=np.sum(s)
 
     #- Max lag in sec --> convert to sample numbers
 #    Fs=dat1.stats.sampling_rate
@@ -154,7 +158,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
 #        s1=s1/abs(s1)
 #        return s1
 #    else:
-    return np.abs(pxc)
+    return pxc
 
 
 
