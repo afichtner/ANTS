@@ -69,7 +69,7 @@
     <!--time- and frequency-domain normalisations-->
     <normalisation>
         <!--onebit normalization-->
-        <onebit>1</onebit>
+        <onebit>0</onebit>
         <!--clip at rms of the trace-->
         <rms_clipping>0</rms_clipping>
         <!--running average normalisation-->
