@@ -122,13 +122,13 @@ def stack(xmlinput):
             if plotting:
                 t=np.linspace(-maxlag*dat1.stats.sampling_rate,maxlag*dat1.stats.sampling_rate, len(correlation_stack))
                 plt.subplot(311)
-                plt.plot(t,correlation_stack)
+                plt.plot(correlation_stack)
                 plt.ylabel('linear stack')
                 plt.subplot(312)
-                plt.plot(t,np.abs(coherence_stack))
+                plt.plot(np.abs(coherence_stack))
                 plt.ylabel('phase coherence')
                 plt.subplot(313)
-                plt.plot(t,correlation_stack*np.abs(coherence_stack))
+                plt.plot(correlation_stack*np.abs(coherence_stack))
                 plt.xlabel('t [s]')
                 plt.ylabel('phase-weighted stack')
                 plt.show()
@@ -152,8 +152,7 @@ def stack(xmlinput):
                 if verbose==True: "Correlation function already exists. Add to previous one."
                 tr_old=read(fileid)
                 tr1.data+=tr_old[0].data
-
-            tr1.write(fileid, format="MSEED")
+                tr1.write(fileid, format="MSEED")
 
             #- Write time windows to a file for documentation =====================================
             filename=outdir+'/'+fn1+'-'+fn2+'.windows'
@@ -287,15 +286,19 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     #- Loop over time windows and update stack ----------------------------------------------------
     while t2<=endday:
 
+        correlate=True
+
         #- Get the portion of the trace that you want
         tr1=dat1.copy()
         tr2=dat2.copy()
-            
-        tr1.trim(starttime=t1, endtime=t2)
-        tr2.trim(starttime=t1, endtime=t2)
+
+        if (dat1.stats.starttime<=t1) and (dat1.stats.endtime>=t2) and (dat2.stats.starttime<=t1) and (dat2.stats.endtime>=t2):
+            tr1.trim(starttime=t1, endtime=t2)
+            tr2.trim(starttime=t1, endtime=t2)
+        else:
+            correlate=False
     
-        #- Perform a series of check on the time series
-        correlate=True
+        #- Perform a series of checks on the time series
 
         if len(tr1.data)!=len(tr2.data):
             #if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
@@ -322,7 +325,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
             elif corr_type=='fd_classic':
                 correlation=corr.xcorrelation_fd(tr1, tr2)
             elif corr_type=='pcc':
-                correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)[0]
+                correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)
 
             #- update statistics
             n+=1
@@ -330,7 +333,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
             #- linear stack =======================================================================
             if n==1:
                 correlation_stack=correlation
-            else:
+            elif len(correlation_stack)==len(correlation):
                 correlation_stack+=correlation
 
             #- phase coherence stack ==============================================================
@@ -339,7 +342,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
             coherence=coherence/(np.abs(coherence)+tol)
             if n==1:
                 coherence_stack=coherence
-            else:
+            elif len(coherence_stack)==len(coherence):
                 coherence_stack+=coherence
 
             #- make time window pairs for documentation

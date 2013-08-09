@@ -32,13 +32,11 @@ def xcorrelation_fd(dat1, dat2):
 # Time domain cross-correlation
 #==================================================================================================
 def xcorrelation_td(dat1, dat2, max_lag):
-    print time.time()
     from obspy.signal import cross_correlation
     
     numsamples=int(float(max_lag)*dat1.stats.sampling_rate)
 
     xcorr=cross_correlation.xcorr(dat1.data, dat2.data, numsamples ,True)[2]
-    print time.time()
     return xcorr
    
 
@@ -47,7 +45,6 @@ def xcorrelation_td(dat1, dat2, max_lag):
 # Time domain cross-correlation II - only implemented to check speed
 #==================================================================================================
 def xcorrelation_td2(dat1, dat2, max_lag):
-    print time.time()
 #Max lag in sec --> convert to sample numbers
     Fs=dat1.stats.sampling_rate
     max_lag=int(max_lag*Fs)
@@ -67,7 +64,6 @@ def xcorrelation_td2(dat1, dat2, max_lag):
     for k in range(1,max_lag+1):
         s=np.abs(s2[k:]*s1[:(n-k)])
         xcorr_td2[max_lag-k]=np.sum(s)
-    print time.time()
     
     return xcorr_td2
 
