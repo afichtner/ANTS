@@ -67,61 +67,16 @@ def xcorrelation_td2(dat1, dat2, max_lag):
     
     return xcorr_td2
 
-#==================================================================================================
-# Phase cross correlation (Schimmel 1999)
-#==================================================================================================    
-from scipy.signal import hilbert
-
-def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
-    # Initialize arrays
-    s1=np.zeros((len(dat1), ),  dtype=np.float)
-    s2=np.zeros((len(dat1), ),  dtype=np.float)
-    
-    #Obtain analytic signal
-    s1=hilbert(dat1.data)
-    s2=hilbert(dat2.data)
-    
-    #Normalization
-    tol1=np.mean(np.abs(s1))/10.0
-    tol2=np.mean(np.abs(s2))/10.0
-    s1=s1/(np.abs(s1)+tol1)
-    s2=s2/(np.abs(s2)+tol2)
-    
-    #Max lag in sec --> convert to sample numbers
-    Fs=dat1.stats.sampling_rate
-    max_lag=int(max_lag*Fs)
-    n=len(s1)
-   
-    #Correlation window length (in samples)
-    T=min(len(s1), len(s2))-2*max_lag
-
-    if T<=0:
-        print 'Not enough samples available to calculate correlation at maximum lag.'
-        return ()
-    
-    #Array for the phase crosscorrelation
-    pxc=np.zeros((2*max_lag+1, ))
-
-    #Positive time lag of window 1 w. r. t. window 2
-    for k in range(0, max_lag+1):
-        s=np.abs(s1[k:]+s2[:(n-k)])**nu - np.abs(s1[k:]-s2[:(n-k)])**nu
-        pxc[max_lag+k]=np.sum(s)
-    #- loop over negative time lags
-    for k in range(1,max_lag+1):
-        s=np.abs(s2[k:]+s1[:(n-k)])**nu - np.abs(s2[k:]-s1[:(n-k)])**nu
-        pxc[max_lag-k]=np.sum(s)
-        
-
 
 #==================================================================================================
 # Phase cross correlation II (Schimmel 1999, with fixed correlation window length)
 #==================================================================================================    
 from scipy.signal import hilbert
 
-def phase_xcorrelation_fixedwindow(dat1, dat2, max_lag=10, nu=1):
+def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
     # Initialize arrays
-    s1=np.zeros((len(dat1), ),  dtype=np.float)
-    s2=np.zeros((len(dat1), ),  dtype=np.float)
+    s1=np.zeros((len(dat1),),  dtype=np.float)
+    s2=np.zeros((len(dat1),),  dtype=np.float)
     
     #Obtain analytic signal
     s1=hilbert(dat1.data)
@@ -143,10 +98,10 @@ def phase_xcorrelation_fixedwindow(dat1, dat2, max_lag=10, nu=1):
         return ()
     
     #Initialize pcc array
-    pxc=np.zeros((2*max_lag+1, ))
+    pxc=np.zeros((2*max_lag+1,), dtype=float)
 
     #And this is a la Schimmel
-    for k in range(-max_lag,  max_lag+1):
+    for k in range(-max_lag, max_lag+1):
         
         i1=2*max_lag+k
         i2=len(s1)-2*max_lag+k
