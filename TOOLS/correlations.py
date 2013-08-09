@@ -91,7 +91,7 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
     max_lag=int(max_lag*Fs)
    
     #Correlation window length (in samples)
-    T=min(len(s1), len(s2))-4*max_lag
+    T=min(len(s1), len(s2))-2*max_lag
    
     if T<=0:
         print 'Not enough samples available to calculate correlation at maximum lag.'
@@ -103,10 +103,10 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1):
     #And this is a la Schimmel
     for k in range(-max_lag, max_lag+1):
         
-        i1=2*max_lag+k
-        i2=len(s1)-2*max_lag+k
+        i1=max_lag+k
+        i2=len(s1)-max_lag+k
         
-        s=np.abs(s1[i1+k:i2+k]+s2[i1:i2])**nu - np.abs(s1[i1+k:i2+k]-s2[i1:i2])**nu
+        s=np.abs(s1[i1:i2]+s2[i1-k:i2-k])**nu - np.abs(s1[i1:i2]-s2[i1-k:i2-k])**nu
         pxc[max_lag+k]=np.sum(s)
         
 
