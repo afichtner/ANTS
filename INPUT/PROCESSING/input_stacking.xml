@@ -4,7 +4,7 @@
 
     <!--print screen output-->
     <verbose>1</verbose>
-    <plotting>1</plotting>
+    <plotting>0</plotting>
 
     <!--*************************************************************************************************-->
     <!--input and output directories-->
@@ -12,7 +12,7 @@
 
     <directories>
         <!--Input directory containing all the day folders-->
-        <indir>./DATA/G.2012.01.data.processed</indir>
+        <indir>./DATA/G.2012.01.data.processed.small</indir>
         <!--output directory for stacked crosscorrelation functions-->
         <outdir>./DATA/G.2012.01.correlations</outdir>
     </directories>
@@ -51,7 +51,7 @@
         <!--Maximum lag in seconds-->
         <max_lag>100</max_lag>
         <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
-        <corr_type>pcc</corr_type>
+        <corr_type>td_classic</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
     </correlations>  

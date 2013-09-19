@@ -66,11 +66,11 @@ def stack(xmlinput):
     #- copy the input xml to the output directory for documentation
     shutil.copy(xmlinput,outdir)
 
-    #- list available data files (should be one per channel)
+    #- list of available data files (should be one per channel)
     record_list=os.listdir(indir+'/')
 
     #- Find out what are the relevant combinations. This returns a list of tuples with identifiers that are to be correlated (e. g. ('G.ECH.00.BHE','G.CAN.00.BHE'))
-    corr_ch=find_pairs(record_list,channels,mix_channels)
+    corr_ch=find_pairs(record_list,channels,mix_channels,win_len)
 
     if verbose:
         print 'number of potential correlations: '+str(len(corr_ch))
@@ -99,7 +99,7 @@ def stack(xmlinput):
             if verbose: print 'One or both files not found. Skipping this correlation.'
             continue
      
-        #- Test if sampling rates are same. Should have been enforced by the preprocessing.
+        #- Test if sampling rates are the same. Should have been enforced by the preprocessing.
         if dat1.stats.sampling_rate!=dat2.stats.sampling_rate:
             if verbose: print 'Unequal sampling rates. Skipping this correlation.'
             continue
@@ -110,6 +110,29 @@ def stack(xmlinput):
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
+
+        #==========================================================================================
+        #- write metadata
+        #==========================================================================================
+
+        fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
+        fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
+        filename=outdir+'/'+fn1+'-'+fn2+'.metadata'
+        
+        if os.path.exists(filename)==False:
+            fid=open(filename,'w')
+            fid.write('= station information ================================\n')
+            fid.write('network_1: '+dat1.stats.network+'\n')
+            fid.write('station_1: '+dat1.stats.station+'\n')
+            fid.write('location_1: '+dat1.stats.location+'\n')
+            fid.write('channel_1: '+dat1.stats.channel+'\n')
+            fid.write('network_2: '+dat2.stats.network+'\n')
+            fid.write('station_2: '+dat2.stats.station+'\n')
+            fid.write('location_2: '+dat2.stats.location+'\n')
+            fid.write('channel_2: '+dat2.stats.channel+'\n')
+            fid.write('= contributing time windows ==========================\n')
+            fid.close()
+
         
         #==========================================================================================
         #- produce written and visual output provided that at least one time window could be used
@@ -136,56 +159,81 @@ def stack(xmlinput):
             #- Write correlation function to a file ===============================================
         
             #- Create a trace object and fill in the basic information
-            tr1=trace.Trace()
-            tr1.stats.sampling_rate=dat1.stats.sampling_rate
-            tr1.data=correlation_stack
+            tr_correlation_stack=trace.Trace()
+            tr_coherence_stack_real=trace.Trace()
+            tr_coherence_stack_imag=trace.Trace()
 
-            #- fill in all the necessary information
-        
+            tr_correlation_stack.stats.sampling_rate=dat1.stats.sampling_rate
+            tr_correlation_stack.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            tr_correlation_stack.data=correlation_stack
+
+            tr_coherence_stack_real.stats.sampling_rate=dat1.stats.sampling_rate
+            tr_coherence_stack_real.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            tr_coherence_stack_real.data=np.real(coherence_stack)
+
+            tr_coherence_stack_imag.stats.sampling_rate=dat1.stats.sampling_rate
+            tr_coherence_stack_imag.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            tr_coherence_stack_imag.data=np.imag(coherence_stack.imag)
+
+
             #- open file and write correlation function
-            fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
-            fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
-            fileid=outdir+'/'+fn1+'-'+fn2+'.lin_stack.MSEED'
+            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.correlation_stack.MSEED'
+            fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.MSEED'
+            fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.MSEED'
 
-            #- if file already exists, open the old one and add traces together
-            if os.path.exists(fileid)==True:
-                if verbose==True: "Correlation function already exists. Add to previous one."
-                tr_old=read(fileid)
-                tr1.data+=tr_old[0].data
-                tr1.write(fileid, format="MSEED")
+            #- linear stack
+            if os.path.exists(fileid_correlation_stack)==True:
+                if verbose: 
+                    print "Correlation stack already exists. Add to previous one."
+                tr_old=read(fileid_correlation_stack)
+                tr_correlation_stack.data=tr_correlation_stack.data+tr_old[0].data
+                tr_correlation_stack.write(fileid_correlation_stack, format="MSEED")
+            else:
+                tr_correlation_stack.write(fileid_correlation_stack, format="MSEED")
+
+            #- real part of coherence stack
+            if os.path.exists(fileid_coherence_stack_real)==True:
+                if verbose: 
+                    print "Real part of coherence stack already exists. Add to previous one."
+                tr_old=read(fileid_coherence_stack_real)
+                tr_coherence_stack_real.data=tr_coherence_stack_real.data+tr_old[0].data
+                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")
+            else:
+                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")
+
+            #- imaginary part of coherence stack
+            if os.path.exists(fileid_coherence_stack_imag)==True:
+                if verbose:
+                    print "Imaginary part of coherence stack already exists. Add to previous one."
+                tr_old=read(fileid_coherence_stack_imag)
+                tr_coherence_stack_imag.data=tr_coherence_stack_imag.data+tr_old[0].data
+                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
+            else:
+                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
 
             #- Write time windows to a file for documentation =====================================
-            filename=outdir+'/'+fn1+'-'+fn2+'.windows'
+            filename=outdir+'/'+fn1+'-'+fn2+'.metadata'
             fid=open(filename,'a')
             for window in windows:
-               fid.write(str(window)+'\n')
+               fid.write(str(window[0].year)+' '+str(window[0].month)+' '+str(window[0].day)+' '+str(window[0].hour)+' '+str(window[0].minute)+' '+str(window[0].second)+', '+str(window[1].year)+' '+str(window[1].month)+' '+str(window[1].day)+' '+str(window[1].hour)+' '+str(window[1].minute)+' '+str(window[1].second)+'\n')
             fid.close()
-
-        #Create a trace object
-#        tr2=trace.Trace()
-#        tr2.stats.sampling_rate=Fs
-#        tr2.data=xcorrstack
-        
-#        fileid=outdir+'/'+chpair[0]+'.'+chpair[1]+'.pw_stack'
-        #append start and end date to fileid?
-#        tr2.write(fileid, format="MSEED")
-        
 
 
 #==================================================================================================
 # find pairs of recordings
 #==================================================================================================
 
-def find_pairs(record_list,channels,mix_channels):
+def find_pairs(record_list,channels,mix_channels,win_len):
     
     """
-    Find pairs of recordings.
+    Find pairs of recordings with overlapping time windows.
 
     ccpairs=find_pairs(record_list,channels,mix_channels):
 
     record_list:    list of seismogram files following the naming convention network.station.location.channel
     channels:       list of channels to be considered, e.g. ['BHZ','LHE']
     mix_channels:   boolean parameter determining if pairs are allowed to have different channels
+    win_len:        length of the time windows to be correlated in seconds, used to check minimum length of traces
 
     ccpairs:        list of seismogram pairs
 
@@ -196,6 +244,8 @@ def find_pairs(record_list,channels,mix_channels):
     for i in range(len(record_list)):
         for j in range(len(record_list)):
             if i<j: continue
+
+            #- get station and channel names, as well as start and end times ----------------------
 
             #- stations
             sta1=record_list[i].split('.')[1]
@@ -214,16 +264,21 @@ def find_pairs(record_list,channels,mix_channels):
             chcomb=()
             make_pair=False
 
-            if (cha1 in channels) & (cha2 in channels):
+            #- perform tests to compile the station pair list -------------------------------------
+
+            if (cha1 in channels) & (cha2 in channels) & (t12>=t11+win_len) & (t22>=t21+win_len):
+
                 #- if channels differ, make pair only when channel mixing is allowed
                 if (cha1!=cha2 and mix_channels):
-                    if (t12>t21) and (t11<t12) and (t21<t22):
+                    if (t12>t21) and (t11<t12):
                         make_pair=True
                 #- make a pair when channels are identical
                 elif (cha1==cha2):
-                    if (t12>t21) and (t11<t12) and (t21<t22):
+                    if (t12>t21) and (t11<t12):
                         make_pair=True
 
+            #- add to the list of pairs -----------------------------------------------------------
+    
             if make_pair:
                 chcomb=(record_list[i],record_list[j])
                 ccpairs.append(chcomb)
@@ -232,7 +287,7 @@ def find_pairs(record_list,channels,mix_channels):
     
     
 #==================================================================================================
-# Compute stecked correlation functions
+# Compute stacked correlation functions
 #==================================================================================================
 
 def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, verbose):
@@ -254,7 +309,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     verbose:    talk or not
 
     correlation_stack:  stacked correlations
-    coherence_stack:    stacked phase coherences
+    coherence_stack:    stacked phase coherences, this is the complex coherence before taking the absolute value
     windows:            time windows used in the stack
     n:                  number of successfully stacked correlations
     n_skip:             number of discarded time windows
@@ -348,10 +403,6 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
             #- make time window pairs for documentation
             window=(t1,t2)
             windows.append(window)
-
-            #- phase-weighted stack
-            # *** to be implemented ***
-            #- At this point one could simply compute the phase weighting function, based on "stack".
 
         #- go to the next time window
         t1=t2-olap

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <memory.h>
-#include <csubs.h>
+#include "csubs.h"
 #define pi 3.14159265
 
 /*--------------------------------------------------------------------

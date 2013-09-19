@@ -24,7 +24,7 @@ void main(void){
     
     FILE *fh_t, *fh_u, *fh_v, *fh_pcc;
     
-    int a, b,i1,i2, ndat=1024*512,len,n2=2*ndat;
+    int a, b,i1,i2, ndat=2048*2048,len,n2=2*ndat;
     float *tra1, *tra2;
     float *atra1, *atra2;
     float *re1, *im1;
