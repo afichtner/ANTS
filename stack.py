@@ -9,7 +9,7 @@ import shutil
 import matplotlib.pyplot as plt
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
-
+from math import log
 
 def stack(xmlinput):
 
@@ -105,8 +105,9 @@ def stack(xmlinput):
             continue
             
         #-Test if it is necessary to change the window length in order to have a power-of-2 length window
-        win_len=wl_adjust(win_len, dat1.stats.sampling_rate)
-        if verbose: print 'Window length changed to ', win_len, ' seconds.'
+        if win_len%2!=0: 
+            win_len=wl_adjust(win_len, dat1.stats.sampling_rate)
+            if verbose: print 'Window length changed to ', win_len, ' seconds.'
 
 
         #- Compute stacked correlations ===========================================================
