@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 
 from obspy.core import read
 
@@ -34,6 +35,9 @@ def preprocessing(processing_input):
     
     if os.path.exists(outdir)==False:
         os.mkdir(outdir)
+
+    #- copy the input xml to the output directory for documentation ===============================
+    shutil.copy(processing_input,outdir)
     
     #- loop through all files =====================================================================
 
@@ -58,6 +62,10 @@ def preprocessing(processing_input):
                 if verbose==True: print 'file could not be opened, abort'
                 continue
 
+            #- split traces into shorter segments
+            if inp1['processing']['split']['doit']=='1':
+                data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose)
+
             n_traces=len(data)
 
             if verbose==True:
@@ -70,6 +78,8 @@ def preprocessing(processing_input):
 
                 trace=data[k]
 
+                if verbose==True: print '-----------------------------------------------------------'
+
                 if plot==True:
                     print '* trace before processing'
                     trace.plot()
@@ -77,11 +87,6 @@ def preprocessing(processing_input):
                 #==================================================================================
                 # basic quality checks
                 #==================================================================================
-                    
-                #- minimum length (currently 60 s)
-                if (trace.stats.endtime-trace.stats.starttime)<60.0:
-                    if verbose==True: print '** trace too short, discarded'
-                    continue
 
                 #- check NaN
                 if True in np.isnan(trace.data):
@@ -92,6 +97,8 @@ def preprocessing(processing_input):
                 if True in np.isinf(trace.data):
                     if verbose==True: print '** trace contains infinity, discarded'
                     continue
+
+                if verbose==True: print '* number of points: '+str(trace.stats.npts)
 
                 #==================================================================================
                 # processing (detrending, filtering, response removal, decimation)

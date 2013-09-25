@@ -1,9 +1,40 @@
 import os as os
 import numpy as np
 from obspy.core import read
+from obspy.core import stream
 from scipy.interpolate import interp1d
 from obspy.core import trace, stream, UTCDateTime
 
+#==================================================================================================
+# SPLIT TRACES INTO SHORTER SEGMENTS
+#==================================================================================================
+
+def split_traces(s,length_in_sec,min_length_in_sec,verbose):
+	"""
+	Split an ObsPy stream object with multiple traces into a stream with traces of a predefined
+	maximum length.
+	"""
+
+	if verbose==True: print '* split into traces of '+str(length_in_sec)+' s maximum length'
+
+	s_new=stream.Stream()
+
+	#- loop through traces ------------------------------------------------------------------------
+	for k in np.arange(len(s)):
+		#- check for minimum length
+		if (s[k].stats.endtime-s[k].stats.starttime)<min_length_in_sec:
+			if verbose==True: print '** trace too short, discarded'
+			continue
+		#- set initial start time
+		start=s[k].stats.starttime
+		#- march through the trace until the endtime is reached
+		while start<s[k].stats.endtime:
+			s_copy=s.copy()
+			s_copy.trim(start,start+length_in_sec)
+			s_new.append(s_copy[0])
+			start=start+length_in_sec
+
+	return s_new
 
 #==================================================================================================
 # TAPER

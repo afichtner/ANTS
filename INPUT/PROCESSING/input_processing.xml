@@ -12,12 +12,19 @@
 
     <directories>
         <!--list of input directories separated by spaces-->
-        <indirs>./DATA/G.2012.01.data</indirs>
+        <indirs>./DATA/G.2012.02.data</indirs>
         <!--output directory for processed data-->
-        <outdir>./DATA/G.2012.01.data.processed</outdir>
+        <outdir>./DATA/G.2012.02.data.processed</outdir>
     </directories>
 
+    <!--*************************************************************************************************-->
+    <!--quality checks-->
+    <!--*************************************************************************************************-->
    
+    <quality>
+        <min_length_in_sec>86400</min_length_in_sec>
+    </quality>
+
     <!--*************************************************************************************************-->
     <!--preprocessing-->
     <!--*************************************************************************************************-->
@@ -25,6 +32,11 @@
     <!--preprocessing on individual seismograms-->
     <!--The order corresponds to the actual order of execution-->
     <processing>
+        <!--split traces into shorter segments-->
+        <split>
+            <doit>1</doit>
+            <length_in_sec>864000</length_in_sec>
+        </split>
         <!--trim to nearest second-->
         <trim>1</trim>
         <!--remove average and linear trend-->
@@ -32,31 +44,31 @@
         <!--taper edges of seismogram for better filtering-->
         <taper>
             <doit>1</doit>
-            <taper_width>0.05</taper_width>
+            <taper_width>0.02</taper_width>
         </taper>
         <!--bandpass filter before response removal-->
         <bandpass_1>
             <doit>1</doit>
             <f_min>0.01</f_min>
-            <f_max>0.03</f_max>
+            <f_max>0.05</f_max>
             <corners>4</corners>
         </bandpass_1>
         <!--downsampling-->
         <decimation>
             <doit>1</doit>
-            <new_sampling_rate>0.5</new_sampling_rate>
+            <new_sampling_rate>1.0</new_sampling_rate>
         </decimation>
         <!--remove instrument response-->
         <instrument_response>
             <doit>1</doit>
             <unit>DIS</unit>
-            <respdir>./DATA/G.2012.01.resp</respdir>
+            <respdir>./DATA/G.2012.02.resp</respdir>
         </instrument_response>
         <!--bandpass after response removal-->
         <bandpass_2>
             <doit>1</doit>
             <f_min>0.01</f_min>
-            <f_max>0.1</f_max>
+            <f_max>0.05</f_max>
             <corners>4</corners>
         </bandpass_2>
     </processing>
