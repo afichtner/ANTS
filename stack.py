@@ -9,7 +9,7 @@ import shutil
 import matplotlib.pyplot as plt
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
-
+from math import log
 
 def stack(xmlinput):
 
@@ -103,6 +103,11 @@ def stack(xmlinput):
         if dat1.stats.sampling_rate!=dat2.stats.sampling_rate:
             if verbose: print 'Unequal sampling rates. Skipping this correlation.'
             continue
+            
+        #-Test if it is necessary to change the window length in order to have a power-of-2 length window
+        if win_len%2!=0: 
+            win_len=wl_adjust(win_len, dat1.stats.sampling_rate)
+            if verbose: print 'Window length changed to ', win_len, ' seconds.'
 
 
         #- Compute stacked correlations ===========================================================
@@ -350,6 +355,10 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         if (dat1.stats.starttime<=t1) and (dat1.stats.endtime>=t2) and (dat2.stats.starttime<=t1) and (dat2.stats.endtime>=t2):
             tr1.trim(starttime=t1, endtime=t2)
             tr2.trim(starttime=t1, endtime=t2)
+            if len(tr1.data)%2!=0:
+                newlen=int(2**round(log(len(tr1.data))/log(2)))
+                tr1.data=tr1.data[0:newlen]
+                tr2.data=tr2.data[0:newlen]
         else:
             correlate=False
     
