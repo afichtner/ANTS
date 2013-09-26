@@ -144,6 +144,11 @@ def preprocessing(processing_input):
 
                     trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose)
 
+                #- taper edges ========================================================================
+
+                if inp1['processing']['taper']['doit']=='1':
+
+                    trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
 
                 #======================================================================================
                 # normalisations (whitening, averages, ...)
