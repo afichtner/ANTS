@@ -33,10 +33,6 @@ def stack(xmlinput):
     verbose=bool(int(inp1['verbose']))
     plotting=bool(int(inp1['plotting']))
     
-    save_lin=inp1['stacks']['save_linstack']
-    save_pws=inp1['stacks']['save_pwstack']
-    pws_nu=int(inp1['stacks']['pws_nu'])
-    
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
     win_len=int(inp1['timethings']['winlen'])
@@ -182,7 +178,7 @@ def stack(xmlinput):
 
 
             #- open file and write correlation function
-            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.correlation_stack.MSEED'
+            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'_stack.MSEED'
             fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.MSEED'
             fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.MSEED'
 
@@ -217,7 +213,7 @@ def stack(xmlinput):
                 tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
 
             #- Write time windows to a file for documentation =====================================
-            filename=outdir+'/'+fn1+'-'+fn2+'.metadata'
+            filename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
             fid=open(filename,'a')
             for window in windows:
                fid.write(str(window[0].year)+' '+str(window[0].month)+' '+str(window[0].day)+' '+str(window[0].hour)+' '+str(window[0].minute)+' '+str(window[0].second)+', '+str(window[1].year)+' '+str(window[1].month)+' '+str(window[1].day)+' '+str(window[1].hour)+' '+str(window[1].minute)+' '+str(window[1].second)+'\n')

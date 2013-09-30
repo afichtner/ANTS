@@ -12,9 +12,9 @@
 
     <directories>
         <!--Input directory containing all the day folders-->
-        <indir>./DATA/G.2012.01.data.processed.small</indir>
+        <indir>./DATA/US-TA.CI.2012.01.processed</indir>
         <!--output directory for stacked crosscorrelation functions-->
-        <outdir>./DATA/G.2012.01.correlations</outdir>
+        <outdir>./DATA/US-TA.CI.2012.01.pcc</outdir>
     </directories>
 
      
@@ -25,9 +25,9 @@
         <!--Start date. Loop will start with this directory-->
         <startdate>20120101</startdate>
         <!--End date. Loop will end AFTER processing this directory-->
-        <enddate>20120201</enddate>
+        <enddate>20120115</enddate>
         <!--Length of the time windows to be correlated, in seconds-->
-        <winlen>3600</winlen>
+        <winlen>65536</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
         <olap>0</olap>
@@ -40,31 +40,21 @@
 
     <channels>
         <!-- list of channels considered, separated by spaces, no wildcarding -->
-        <channel_list>BHE BHZ</channel_list>
+        <channel_list>BHE BHN BHZ</channel_list>
         <!-- compute correlations between channels, 0=no, 1=yes -->
-        <mix_channels>1</mix_channels>
+        <mix_channels>0</mix_channels>
     </channels>
 
     <!--Types of correlations-->
     <!--The order corresponds to the actual order of execution-->
     <correlations>
         <!--Maximum lag in seconds-->
-        <max_lag>100</max_lag>
+        <max_lag>500</max_lag>
         <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
-        <corr_type>td_classic</corr_type>
+        <corr_type>pcc</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
     </correlations>  
-    
-    <stacks>
-        <!--What type of stack to save-->
-        <save_linstack>1</save_linstack>
-        <save_pwstack>1</save_pwstack>
-        <!--Specify nu parameter for pwstack (Schimmel&Paulsen 1997)-->
-        <pws_nu>1</pws_nu>
-    </stacks>
-        
-        
         
 
 
