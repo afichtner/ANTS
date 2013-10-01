@@ -8,24 +8,31 @@ from TOOLS.read_xml import read_xml
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_dist(indir, xmldir, station, corrtype, ps_nu, verbose=False, savefig=False):
+def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu, verbose=False, savefig=False):
     """
     A script to plot cross-correlation traces sorted by interstation distance.
     indir: string: path to directory containing results of stack.py
     xmldir: A directory containing the station xml files for all stations (to get the distances). These files must be in xml format and must be called network.station.sta_info.xml
     station: The 'reference': All other stations are plotted with respect to the station selected here and distance is distance to this station
-    corrtype: string: cc or pcc
+    channel: string: A rudimentary selection for channels. BHZ, BHE, BHN or BH*
+    corrtype: string: ccc or pcc (classical cross correlation, phase cross correlation)
     ps_nu: integer; power to which the weighting by instantaneous phase stack is raised. ps=0 means linear stack.
     """
     #Initialize the plot
-    fig=plt.figure(figsize=(10, 16), dpi=100)
+    fig=plt.figure(figsize=(5, 6))
     fig.hold()
     plt.subplot(111)
-    plt.rc('axes', color_cycle=['b', 'g', 'k'])
+    
+    if channel!='BHE' and channel!='BHN' and channel!='BHZ':
+        plt.rc('axes', color_cycle=['b', 'g', 'k'])
+    else:
+        plt.rc('axes', color_cycle=['k'])
+    
     
     #Find the files containing a correlation of the 'reference' station
     sta=re.compile(station)
     ctype=re.compile(corrtype+'_stack')
+    cha=re.compile(channel)
     
     ls=os.listdir(indir)
     stalist=[]
@@ -33,12 +40,15 @@ def plot_dist(indir, xmldir, station, corrtype, ps_nu, verbose=False, savefig=Fa
     for filename in ls:
         if sta.search(filename) is not None:
             if ctype.search(filename) is not None:
-                stalist.append(filename)
+                if cha.search(filename) is not None:
+                    
+                    stalist.append(filename)
         else:
             continue
             
     
     #For all these files find the interstation distance, and plot accordingly
+    dist_old=0
     for file in stalist:
         if verbose: print file
         inf=file.split('-')[0].split('.')+file.split('-')[1].split('.')
@@ -74,20 +84,25 @@ def plot_dist(indir, xmldir, station, corrtype, ps_nu, verbose=False, savefig=Fa
            lat2=float(inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
            lon2=float( inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
            dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
-           
-        plt.plot(taxis, correlation.data/np.max(correlation.data)+dist/10000)
-        plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/10000) , xytext=(taxis[0]-150, dist/10000), fontsize=8 )
         
+        plt.plot(taxis, correlation.data/np.max(correlation.data)+dist/10000)
+        if dist_old-dist>=1:
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/10000) , xytext=(taxis[0]-100, dist/10000+0.1), fontsize=12 )
+        else:
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/10000) , xytext=(taxis[-1:]-100, dist/10000+0.1), fontsize=12 )
+        dist_old=dist
+            
     plt.xlabel('Lag Time (sec)')
     plt.ylabel('Cross-Correlation / Interstation distance')
-    plt.xlim((taxis[0]-200, taxis[-1:]+200))
+    
+    plt.xlim((taxis[0]-200, taxis[-1:]+300))
     frame1=plt.gca()
     frame1.axes.get_yaxis().set_ticks([])
     
     
     if savefig==True:
-        figname=indir+'/'+station+'.'+stacktype+'.'+corrtype+'.png'
-        plt.savefig(figname, format='png')
+        figname=indir+'/'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.png'
+        plt.savefig(figname, format='png', dpi=200)
         
     plt.show()
                      

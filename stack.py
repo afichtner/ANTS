@@ -304,7 +304,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     win_len:    length of the time windows to be correlated
     olap:       overlap of time windows
     endday:     UTC time when the last correlation window starts
-    corr_type:  type of correlation functions
+    corr_type:  type of correlation functions, ccc or pcc
     maxlag:     maximum time lag in the correlation functions
     pcc_nu:     exponent in the phase cross-correlation
     verbose:    talk or not
@@ -335,7 +335,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     t2=t1+win_len
     windows=[]
 
-    if corr_type not in ['td_classic','fd_classic','pcc']:
+    if corr_type not in ['ccc', 'fcc','pcc']:
         if verbose: 'Correlation type '+corr_type+' not supported'
         return([], [], [], 0, 0)
 
@@ -380,9 +380,9 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         if correlate==False:
             n_skip+=1
         else:
-            if corr_type=='td_classic':
+            if corr_type=='ccc':
                 correlation=corr.xcorrelation_td(tr1, tr2, maxlag)
-            elif corr_type=='fd_classic':
+            elif corr_type=='fcc':
                 correlation=corr.xcorrelation_fd(tr1, tr2)
             elif corr_type=='pcc':
                 correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)

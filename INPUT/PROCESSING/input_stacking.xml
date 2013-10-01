@@ -50,7 +50,7 @@
     <correlations>
         <!--Maximum lag in seconds-->
         <max_lag>500</max_lag>
-        <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
+        <!-- ccc: time-domain classical xcorrelation, fcc: frequency-domain classical xcorrelation, pcc: phase correlation -->
         <corr_type>pcc</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
