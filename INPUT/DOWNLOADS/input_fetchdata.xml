@@ -7,7 +7,7 @@
     
     
     <!--user identity-->
-    <user>andreas.fichtner@derdw.ethz.ch</user>
+    <user>laura.ermert@derdw.ethz.ch</user>
 
     <!--networks, channels, stations, locations, etc.-->
     <data>
@@ -18,14 +18,14 @@
         <!-- list of locations, separated by blanks-->
         <locations>*</locations>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>./INPUT/STATION_LISTS/staG.txt</stations>
+        <stations>./../../sandbox/TestIC/stations.txt</stations>
     </data>
 
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
         <starttime>2011-12-31,23:59:00</starttime>
-        <endtime>2012-02-01,00:01:00</endtime>
+        <endtime>2012-01-03,00:01:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->
@@ -38,8 +38,8 @@
 
     <!--saving data-->
     <storage>
-        <downloadloc>./DATA/G.2012.01.data</downloadloc>
-        <respfileloc>./DATA/G.2012.01.resp</respfileloc>
+        <downloadloc>./../../sandbox/TestIC/Gdata</downloadloc>
+        <respfileloc>./../../sandbox/TestIC/Gresp</respfileloc>
     </storage>
     
 </data_download>

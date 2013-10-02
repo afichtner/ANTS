@@ -119,6 +119,12 @@ def preprocessing(processing_input):
                 if inp1['processing']['taper']['doit']=='1':
 
                     trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
+                    
+                #- demean============================================================================
+
+                if inp1['processing']['demean']=='1':
+
+                    trace=proc.demean(trace,verbose)
 
                 #- bandpass, first stage ==============================================================
 
