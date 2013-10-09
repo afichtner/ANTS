@@ -122,36 +122,31 @@ def preprocessing(processing_input):
                 
                 if inp1['processing']['trim']=='1':
                     trace=proc.trim_next_sec(trace,verbose)
-                    if True in np.isnan(trace.data):
-                        print "THERE ARE NANS HERE!"
+                    
                     
                 #- detrend ============================================================================
 
                 if inp1['processing']['detrend']=='1':
                     trace=proc.detrend(trace,verbose)
-                    if True in np.isnan(trace.data):
-                        print "THERE ARE NANS HERE!"
+                    
                     
                 #- demean============================================================================
 
                 if inp1['processing']['demean']=='1':
-
                     trace=proc.demean(trace,verbose)
-                    if True in np.isnan(trace.data):
-                        print "THERE ARE NANS HERE!"
+                    
                    
                 #- taper edges ========================================================================
 
                 if inp1['processing']['taper']['doit']=='1':
                    trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
-                   print 'tapered trace begins with ', trace.data[0]
+                   
             
                 #- bandpass, first stage ==============================================================
 
                 if inp1['processing']['bandpass_1']['doit']=='1':
-
                     trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
-                    trace.plot()
+              
                     
                     
                 #- downsampling =======================================================================
@@ -162,8 +157,7 @@ def preprocessing(processing_input):
                     print "It is necessary to apply an anti-alias filter first (see bandpass first stage in input file).\n No filter has been defined, therefore a fourth-order lowpass filter with fc=0.25*new sampling rate is now imposed."
                     trace=proc.lowpass(trace, 4, 0.25*float(inp1['processing']['decimation']['new_sampling_rate']), verbose)
                     trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
-                trace.plot()
-                print trace
+       
                    
                 #- remove instrument response =========================================================
 
@@ -228,7 +222,7 @@ def preprocessing(processing_input):
                     if plot:
                         print '* trace after processing'
                         trace.plot()
-                        print trace.data[0:19]
+
                         
                     
                     if (inp1['saveprep']=='1'):

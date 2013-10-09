@@ -18,8 +18,7 @@ def split_traces(s,length_in_sec,min_len, verbose):
     if verbose==True: print '* split into traces of '+str(length_in_sec)+' s length'
 
     s_new=stream.Stream()
-    print s
-    print "The length of the traces loop for splitting is ", len(s)
+    
     #- loop through traces ------------------------------------------------------------------------
     for k in np.arange(len(s)):
         #- set initial start time
@@ -49,8 +48,7 @@ def taper(data,width,verbose):
 
     if verbose==True: print '* taper '+str(100*width)+' percent of trace'
     data.taper('cosine',p=width)
-    print data
-
+    
     return data
 
 
