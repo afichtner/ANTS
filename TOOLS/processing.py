@@ -1,7 +1,6 @@
 import os as os
 import numpy as np
 from obspy.core import read
-from obspy.core import stream
 from obspy.signal import bandpass
 from scipy.interpolate import interp1d
 from obspy.core import trace, stream, UTCDateTime
@@ -10,7 +9,7 @@ from obspy.core import trace, stream, UTCDateTime
 # SPLIT TRACES INTO SHORTER SEGMENTS
 #==================================================================================================
 
-def split_traces(s,length_in_sec,min_length_in_sec,verbose):
+def split_traces(s,length_in_sec,min_len, verbose):
     """
     Split an ObsPy stream object with multiple traces into a stream with traces of a predefined
     maximum length.
@@ -19,24 +18,28 @@ def split_traces(s,length_in_sec,min_length_in_sec,verbose):
     if verbose==True: print '* split into traces of '+str(length_in_sec)+' s length'
 
     s_new=stream.Stream()
-
+    print s
+    print "The length of the traces loop for splitting is ", len(s)
     #- loop through traces ------------------------------------------------------------------------
     for k in np.arange(len(s)):
         #- set initial start time
         start=s[k].stats.starttime
+        print start
         #- march through the trace until the endtime is reached
-        while start<s[k].stats.endtime:
-            s_copy=s.copy()
-            s_copy.trim(start,start+length_in_sec)
-
+        while start<s[k].stats.endtime-length_in_sec+1/(s[k].stats.sampling_rate):
+            s_copy=s[k].copy()
+          
+            s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
+            print s_copy
             start+=length_in_sec
-            if (s_copy[0].stats.endtime-s_copy[0].stats.starttime)<min_length_in_sec:
+            
+            if (s_copy.stats.endtime-s_copy.stats.starttime)<length_in_sec-1/(s[k].stats.sampling_rate):
                 if verbose==True: print '** trace too short, discarded'
-                continue
             else:
-                s_new.append(s_copy[0])
+                s_new.append(s_copy)
 
     return s_new
+
 
 #==================================================================================================
 # TAPER
@@ -46,6 +49,7 @@ def taper(data,width,verbose):
 
     if verbose==True: print '* taper '+str(100*width)+' percent of trace'
     data.taper('cosine',p=width)
+    print data
 
     return data
 
@@ -58,7 +62,7 @@ def detrend(data,verbose):
 
     if verbose==True: print '* detrend'
     data.detrend('linear')
-
+    
     return data
     
 #==================================================================================================
@@ -77,11 +81,12 @@ def demean(data,verbose):
 #==================================================================================================
 
 def bandpass(data,corners,f_min,f_max,verbose):
-
-    if verbose==True: print '* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz'
-    data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
     
-
+    if verbose==True: print '* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz'
+    #data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
+    data.filter('lowpass', freq=f_max, corners=corners, zerophase=False)
+    data.filter('highpass', freq=f_min, corners=corners, zerophase=False)
+    
     return data
 
 #==================================================================================================
@@ -91,7 +96,7 @@ def bandpass(data,corners,f_min,f_max,verbose):
 def lowpass(data,corners,f_max,verbose):
 
     if verbose==True: print '* lowpass below '+str(f_max)+' Hz'
-    data.filter('lowpass', freqmax=f_max,corners=corners,zerophase=False)
+    data.filter('lowpass', freq=f_max,corners=corners,zerophase=False)
     
 
     return data
@@ -101,7 +106,7 @@ def lowpass(data,corners,f_max,verbose):
 # REMOVE INSTRUMENT RESPONSE
 #==================================================================================================
 
-def remove_response(data,respdir,unit,verbose):
+def remove_response(data,respdir,unit,waterlevel,verbose):
 
     """
     Remove instrument response located in respdir from data. Unit is displacement (DIS), velocity (VEL) or acceleration (ACC).
@@ -124,7 +129,7 @@ def remove_response(data,respdir,unit,verbose):
         resp_dict = {"filename": resp_file, "units": unit, "date": data.stats.starttime}
 
         try:
-            data.simulate(seedresp=resp_dict)
+            data.simulate(seedresp=resp_dict, water_level=float(waterlevel))
         except ValueError:
             if verbose==True: print '** could not remove instrument response'
             success=0
@@ -210,30 +215,41 @@ def trim_next_sec(data,verbose):
     
     """
 
-    if verbose: print '* Trimming to full second. Add small buffer around the edges.'
+    if verbose: print '* Trimming to full second.'#' Add small buffer around the edges.'
 
-    try:
+    if isinstance(data,trace.Trace):
         starttime=data.stats.starttime
         endtime=data.stats.endtime
-    except AttributeError:        
-        starttime=data[0].stats.starttime
-        endtime=data[0].stats.endtime
     
-    fullsecondtime_start=starttime.strftime('%Y%m%d%H%M%S')
-    fullsecondtime_start=UTCDateTime(fullsecondtime_start)-10
-
-    fullsecondtime_end=endtime.strftime('%Y%m%d%H%M%S')
-    fullsecondtime_end=UTCDateTime(fullsecondtime_end)+10
-
-    data.trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
-    data.trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
+        fullsecondtime_start=starttime.strftime('%Y%m%d%H%M%S')
+        fullsecondtime_start=UTCDateTime(fullsecondtime_start)#-10
+    
+        fullsecondtime_end=endtime.strftime('%Y%m%d%H%M%S')
+        fullsecondtime_end=UTCDateTime(fullsecondtime_end)#+10
+    
+        data.trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
+        data.trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
+        
+    elif isinstance(data, stream.Stream):
+        for k in range(len(data)):
+            starttime=data[k].stats.starttime
+            endtime=data[k].stats.endtime
+    
+            fullsecondtime_start=starttime.strftime('%Y%m%d%H%M%S')
+            fullsecondtime_start=UTCDateTime(fullsecondtime_start)#-10
+        
+            fullsecondtime_end=endtime.strftime('%Y%m%d%H%M%S')
+            fullsecondtime_end=UTCDateTime(fullsecondtime_end)#+10
+        
+            data[k].trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
+            data[k].trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
 
     return data
     
 
 
 #==================================================================================================
-# DOWNSAMPLING AND INTERPOLATION
+# DOWNSAMPLING
 #==================================================================================================
 
 def downsample(data, Fsnew, verbose):
@@ -252,11 +268,14 @@ def downsample(data, Fsnew, verbose):
     A lowpassfilter is applied to avoid aliasing.
 
     """
-
-    Fs=float(data.stats.sampling_rate) 
+    try:
+        Fs=float(data.stats.sampling_rate)
+    except AttributeError:
+        Fs=float(data[0].stats.sampling_rate)
+    
     Fsnew=float(Fsnew)
     f_max=Fsnew/4
-
+    
     data_new=data.copy()
 
     #- Check if data already have the desired sampling rate =======================================
@@ -268,10 +287,10 @@ def downsample(data, Fsnew, verbose):
     #- Downsampling ===============================================================================
 
     else:
-        data_new.filter('lowpass', freq=f_max, corners=4,zerophase=False)
+        
         dec=int(Fs/Fsnew)
         data_new.decimate(dec, no_filter=True)
-        if verbose: print '* Lowpass filter with f_c = ', f_max, ' before downsampling.'
+        
         if verbose==True:  print '* downsampling by factor '+str(dec)
 
     return data_new

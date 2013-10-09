@@ -12,9 +12,9 @@
 
     <directories>
         <!--list of input directories separated by spaces-->
-        <indirs>./../../sandbox/TestIC/Gdata</indirs>
+        <indirs>./DATA/G.2012.01.data</indirs>
         <!--output directory for processed data-->
-        <outdir>./../../sandbox/TestIC/Gproc</outdir>
+        <outdir>./DATA/G.2012.01.proc</outdir>
     </directories>
 
     <!--*************************************************************************************************-->
@@ -35,7 +35,7 @@
         <!--split traces into shorter segments-->
         <split>
             <doit>1</doit>
-            <length_in_sec>65536</length_in_sec>
+            <length_in_sec>2097152</length_in_sec>
         </split>
         <!--trim to nearest second-->
         <trim>1</trim>
@@ -53,8 +53,8 @@
         <!--bandpass filter before response removal-->
         <bandpass_1>
             <doit>1</doit>
-            <f_min>0.0001</f_min>
-            <f_max>0.1</f_max>
+            <f_min>0.001</f_min>
+            <f_max>0.25</f_max>
             <corners>4</corners>
         </bandpass_1>
         
@@ -70,14 +70,16 @@
         <instrument_response>
             <doit>1</doit>
             <unit>DIS</unit>
-            <respdir>./../../sandbox/TestIC/Gresp</respdir>
+            <respdir>./DATA/G.2012.resp</respdir>
+            <waterlevel>600.0</waterlevel>
         </instrument_response>
+        
         <!--bandpass after response removal-->
         <bandpass_2>
             <doit>1</doit>
-            <f_min>0.0001</f_min>
-            <f_max>0.05</f_max>
-            <corners>4</corners>
+            <f_min>0.001</f_min>
+            <f_max>0.2</f_max>
+            <corners>3</corners>
         </bandpass_2>
     </processing>
 
