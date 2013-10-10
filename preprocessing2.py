@@ -13,6 +13,7 @@ import TOOLS.processing as proc
 import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.renamer as rn
+import TOOLS.testinput as ti
 
 def preprocessing(processing_input):
 
@@ -24,12 +25,17 @@ def preprocessing(processing_input):
 
     inp1=rxml.read_xml(processing_input)
     inp1=inp1[1]
+    
+    if ti.testinput(inp1)==False:
+        print 'Problems in xmlinput, forced to interrupt.'
+        return
 
     indirs=inp1['directories']['indirs'].strip().split(' ')
     outdir=inp1['directories']['outdir']
 
     verbose=bool(int(inp1['verbose']))
     plot=bool(int(inp1['plot']))
+    
 
     #- make target directory if it does not exist =================================================
     
@@ -37,11 +43,11 @@ def preprocessing(processing_input):
         os.mkdir(outdir)
 
     #- copy the input xml to the output directory for documentation ===============================
+    
     shutil.copy(processing_input,outdir)
     
-    #- loop through all files =====================================================================
-
-    #- loop through input directories -------------------------------------------------------------
+    #- loop through directories ==================================================================
+    
     for indir in indirs:
 
         content=os.listdir(indir)
@@ -50,7 +56,6 @@ def preprocessing(processing_input):
         # Input files loop
         #==================================================================================
         for filename in content:
-            #if filename=='.DS_Store': continue
             
             filepath=indir+'/'+filename
         
@@ -68,24 +73,50 @@ def preprocessing(processing_input):
                 continue
             
             
-            #- taper edges ========================================================================
-
-            if inp1['processing']['taper']['doit']=='1':
-                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
+            #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            if inp1['first_step']=='decimate':
+                #- taper edges ========================================================================
+    
+                if inp1['processing']['taper']['doit']=='1':
+                    data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
+                    
+                #- trim ===============================================================================
                 
-            #- trim ===========================================================================
-            if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data,verbose)
-            #- downsampling =======================================================================
-            if inp1['processing']['decimation']['doit']=='1':
-                data=proc.lowpass(data,4,float(inp1['processing']['decimation']['new_sampling_rate'])*0.25,verbose )
-                data=proc.downsample(data,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                if inp1['processing']['trim']=='1':
+                    data=proc.trim_next_sec(data,verbose)
+                    
+                #- downsampling =======================================================================
+                
+                if inp1['processing']['decimation']['doit']=='1':
+                    data=proc.lowpass(data,4,float(inp1['processing']['decimation']['new_sampling_rate'])*0.25,verbose )
+                    data=proc.downsample(data,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    
+            
 
-            #- split traces into shorter segments==============================================
+            #- split traces into shorter segments======================================================
             if inp1['processing']['split']['doit']=='1':
-                data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']) ,verbose)
+                data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose)
             n_traces=len(data)
             
+            
+            #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            if inp1['first_step']=='split':
+                #- taper edges ========================================================================
+    
+                if inp1['processing']['taper']['doit']=='1':
+                    data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
+                    
+                #- trim ===============================================================================
+                
+                if inp1['processing']['trim']=='1':
+                    data=proc.trim_next_sec(data,verbose)
+            #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                
+                
             
             if verbose==True:
                 print 'contains '+str(n_traces)+' trace(s)'
@@ -102,9 +133,9 @@ def preprocessing(processing_input):
                 
                 if verbose==True: print '-----------------------------------------------------------'
 
-                #if plot==True:
-                    #print '* trace before processing'
-                    #trace.plot()
+                if plot==True:
+                    print '* trace before processing'
+                    trace.plot()
 
                 #==================================================================================
                 # basic quality checks
@@ -151,12 +182,27 @@ def preprocessing(processing_input):
                 if inp1['processing']['bandpass_1']['doit']=='1':
 
                     trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
-                   
+                    
+                    
+                #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                #- downsampling =======================================================================
+                
+                if inp1['processing']['decimation']['doit']=='1':
+                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                    
+                #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                    
                 #- remove instrument response =========================================================
 
                 if inp1['processing']['instrument_response']['doit']=='1':
 
-                    removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'], 600.0,verbose)
+                    removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose)
+                    if True in np.isnan(trace):
+                        print 'Deconvolution seems unstable! Trace discarded.'
+                        continue
 
                 #- bandpass, second stage =============================================================
 
@@ -213,13 +259,13 @@ def preprocessing(processing_input):
                 colloc_data+=trace
             
             colloc_data._cleanup()
-            print colloc_data
+            print '* traces after processing are:\n', colloc_data
             
             if len(colloc_data)>0:
                 if plot:
-                    print '* traces after processing'
                     colloc_data.plot()
                 if (inp1['saveprep']=='1'):
-                    if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):
-                        rn.rename_seismic_data(colloc_data, outdir, True, verbose)
+                    for k in range(len(colloc_data)):
+                        if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):
+                            rn.rename_seismic_data(colloc_data[k], outdir, True, verbose)
                     
