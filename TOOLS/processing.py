@@ -21,21 +21,23 @@ def split_traces(s,length_in_sec,min_len, verbose):
     
     #- loop through traces ------------------------------------------------------------------------
     for k in np.arange(len(s)):
+        
+          
         #- set initial start time
         start=s[k].stats.starttime
-        print start
+        
         #- march through the trace until the endtime is reached
-        while start<s[k].stats.endtime-length_in_sec+1/(s[k].stats.sampling_rate):
+        while start<s[k].stats.endtime-min_len:
             s_copy=s[k].copy()
-          
             s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
-            print s_copy
-            start+=length_in_sec
             
-            if (s_copy.stats.endtime-s_copy.stats.starttime)<length_in_sec-1/(s[k].stats.sampling_rate):
+            if (s_copy.stats.endtime-s_copy.stats.starttime)<min_len:
                 if verbose==True: print '** trace too short, discarded'
             else:
                 s_new.append(s_copy)
+           
+            
+            start+=length_in_sec
 
     return s_new
 
@@ -81,9 +83,7 @@ def demean(data,verbose):
 def bandpass(data,corners,f_min,f_max,verbose):
     
     if verbose==True: print '* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz'
-    #data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
-    data.filter('lowpass', freq=f_max, corners=corners, zerophase=False)
-    data.filter('highpass', freq=f_min, corners=corners, zerophase=False)
+    data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
     
     return data
 
@@ -289,7 +289,12 @@ def downsample(data, Fsnew, verbose):
         dec=int(Fs/Fsnew)
         data_new.decimate(dec, no_filter=True)
         
-        if verbose==True:  print '* downsampling by factor '+str(dec)
+        try:
+            tl=len(data_new.data)
+        except AttributeError:
+            tl=len(data_new[0].data)
+        
+        if verbose==True:  print '* downsampling by factor '+str(dec)+', length of new trace: '+str(tl)
 
     return data_new
     
