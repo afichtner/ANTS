@@ -5,7 +5,7 @@ from obspy.core import trace
 from obspy.core import  UTCDateTime
 import os
 import shutil
-
+import re
 import matplotlib.pyplot as plt
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
@@ -27,17 +27,22 @@ def stack(xmlinput):
 
     indir=inp1['directories']['indir']
     outdir=inp1['directories']['outdir']
+    fformat=inp1['directories']['format']
     if os.path.isdir(outdir)==False:
         os.mkdir(outdir)
         
     verbose=bool(int(inp1['verbose']))
     plotting=bool(int(inp1['plotting']))
     
+    
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
     win_len=int(inp1['timethings']['winlen'])
+    Fs=float(inp1['timethings']['Fs'])
     olap=int(inp1['timethings']['olap'])
-
+    
+    win_len=wl_adjust(win_len, Fs)
+    
     channels=inp1['channels']['channel_list'].split(' ')
     mix_channels=bool(int(inp1['channels']['mix_channels']))
     
@@ -55,9 +60,10 @@ def stack(xmlinput):
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
     
-    #- Get rid of annoyances
+    #- Get rid of non-mseed files
     if os.path.exists(indir+'/.DS_Store'):
         os.remove(indir+'/.DS_Store')
+    
     
     #- copy the input xml to the output directory for documentation
     shutil.copy(xmlinput,outdir)
@@ -66,7 +72,7 @@ def stack(xmlinput):
     record_list=os.listdir(indir+'/')
 
     #- Find out what are the relevant combinations. This returns a list of tuples with identifiers that are to be correlated (e. g. ('G.ECH.00.BHE','G.CAN.00.BHE'))
-    corr_ch=find_pairs(record_list,channels,mix_channels,win_len)
+    corr_ch=find_pairs(record_list,fformat, channels,mix_channels,win_len, verbose)
 
     if verbose:
         print 'number of potential correlations: '+str(len(corr_ch))
@@ -100,14 +106,8 @@ def stack(xmlinput):
             if verbose: print 'Unequal sampling rates. Skipping this correlation.'
             continue
             
-        #-Test if it is necessary to change the window length in order to have a power-of-2 length window
-        if win_len%2!=0: 
-            win_len=wl_adjust(win_len, dat1.stats.sampling_rate)
-            if verbose: print 'Window length changed to ', win_len, ' seconds.'
-
-
         #- Compute stacked correlations ===========================================================
-        (correlation_stack, coherence_stack, windows, n, n_skip)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, verbose)
+        (correlation_stack, coherence_stack, windows, n, n_skip)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,  verbose)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
@@ -224,7 +224,7 @@ def stack(xmlinput):
 # find pairs of recordings
 #==================================================================================================
 
-def find_pairs(record_list,channels,mix_channels,win_len):
+def find_pairs(record_list,format,channels,mix_channels,win_len,verbose):
     
     """
     Find pairs of recordings with overlapping time windows.
@@ -232,6 +232,7 @@ def find_pairs(record_list,channels,mix_channels,win_len):
     ccpairs=find_pairs(record_list,channels,mix_channels):
 
     record_list:    list of seismogram files following the naming convention network.station.location.channel
+    format:         string specifying the file format, mseed/sac
     channels:       list of channels to be considered, e.g. ['BHZ','LHE']
     mix_channels:   boolean parameter determining if pairs are allowed to have different channels
     win_len:        length of the time windows to be correlated in seconds, used to check minimum length of traces
@@ -241,10 +242,12 @@ def find_pairs(record_list,channels,mix_channels,win_len):
     """
 
     ccpairs=[]
+    format=re.compile(format, re.I)
     
     for i in range(len(record_list)):
         for j in range(len(record_list)):
             if i<j: continue
+            if format.search(record_list[i]) is None: continue
 
             #- get station and channel names, as well as start and end times ----------------------
 
@@ -291,7 +294,7 @@ def find_pairs(record_list,channels,mix_channels,win_len):
 # Compute stacked correlation functions
 #==================================================================================================
 
-def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, verbose):
+def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,verbose):
 
     """
     Compute stacked correlation functions.
@@ -316,11 +319,11 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     n_skip:             number of discarded time windows
 
     """
-
+   
     from scipy.signal import hilbert
 
     #- initialisations ----------------------------------------------------------------------------
-
+    if verbose: print 'Hi from stacking routine.'
     #- Prepare stack
     #stack=np.zeros((int(2.0*float(maxlag)*dat1.stats.sampling_rate+1.0), ))
        
@@ -341,13 +344,13 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
 
     #- Loop over time windows and update stack ----------------------------------------------------
     while t2<=endday:
-
+        
         correlate=True
 
         #- Get the portion of the trace that you want
         tr1=dat1.copy()
         tr2=dat2.copy()
-
+        
         if (dat1.stats.starttime<=t1) and (dat1.stats.endtime>=t2) and (dat2.stats.starttime<=t1) and (dat2.stats.endtime>=t2):
             tr1.trim(starttime=t1, endtime=t2)
             tr2.trim(starttime=t1, endtime=t2)
@@ -356,26 +359,27 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
                 tr1.data=tr1.data[0:newlen]
                 tr2.data=tr2.data[0:newlen]
         else:
+            if verbose: print "Traces do not cover the desired window. T1 is %s whereas windows start at %s  %s\n T2 is %s whereas windows end at %s  %s." % (str(t1), str(dat1.stats.starttime), str(dat2.stats.starttime), str(t2), str(dat1.stats.endtime),str(dat2.stats.endtime))
             correlate=False
-    
+       
+       
         #- Perform a series of checks on the time series
-
         if len(tr1.data)!=len(tr2.data):
-            #if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
+            if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
             correlate=False
         if len(tr1.data)==0:
-            #if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
+            if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
             correlate=False
         if len(tr2.data)==0:
-            #if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr2.stats.station,str(t1),str(t2))
+            if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr2.stats.station,str(t1),str(t2))
             correlate=False
         if (True in np.isnan(tr1.data)) or (True in np.isnan(tr2.data)):
-            #if verbose: print 'Traces contain NaN in time window '+str(t1)+' to '+str(t2)+', skipped'
+            if verbose: print 'Traces contain NaN in time window '+str(t1)+' to '+str(t2)+', skipped'
             correlate=False
         if (True in np.isinf(tr1.data)) or (True in np.isinf(tr2.data)):
-            #if verbose: print 'Traces contain Inf in time window '+str(t1)+' to '+str(t2)+', skipped'
+            if verbose: print 'Traces contain Inf in time window '+str(t1)+' to '+str(t2)+', skipped'
             correlate=False
-
+        
         #- Compute correlations, provided that time series are okay
         if correlate==False:
             n_skip+=1
@@ -386,7 +390,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
                 correlation=corr.xcorrelation_fd(tr1, tr2)
             elif corr_type=='pcc':
                 correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)
-
+        
             #- update statistics
             n+=1
 
@@ -408,6 +412,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
             #- make time window pairs for documentation
             window=(t1,t2)
             windows.append(window)
+           
 
         #- go to the next time window
         t1=t2-olap
@@ -417,3 +422,21 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         return([], [], [], n, n_skip)
     else:
         return(correlation_stack, coherence_stack, windows, n, n_skip)
+        
+        
+#==================================================================================================
+# Compute stacked correlation functions
+#==================================================================================================
+"""Get the nearest power of two in terms of samples; then determine the corresponding window length in seconds. 
+win_len: Integer, User-defined window length in seconds
+Fs: Integer, Sampling rate """
+from math import ceil,  log
+
+def wl_adjust(win_len, Fs):
+    
+    #current window length
+    cwl=Fs*win_len;
+    nwl=(2**ceil(log(cwl)/log(2)))/Fs
+    
+    
+    return nwl
