@@ -334,6 +334,10 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     #- Counter for failed time windows
     n_skip=0
 
+    #- check how far the traces go!
+    startday=max(startday, dat1.stats.starttime, dat2.stats.starttime)
+    endday=min(endday, dat1.stats.endtime, dat2.stats.endtime)
+    
     #- Initial time window and initial time window pairs for documentation
     t1=startday
     t2=t1+win_len
@@ -344,8 +348,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         if verbose: 'Correlation type '+corr_type+' not supported'
         return([], [], [], 0, 0)
         
-    #- check how far the traces go!
-    endday=min(endday, dat1.stats.endtime, dat2.stats.endtime)
+    
 
     #- Loop over time windows and update stack ----------------------------------------------------
     while t2<=endday:
