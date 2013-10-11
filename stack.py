@@ -41,7 +41,7 @@ def stack(xmlinput):
     Fs=float(inp1['timethings']['Fs'])
     olap=int(inp1['timethings']['olap'])
     
-    win_len=wl_adjust(win_len, Fs)
+    win_len=wl_adjust(win_len, Fs, verbose)
     
     channels=inp1['channels']['channel_list'].split(' ')
     mix_channels=bool(int(inp1['channels']['mix_channels']))
@@ -60,10 +60,10 @@ def stack(xmlinput):
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
     
-    #- Get rid of non-mseed files
-    if os.path.exists(indir+'/.DS_Store'):
-        os.remove(indir+'/.DS_Store')
-    
+#    #- Get rid of non-mseed files
+#    if os.path.exists(indir+'/.DS_Store'):
+#        os.remove(indir+'/.DS_Store')
+#    
     
     #- copy the input xml to the output directory for documentation
     shutil.copy(xmlinput,outdir)
@@ -324,9 +324,10 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
 
     #- initialisations ----------------------------------------------------------------------------
     if verbose: print 'Hi from stacking routine.'
-    #- Prepare stack
-    #stack=np.zeros((int(2.0*float(maxlag)*dat1.stats.sampling_rate+1.0), ))
-       
+   
+    #- Get sampling frequency
+    Fs=dat1.stats.sampling_rate
+    
     #- Counter for number of successfully correlated time windows
     n=0
 
@@ -336,11 +337,15 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     #- Initial time window and initial time window pairs for documentation
     t1=startday
     t2=t1+win_len
+   
     windows=[]
 
     if corr_type not in ['ccc', 'fcc','pcc']:
         if verbose: 'Correlation type '+corr_type+' not supported'
         return([], [], [], 0, 0)
+        
+    #- check how far the traces go!
+    endday=min(endday, dat1.stats.endtime, dat2.stats.endtime)
 
     #- Loop over time windows and update stack ----------------------------------------------------
     while t2<=endday:
@@ -352,33 +357,33 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         tr2=dat2.copy()
         
         if (dat1.stats.starttime<=t1) and (dat1.stats.endtime>=t2) and (dat2.stats.starttime<=t1) and (dat2.stats.endtime>=t2):
-            tr1.trim(starttime=t1, endtime=t2)
-            tr2.trim(starttime=t1, endtime=t2)
-            if len(tr1.data)%2!=0:
-                newlen=int(2**round(log(len(tr1.data))/log(2)))
-                tr1.data=tr1.data[0:newlen]
-                tr2.data=tr2.data[0:newlen]
+            tr1.trim(starttime=t1, endtime=t2-1/Fs)
+            tr2.trim(starttime=t1, endtime=t2-1/Fs)
+         
+            #- Perform a series of checks on the time series
+            if len(tr1.data)!=len(tr2.data):
+                if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
+                correlate=False
+            if len(tr1.data)==0:
+                if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
+                correlate=False
+            if len(tr2.data)==0:
+                if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr2.stats.station,str(t1),str(t2))
+                correlate=False
+            if (True in np.isnan(tr1.data)) or (True in np.isnan(tr2.data)):
+                if verbose: print 'Traces contain NaN in time window '+str(t1)+' to '+str(t2)+', skipped'
+                correlate=False
+            if (True in np.isinf(tr1.data)) or (True in np.isinf(tr2.data)):
+                if verbose: print 'Traces contain Inf in time window '+str(t1)+' to '+str(t2)+', skipped'
+                correlate=False
+        
+            
+            
         else:
-            if verbose: print "Traces do not cover the desired window. T1 is %s whereas windows start at %s  %s\n T2 is %s whereas windows end at %s  %s." % (str(t1), str(dat1.stats.starttime), str(dat2.stats.starttime), str(t2), str(dat1.stats.endtime),str(dat2.stats.endtime))
+            #if verbose: print "Traces do not cover the desired window. T1 is %s whereas windows start at %s  %s\n T2 is %s whereas windows end at %s  %s." % (str(t1), str(dat1.stats.starttime), str(dat2.stats.starttime), str(t2), str(dat1.stats.endtime),str(dat2.stats.endtime))
             correlate=False
        
        
-        #- Perform a series of checks on the time series
-        if len(tr1.data)!=len(tr2.data):
-            if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
-            correlate=False
-        if len(tr1.data)==0:
-            if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
-            correlate=False
-        if len(tr2.data)==0:
-            if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr2.stats.station,str(t1),str(t2))
-            correlate=False
-        if (True in np.isnan(tr1.data)) or (True in np.isnan(tr2.data)):
-            if verbose: print 'Traces contain NaN in time window '+str(t1)+' to '+str(t2)+', skipped'
-            correlate=False
-        if (True in np.isinf(tr1.data)) or (True in np.isinf(tr2.data)):
-            if verbose: print 'Traces contain Inf in time window '+str(t1)+' to '+str(t2)+', skipped'
-            correlate=False
         
         #- Compute correlations, provided that time series are okay
         if correlate==False:
@@ -425,18 +430,20 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         
         
 #==================================================================================================
-# Compute stacked correlation functions
+# Adjust window lenght to be power of 2
 #==================================================================================================
 """Get the nearest power of two in terms of samples; then determine the corresponding window length in seconds. 
 win_len: Integer, User-defined window length in seconds
 Fs: Integer, Sampling rate """
 from math import ceil,  log
 
-def wl_adjust(win_len, Fs):
+def wl_adjust(win_len, Fs, verbose):
     
     #current window length
     cwl=Fs*win_len;
-    nwl=(2**ceil(log(cwl)/log(2)))/Fs
+    nwl=int((2**ceil(log(cwl)/log(2)))/Fs)
     
-    
+    if cwl!=nwl:
+        if verbose:
+            print 'Window length adjusted to '+str(nwl)
     return nwl
