@@ -14,7 +14,7 @@
         <!--list of input directories separated by spaces-->
         <indirs>./DATA/G.2012.01.data</indirs>
         <!--output directory for processed data-->
-        <outdir>./DATA/G.2012.01.proc</outdir>
+        <outdir>./DATA/test</outdir>
     </directories>
 
     <!--*************************************************************************************************-->
@@ -22,13 +22,18 @@
     <!--*************************************************************************************************-->
    
     <quality>
-        <min_length_in_sec>65536</min_length_in_sec>
+        <min_length_in_sec>50000</min_length_in_sec>
     </quality>
 
     <!--*************************************************************************************************-->
     <!--preprocessing-->
     <!--*************************************************************************************************-->
-
+    
+    <!--Workflow of processing:-->
+    <!--Provide string: 'split' means traces will be split first, then downsampled.-->
+    <!--'decimate' means traces will be downsampled first. This comes with additional lowpass (antialias) filter at a quarter of the new sampling rate-->
+    <first_step>decimate</first_step>
+    
     <!--preprocessing on individual seismograms-->
     <!--The order corresponds to the actual order of execution-->
     <processing>
@@ -46,14 +51,14 @@
         <!--taper edges of seismogram for better filtering-->
         <taper>
             <doit>1</doit>
-            <taper_width>0.02</taper_width>
+            <taper_width>0.05</taper_width>
         </taper>
         
         
         <!--bandpass filter before response removal-->
         <bandpass_1>
             <doit>1</doit>
-            <f_min>0.001</f_min>
+            <f_min>0.0005</f_min>
             <f_max>0.25</f_max>
             <corners>4</corners>
         </bandpass_1>
@@ -61,9 +66,11 @@
         
         <!--downsampling-->
         <!--A lowpass filter is hardcoded into downsampling. It has a corner frequency of one quarter of the new sampling frequency.-->
+        <!--When a large amont of downsampling is performed, do it in two steps! e. g. instead of by factor 20 decimate by 5 then 4.-->
+        <!--put in intermediate steps separated by spaces, e. g. 4.0 1.0-->
         <decimation>
             <doit>1</doit>
-            <new_sampling_rate>1.0</new_sampling_rate>
+            <new_sampling_rate>4.0 1.0</new_sampling_rate>
         </decimation>
         
         <!--remove instrument response-->
@@ -71,15 +78,15 @@
             <doit>1</doit>
             <unit>DIS</unit>
             <respdir>./DATA/G.2012.resp</respdir>
-            <waterlevel>600.0</waterlevel>
+            <waterlevel>500.0</waterlevel>
         </instrument_response>
         
         <!--bandpass after response removal-->
         <bandpass_2>
             <doit>1</doit>
-            <f_min>0.001</f_min>
+            <f_min>0.0005</f_min>
             <f_max>0.2</f_max>
-            <corners>3</corners>
+            <corners>4</corners>
         </bandpass_2>
     </processing>
 

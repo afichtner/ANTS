@@ -89,8 +89,10 @@ def preprocessing(processing_input):
                 #- downsampling =======================================================================
                 
                 if inp1['processing']['decimation']['doit']=='1':
-                    data=proc.lowpass(data,4,float(inp1['processing']['decimation']['new_sampling_rate'])*0.25,verbose )
-                    data=proc.downsample(data,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                    new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
+                    data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose )
+                    for fs in new_fs:
+                        data=proc.downsample(data,float(fs),verbose)
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     
             
@@ -186,11 +188,11 @@ def preprocessing(processing_input):
                     
                 #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
+                if inp1['first_step']=='split':
                 #- downsampling =======================================================================
                 
-                if inp1['processing']['decimation']['doit']=='1':
-                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                    if inp1['processing']['decimation']['doit']=='1':
+                        trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
                     
                 #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
