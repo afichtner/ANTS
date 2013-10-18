@@ -11,10 +11,8 @@
     <!--*************************************************************************************************-->
 
     <directories>
-        <!--list of input directories separated by spaces-->
-        <indirs>./DATA/G.2012.01.data</indirs>
         <!--output directory for processed data-->
-        <outdir>./DATA/test</outdir>
+        <outdir>./../../sandbox/Test_Processing/test8</outdir>
     </directories>
 
     <!--*************************************************************************************************-->
@@ -22,7 +20,7 @@
     <!--*************************************************************************************************-->
    
     <quality>
-        <min_length_in_sec>50000</min_length_in_sec>
+        <min_length_in_sec>500000</min_length_in_sec>
     </quality>
 
     <!--*************************************************************************************************-->
@@ -60,7 +58,7 @@
             <doit>1</doit>
             <f_min>0.0005</f_min>
             <f_max>0.25</f_max>
-            <corners>4</corners>
+            <corners>3</corners>
         </bandpass_1>
         
         
@@ -77,7 +75,7 @@
         <instrument_response>
             <doit>1</doit>
             <unit>DIS</unit>
-            <respdir>./DATA/G.2012.resp</respdir>
+            <respdir>./DATA/GEOSCOPE/G.2012.resp</respdir>
             <waterlevel>500.0</waterlevel>
         </instrument_response>
         
@@ -86,7 +84,7 @@
             <doit>1</doit>
             <f_min>0.0005</f_min>
             <f_max>0.2</f_max>
-            <corners>4</corners>
+            <corners>3</corners>
         </bandpass_2>
     </processing>
 
@@ -130,6 +128,8 @@
     <rename>1</rename>
     <!--save preprocessed data-->
     <saveprep>1</saveprep>
+    <!--Save plots as png-->
+    <saveplot>1</saveplot>
     
     
     
