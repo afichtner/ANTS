@@ -3,7 +3,8 @@ import numpy as np
 from obspy.core import read
 from obspy.signal import bandpass
 from scipy.interpolate import interp1d
-from obspy.core import trace, stream, UTCDateTime
+from obspy.core import Trace, Stream, UTCDateTime
+from scipy.signal import cheby2,  cheb2ord,  filtfilt
 
 #==================================================================================================
 # SPLIT TRACES INTO SHORTER SEGMENTS
@@ -17,7 +18,7 @@ def split_traces(s,length_in_sec,min_len, verbose):
 
     if verbose==True: print '* split into traces of '+str(length_in_sec)+' s length'
 
-    s_new=stream.Stream()
+    s_new=Stream()
     
     #- loop through traces ------------------------------------------------------------------------
     for k in np.arange(len(s)):
@@ -88,8 +89,56 @@ def bandpass(data,corners,f_min,f_max,verbose):
     return data
 
 #==================================================================================================
-# LOWPASS FILTER
+# CHEBYCHEFF LOWPASS FILTER
 #==================================================================================================
+
+def antialias(data, freqmax, verbose):
+    if isinstance(data,Trace):
+        zerophase_chebychev_lowpass_filter(data, freqmax, verbose)
+    elif isinstance(data,Stream):
+        for trace in data:
+            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose)
+    
+    return data
+            
+
+def zerophase_chebychev_lowpass_filter(trace, freqmax, verbose):
+    """
+    Custom Chebychev type two zerophase lowpass filter useful for decimation
+    filtering.
+
+    This filter is stable up to a reduction in frequency with a factor of 10.
+    If more reduction is desired, simply decimate in steps.
+
+    Partly based on a filter in ObsPy.
+
+    :param data: Input trace
+    :param freqmax: The desired lowpass frequency.
+
+    Will be replaced once ObsPy has a proper decimation filter.
+    """ 
+        
+    # rp - maximum ripple of passband, rs - attenuation of stopband
+    rp, rs, order = 1, 96, 1e99
+    ws = freqmax / (trace.stats.sampling_rate * 0.5)  # stop band frequency
+    wp = ws  # pass band frequency
+
+    while True:
+        if order <= 12:
+            break
+        wp *= 0.99
+        order, wn = cheb2ord(wp, ws, rp, rs, analog=0)
+
+    b, a = cheby2(order, rs, wn, btype="low", analog=0, output="ba")
+
+    # Apply twice to get rid of the phase distortion.
+    trace.data = filtfilt(b, a, trace.data)
+    if verbose: print '* Applied low-pass Chebychev filter with corner freq. ', freqmax
+
+#==================================================================================================
+# BUTTERWORTH LOWPASS FILTER
+#==================================================================================================
+
 
 def lowpass(data,corners,f_max,verbose):
 
@@ -215,7 +264,7 @@ def trim_next_sec(data,verbose):
 
     if verbose: print '* Trimming to full second.'#' Add small buffer around the edges.'
 
-    if isinstance(data,trace.Trace):
+    if isinstance(data,Trace):
         starttime=data.stats.starttime
         endtime=data.stats.endtime
     
@@ -228,7 +277,7 @@ def trim_next_sec(data,verbose):
         data.trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
         data.trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
         
-    elif isinstance(data, stream.Stream):
+    elif isinstance(data,Stream):
         for k in range(len(data)):
             starttime=data[k].stats.starttime
             endtime=data[k].stats.endtime
