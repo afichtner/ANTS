@@ -8,7 +8,7 @@ from TOOLS.read_xml import read_xml
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu, verbose=False, savefig=False):
+def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=10000,maxlag=200, verbose=False, savefig=False):
     """
     A script to plot cross-correlation traces sorted by interstation distance.
     indir: string: path to directory containing results of stack.py
@@ -17,6 +17,8 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu, verbose=False, s
     channel: string: A rudimentary selection for channels. BHZ, BHE, BHN or BH*
     corrtype: string: ccc or pcc (classical cross correlation, phase cross correlation)
     ps_nu: integer; power to which the weighting by instantaneous phase stack is raised. ps=0 means linear stack.
+    dist_scaling: The script calculates the interstation distance in meters. This number has to be scaled down for plotting so that the actual cross-correlations become visible. The amount of scaling depends on the farthest distance in the network on is looking at.
+    maxlag: x axis is restricted to +- this value
     """
     #Initialize the plot
     fig=plt.figure(figsize=(5, 6))
@@ -84,18 +86,21 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu, verbose=False, s
            lat2=float(inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
            lon2=float( inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
            dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
+        correlation.data/=np.max(np.abs(correlation.data))
         
-        plt.plot(taxis, correlation.data/np.max(correlation.data)+dist/10000)
+        plt.plot(taxis, correlation.data+dist/dist_scaling)
+        
         if dist_old-dist>=1:
-            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/10000) , xytext=(taxis[0]-100, dist/10000+0.1), fontsize=12 )
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[0]-100, dist/dist_scaling+0.1), fontsize=12 )
         else:
-            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/10000) , xytext=(taxis[-1:]-100, dist/10000+0.1), fontsize=12 )
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[-1:]-100, dist/dist_scaling+0.1), fontsize=12 )
         dist_old=dist
             
     plt.xlabel('Lag Time (sec)')
     plt.ylabel('Cross-Correlation / Interstation distance')
     
-    plt.xlim((taxis[0]-200, taxis[-1:]+300))
+    
+    plt.xlim(-maxlag, maxlag)
     frame1=plt.gca()
     frame1.axes.get_yaxis().set_ticks([])
     
