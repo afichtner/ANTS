@@ -13,9 +13,6 @@ def testinput(inp):
         print 'plot must be 1 or 0.'
         niceinput=False
         
-    if os.path.exists(inp['directories']['indirs'])==False:
-        print 'Input directory not found.'
-        niceinput=False
         
     try:
         ml=int(inp['quality']['min_length_in_sec'])
@@ -92,7 +89,9 @@ def testinput(inp):
         
         
     try:
-        fs=float(inp['processing']['decimation']['new_sampling_rate'])
+        fs_new=inp['processing']['decimation']['new_sampling_rate'].split(' ')
+        for fs in fs_new:
+            fs=float(fs)
     except ValueError:
         print 'Sampling frequency must be number.'    
         
