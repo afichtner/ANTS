@@ -1,6 +1,13 @@
 import TOOLS.read_xml as rxml
 from obspy import UTCDateTime
 import os
+import sys
+import download_fetchdata as fd
+
+if __name__=='__main__':
+    xmlin=str(sys.argv[1])
+    fd.download_fetchdata(xmlin)
+    
 
 def download_fetchdata(xmlinput):
     
