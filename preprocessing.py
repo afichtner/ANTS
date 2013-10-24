@@ -31,9 +31,9 @@ def prep(xmlinput,content):
     
     """
     
-    This script preprocesses all the MSEED files in the directorys specified as command line arguments.
-    Specify as many directories as you like.
-    The last command line argument must be xml input file.
+    This script preprocesses all the MSEED files at paths specified as command line arguments.
+    Specify as many files as you like.
+    The command line argument following the input files must be xml input file.
     
     """
 
@@ -51,7 +51,8 @@ def prep(xmlinput,content):
         print 'Problems in xmlinput, forced to interrupt.'
         return
     
-    outdir=inp1['directories']['outdir']
+    if outdir=='':
+        outdir=inp1['directories']['outdir']
 
     verbose=bool(int(inp1['verbose']))
     plot=bool(int(inp1['plot']))

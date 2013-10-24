@@ -6,6 +6,7 @@ import shutil
 
 from obspy.core import read
 from obspy import Stream,  Trace
+from obspy.signal import filter
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,6 +36,7 @@ def preprocessing(processing_input):
 
     verbose=bool(int(inp1['verbose']))
     plot=bool(int(inp1['plot']))
+    saveplot=bool(int(inp1['saveplot']))
     
 
     #- make target directory if it does not exist =================================================
@@ -90,8 +92,10 @@ def preprocessing(processing_input):
                 
                 if inp1['processing']['decimation']['doit']=='1':
                     new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
-                    data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose )
+                    #data=proc.antialias(data,float(new_fs[-1])*0.25, verbose)
+                    #data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose )
                     for fs in new_fs:
+                        data.filter('lowpassCheby2', freq=float(fs)*0.25, maxorder=6)
                         data=proc.downsample(data,float(fs),verbose)
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     
@@ -255,8 +259,10 @@ def preprocessing(processing_input):
                 #======================================================================================
                 # plot and store results
                 #======================================================================================
-                print 'single trace after processing:'
-                trace.plot()
+                if plot:
+                    print '* single trace after processing:'
+                    trace.plot()
+                    
                 #merge all into final trace
                 colloc_data+=trace
             
@@ -266,6 +272,10 @@ def preprocessing(processing_input):
             if len(colloc_data)>0:
                 if plot:
                     colloc_data.plot()
+                    if saveplot:
+                        figname=outdir+'/'+colloc_data[0].stats.station+'.'+colloc_data[0].stats.channel+'.png'
+                        colloc_data.plot(outfile=figname)
+                        print '* plot saved to ', figname
                 if (inp1['saveprep']=='1'):
                     for k in range(len(colloc_data)):
                         if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):

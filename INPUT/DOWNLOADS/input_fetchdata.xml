@@ -12,20 +12,20 @@
     <!--networks, channels, stations, locations, etc.-->
     <data>
         <!--list of networks (separated by blanks) from which data are requested, can be virtual networks-->
-        <networks>G</networks>
+        <networks>AF</networks>
         <!--list of channels, separated by blanks-->
-        <channels>BHE BHN BHZ</channels>
+        <channels>LHE LHN LHZ</channels>
         <!-- list of locations, separated by blanks-->
         <locations>*</locations>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>./../../sandbox/TestIC/stations.txt</stations>
+        <stations>./INPUT/STATION_LISTS/staAF.txt</stations>
     </data>
 
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
-        <starttime>2011-12-31,23:59:00</starttime>
-        <endtime>2012-01-03,00:01:00</endtime>
+        <starttime>2012-01-01,23:59:00</starttime>
+        <endtime>2012-02-01,00:01:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->
@@ -38,8 +38,8 @@
 
     <!--saving data-->
     <storage>
-        <downloadloc>./../../sandbox/TestIC/Gdata</downloadloc>
-        <respfileloc>./../../sandbox/TestIC/Gresp</respfileloc>
+        <downloadloc>./DATA/test_commandlinefetchdata</downloadloc>
+        <respfileloc>./DATA/test_commandlinefetchdata</respfileloc>
     </storage>
     
 </data_download>

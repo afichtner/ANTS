@@ -11,16 +11,31 @@ def rename_seismic_data(data,targetdir,processed,verbose):
         processed: True for processed data, False for original data
         verbose: print screen output (True)
     """
-
+    
     #- read statistics
-    starttime=data.stats.starttime
-    endtime=data.stats.endtime
-    samplerate=data.stats.sampling_rate
-    network=data.stats.network
-    station=data.stats.station
-    location=data.stats.location
-    channel=data.stats.channel
-    format=data.stats._format
+    if isinstance(data, obspy.Stream) and len(data)>1:
+        starttime=data[0].stats.starttime
+        endtime=data[len(data)-1].stats.endtime
+        stats=data[0].stats
+    elif isinstance(data, obspy.Stream) and len(data)==1:
+        starttime=data[0].stats.starttime
+        endtime=data[0].stats.endtime
+        stats=data[0].stats
+    elif isinstance(data, obspy.Trace):
+        starttime=data.stats.starttime
+        endtime=data.stats.endtime
+        stats=data.stats
+    else:
+        print 'Nothing saved: Object is not a trace or stream.'
+        return
+        
+        
+    samplerate=stats.sampling_rate
+    network=stats.network
+    station=stats.station
+    location=stats.location
+    channel=stats.channel
+    format=stats._format
         
     #- convert time objects to string
     t1=starttime.strftime('%Y%m%d%H%M%S')

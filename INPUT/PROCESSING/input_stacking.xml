@@ -5,6 +5,8 @@
     <!--print screen output-->
     <verbose>1</verbose>
     <plotting>0</plotting>
+    
+    
 
     <!--*************************************************************************************************-->
     <!--input and output directories-->
@@ -12,22 +14,26 @@
 
     <directories>
         <!--Input directory containing all the day folders-->
-        <indir>./DATA/US-TA.CI.2012.01.processed</indir>
+        <indir>./DATA/GEOSCOPE/G.2012.01.proc</indir>
         <!--output directory for stacked crosscorrelation functions-->
-        <outdir>./DATA/US-TA.CI.2012.01.pcc</outdir>
+        <outdir>./DATA/test</outdir>
+        <!--file format that should be looked for (mseed/sac)-->
+        <format>mseed</format>
     </directories>
 
-     
+    
     <!--*************************************************************************************************-->
     <!--Time-->
     <!--*************************************************************************************************-->
     <timethings>
+        <!--Sampling rate. Needed to change windows to power of 2 windows, to make FFT run faster.-->
+        <Fs>1.0</Fs>
         <!--Start date. Loop will start with this directory-->
         <startdate>20120101</startdate>
         <!--End date. Loop will end AFTER processing this directory-->
-        <enddate>20120115</enddate>
+        <enddate>20120201</enddate>
         <!--Length of the time windows to be correlated, in seconds-->
-        <winlen>65536</winlen>
+        <winlen>2500</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
         <olap>0</olap>
@@ -49,8 +55,8 @@
     <!--The order corresponds to the actual order of execution-->
     <correlations>
         <!--Maximum lag in seconds-->
-        <max_lag>500</max_lag>
-        <!-- ccc: time-domain classical xcorrelation, fcc: frequency-domain classical xcorrelation, pcc: phase correlation -->
+        <max_lag>50</max_lag>
+        <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
         <corr_type>pcc</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>

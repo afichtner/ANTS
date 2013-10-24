@@ -8,7 +8,7 @@ from TOOLS.read_xml import read_xml
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=10000,maxlag=200, verbose=False, savefig=False):
+def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=10000,maxlag=200, verbose=False, savefig=False, outdir='./'):
     """
     A script to plot cross-correlation traces sorted by interstation distance.
     indir: string: path to directory containing results of stack.py
@@ -21,7 +21,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
     maxlag: x axis is restricted to +- this value
     """
     #Initialize the plot
-    fig=plt.figure(figsize=(5, 6))
+    fig=plt.figure(figsize=(10, 18))
     fig.hold()
     plt.subplot(111)
     
@@ -48,7 +48,15 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         else:
             continue
             
+    if len(stalist)==0:
+        if verbose: print 'No matching file found. Try another reference station.'
+        return
     
+    #Get time windows of the correlation for information on the plot. 
+    mdfile='*'+station+'.*.'+channel+'-'+'*'+station+'.*.'+channel+'.'+corrtype+'.metadata'
+    mdfid=open(mdfile, 'r')
+    dates=(mdfid.readlines[0], mdfid.readlines[-1])
+
     #For all these files find the interstation distance, and plot accordingly
     dist_old=0
     for file in stalist:
@@ -97,16 +105,16 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         dist_old=dist
             
     plt.xlabel('Lag Time (sec)')
-    plt.ylabel('Cross-Correlation / Interstation distance')
-    
+    plt.ylabel("Interstation distance (%g m)" %(dist_scaling))   
+    plt.titel(corr_type+" from "+dates[1]+" to "+dates[2]) 
     
     plt.xlim(-maxlag, maxlag)
     frame1=plt.gca()
-    frame1.axes.get_yaxis().set_ticks([])
+    #frame1.axes.get_yaxis().set_ticks([])
     
     
     if savefig==True:
-        figname=indir+'/'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.png'
+        figname=outdir+'/'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.png'
         plt.savefig(figname, format='png', dpi=200)
         
     plt.show()

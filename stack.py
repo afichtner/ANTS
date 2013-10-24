@@ -14,7 +14,8 @@ from math import log
 def stack(xmlinput):
 
     """
-    Here comes the help and descrition
+    A routine to calculate and stack cross-correlations/phase cross-correlations.
+    xmlinput: Path to file that contains all input parameters.
     """
 
     #==============================================================================================
@@ -60,13 +61,12 @@ def stack(xmlinput):
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
     
-#    #- Get rid of non-mseed files
-#    if os.path.exists(indir+'/.DS_Store'):
-#        os.remove(indir+'/.DS_Store')
-#    
     
     #- copy the input xml to the output directory for documentation
     shutil.copy(xmlinput,outdir)
+    #copy also the preprocessing input to the output directory
+    #This screws up the first file if they are called the same! Dont call them the same!
+    shutil.copy(indir+'*.xml', outdir)
 
     #- list of available data files (should be one per channel)
     record_list=os.listdir(indir+'/')
@@ -118,10 +118,10 @@ def stack(xmlinput):
 
         fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
         fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
-        filename=outdir+'/'+fn1+'-'+fn2+'.metadata'
+        mdfilename=outdir+'/'+fn1+'-'+fn2+corrtype+'.metadata'
         
-        if os.path.exists(filename)==False:
-            fid=open(filename,'w')
+        if os.path.exists(mdfilename)==False:
+            fid=open(mdfilename,'w')
             fid.write('= station information ================================\n')
             fid.write('network_1: '+dat1.stats.network+'\n')
             fid.write('station_1: '+dat1.stats.station+'\n')
@@ -213,8 +213,8 @@ def stack(xmlinput):
                 tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
 
             #- Write time windows to a file for documentation =====================================
-            filename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
-            fid=open(filename,'a')
+            #filename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
+            fid=open(mdfilename,'a')
             for window in windows:
                fid.write(str(window[0].year)+' '+str(window[0].month)+' '+str(window[0].day)+' '+str(window[0].hour)+' '+str(window[0].minute)+' '+str(window[0].second)+', '+str(window[1].year)+' '+str(window[1].month)+' '+str(window[1].day)+' '+str(window[1].hour)+' '+str(window[1].minute)+' '+str(window[1].second)+'\n')
             fid.close()
