@@ -122,7 +122,7 @@ def stack(xmlinput):
 
         fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
         fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
-        mdfilename=outdir+'/'+fn1+'-'+fn2+corrtype+'.metadata'
+        mdfilename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
         
         if os.path.exists(mdfilename)==False:
             fid=open(mdfilename,'w')
