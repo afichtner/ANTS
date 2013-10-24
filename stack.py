@@ -68,7 +68,9 @@ def stack(xmlinput):
     #copy also the preprocessing input to the output directory
     #This overwrites the first file if they are called the same! Dont call them the same!
     xmlfile=glob(indir+"/*.xml")
-    shutil.copy(xmlfile, outdir)
+    for f in xmlfile:
+        shutil.copy(f, outdir)
+    
 
     #- list of available data files (should be one per channel)
     record_list=os.listdir(indir+'/')
