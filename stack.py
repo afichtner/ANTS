@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
 from math import log
+from glob import glob
 
 def stack(xmlinput):
 
@@ -65,8 +66,9 @@ def stack(xmlinput):
     #- copy the input xml to the output directory for documentation
     shutil.copy(xmlinput,outdir)
     #copy also the preprocessing input to the output directory
-    #This screws up the first file if they are called the same! Dont call them the same!
-    shutil.copy(indir+'/*.xml', outdir)
+    #This overwrites the first file if they are called the same! Dont call them the same!
+    xmlfile=glob(indir+"/*.xml")
+    shutil.copy(xmlfile, outdir)
 
     #- list of available data files (should be one per channel)
     record_list=os.listdir(indir+'/')
