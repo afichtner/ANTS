@@ -15,6 +15,7 @@ import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.renamer as rn
 import TOOLS.testinput as ti
+import TOOLS.psd_estimate as psd
 
 
 import preprocessing as p
@@ -27,13 +28,12 @@ if __name__=='__main__':
     p.prep(xmlin, rawdata)
 
 
-def prep(xmlinput,content):
+def prep(xmlinput,content=None):
     
     """
     
-    This script preprocesses all the MSEED files at paths specified as command line arguments.
-    Specify as many files as you like.
-    The command line argument following the input files must be xml input file.
+    This script preprocesses the MSEED files at the path specified as command line argument 2.
+    Command line argument 1 must be xml input file.
     
     """
 
@@ -51,11 +51,10 @@ def prep(xmlinput,content):
         print 'Problems in xmlinput, forced to interrupt.'
         return
     
-    if outdir=='':
-        outdir=inp1['directories']['outdir']
+    outdir=inp1['directories']['outdir']
 
     verbose=bool(int(inp1['verbose']))
-    plot=bool(int(inp1['plot']))
+    check=bool(int(inp1['check']))
     saveplot=bool(int(inp1['saveplot']))
     
 
@@ -68,19 +67,26 @@ def prep(xmlinput,content):
     
     shutil.copy(xmlinput,outdir)
     
-    #- loop through directories ==================================================================
-    
+    #- check what input is, list input from different directories =================================
+    if content==None:
+        indirs=inp1['directories']['indirs'].strip().split(' ')
+        content=list()
+        for indir in indirs:
+            content.extend(os.listdir(indir))
+            for k in range(len(content)):
+                content[k]=indir+'/'+content[k]
+
+    elif type(content)==str: 
+        filename=content
+        content=list()
+        content.append(filename)
    
     #==================================================================================
     # Input files loop
     #==================================================================================
-    if type(content)==str: 
-        filename=content
-        content=list();
-        content.append(filename)
-    print content
+    
     for filepath in content:
-        
+        print filepath
         filename=filepath.split('/')[-1]
         
     
@@ -159,12 +165,16 @@ def prep(xmlinput,content):
         for k in np.arange(n_traces):
     
             trace=data[k]
+            if check:
+                trace_original=trace.copy()
             
             if verbose==True: print '-----------------------------------------------------------'
     
-            if plot==True:
+            if check==True:
                 print '* trace before processing'
                 trace.plot()
+                print '*spectrum before processing'
+                psd.plot_psd(trace,100, trace_original)
     
             #==================================================================================
             # basic quality checks
@@ -211,6 +221,9 @@ def prep(xmlinput,content):
             if inp1['processing']['bandpass_1']['doit']=='1':
     
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
+                if check==True:
+                    print '* spectrum after bandpass nr 1'
+                    psd.plot_psd(trace,100, trace_original)
                 
                 
             #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -232,6 +245,9 @@ def prep(xmlinput,content):
                 if True in np.isnan(trace):
                     print 'Deconvolution seems unstable! Trace discarded.'
                     continue
+                if check==True:
+                    print '* spectrum after Instrument correction'
+                    psd.plot_psd(trace,100, trace_original)
     
             #- bandpass, second stage =============================================================
     
@@ -244,7 +260,11 @@ def prep(xmlinput,content):
             if inp1['processing']['taper']['doit']=='1':
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
-    
+                
+                if check==True:
+                    print '* spectrum after bandpass nr 2 and taper'
+                    psd.plot_psd(trace,100, trace_original)
+                    
             #======================================================================================
             # normalisations (whitening, averages, ...)
             #======================================================================================
@@ -282,7 +302,9 @@ def prep(xmlinput,content):
             #======================================================================================
             # plot and store results
             #======================================================================================
-            if plot:
+            if check==True:
+                print '* spectrum after processing'
+                psd.plot_psd(trace,100, trace_original)
                 print '* single trace after processing:'
                 trace.plot()
                 
@@ -293,12 +315,15 @@ def prep(xmlinput,content):
         print '* traces after processing are:\n', colloc_data
         
         if len(colloc_data)>0:
-            if plot:
+            if check:
                 colloc_data.plot()
                 if saveplot:
                     figname=outdir+'/'+colloc_data[0].stats.station+'.'+colloc_data[0].stats.channel+'.png'
                     colloc_data.plot(outfile=figname)
                     print '* plot saved to ', figname
+                psd.plot_psd(colloc_data[0],100)
+                    
+                    
             if (inp1['saveprep']=='1'):
                 for k in range(len(colloc_data)):
                     if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):

@@ -2,9 +2,10 @@
 
 <processing_parameters>
 
-    <!--print screen output and plot-->
+    <!--print screen output-->
     <verbose>1</verbose>
-    <plot>1</plot>
+    <!--plot time series and psd at various processing stages-->
+    <check>1</check>
 
     <!--*************************************************************************************************-->
     <!--input and output directories-->
@@ -12,7 +13,8 @@
 
     <directories>
         <!--output directory for processed data-->
-        <outdir>./../../sandbox/Test_Processing/test8</outdir>
+        <outdir>./../../sandbox/Test_Processing/test</outdir>
+        <indirs>./DATA/GEOSCOPE/G.2012.01.data</indirs>
     </directories>
 
     <!--*************************************************************************************************-->
@@ -20,7 +22,7 @@
     <!--*************************************************************************************************-->
    
     <quality>
-        <min_length_in_sec>500000</min_length_in_sec>
+        <min_length_in_sec>50000</min_length_in_sec>
     </quality>
 
     <!--*************************************************************************************************-->
@@ -38,7 +40,7 @@
         <!--split traces into shorter segments-->
         <split>
             <doit>1</doit>
-            <length_in_sec>2097152</length_in_sec>
+            <length_in_sec>1048576</length_in_sec>
         </split>
         <!--trim to nearest second-->
         <trim>1</trim>
@@ -128,7 +130,7 @@
     <rename>1</rename>
     <!--save preprocessed data-->
     <saveprep>1</saveprep>
-    <!--Save plots as png-->
+    <!--Save plots as png (only processed trace is saved...)-->
     <saveplot>1</saveplot>
     
     

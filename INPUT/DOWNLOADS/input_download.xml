@@ -13,18 +13,18 @@
     <!--networks, channels, stations, locations, etc.-->
     <data>
         <!--list of networks (separated by blanks) from which data are requested-->
-        <networks>CH</networks>
+        <networks>G</networks>
         <!--list of channels, separated by blanks-->
-        <channels>BH*</channels>
+        <channels>LH*</channels>
         <location>*</location>
         <!--Download stations specified in this file. Set to * to download all stations.-->
-        <stations>INPUT/STATION_LISTS/staCH1.txt</stations>
+        <stations>INPUT/STATION_LISTS/staG1.txt</stations>
     </data>
 
     <!--time window where data are requested-->
     <time>
         <starttime>2013-01-01T00:00:00</starttime>
-        <endtime>2013-02-01T00:00:00</endtime>
+        <endtime>2013-01-03T00:00:00</endtime>
     </time>
 
     <!--geographic area where stations are considered-->
@@ -37,16 +37,16 @@
 
     <processing>
         <!--downsampling-->
-        <rundown>1</rundown>
+        <rundown>0</rundown>
         <downs>10</downs>
         <!--Give the desired new sampling rate in Hz-->
     </processing>
     
     <!--saving data-->
     <storage>
-        <format>mseed</format>
-        <downloadloc>./DATA/onemonth_CH</downloadloc>
-        <respfileloc>./DATA/testresp</respfileloc>
+        <format>sac</format>
+        <downloadloc>../../sandbox/Test_Processing/obs_vs_sac</downloadloc>
+        <respfileloc>../../sandbox/Test_Processing/obs_vs_sac_resp</respfileloc>
     </storage>
     
 </data_download>

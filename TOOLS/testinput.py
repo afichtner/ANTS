@@ -9,8 +9,8 @@ def testinput(inp):
         print 'Verbose must be 1 or 0.'
         niceinput=False
     
-    if inp['plot']!='1' and inp['plot']!='0':
-        print 'plot must be 1 or 0.'
+    if inp['check']!='1' and inp['check']!='0':
+        print 'check must be 1 or 0.'
         niceinput=False
         
         

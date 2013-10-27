@@ -14,7 +14,7 @@
 
     <directories>
         <!--Input directory containing all the day folders-->
-        <indir>./DATA/GEOSCOPE/G.2012.01.proc</indir>
+        <indir>./DATA/GEOSCOPE/G.2000.01.processed</indir>
         <!--output directory for stacked crosscorrelation functions-->
         <outdir>./DATA/test</outdir>
         <!--file format that should be looked for (mseed/sac)-->
@@ -29,11 +29,11 @@
         <!--Sampling rate. Needed to change windows to power of 2 windows, to make FFT run faster.-->
         <Fs>1.0</Fs>
         <!--Start date. Loop will start with this directory-->
-        <startdate>20120101</startdate>
+        <startdate>19991231</startdate>
         <!--End date. Loop will end AFTER processing this directory-->
-        <enddate>20120201</enddate>
+        <enddate>20000201</enddate>
         <!--Length of the time windows to be correlated, in seconds-->
-        <winlen>2500</winlen>
+        <winlen>65536</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
         <olap>0</olap>
@@ -46,7 +46,7 @@
 
     <channels>
         <!-- list of channels considered, separated by spaces, no wildcarding -->
-        <channel_list>BHE BHN BHZ</channel_list>
+        <channel_list>LHE LHN LHZ</channel_list>
         <!-- compute correlations between channels, 0=no, 1=yes -->
         <mix_channels>0</mix_channels>
     </channels>
@@ -55,9 +55,9 @@
     <!--The order corresponds to the actual order of execution-->
     <correlations>
         <!--Maximum lag in seconds-->
-        <max_lag>50</max_lag>
+        <max_lag>500</max_lag>
         <!-- td_classic: time-domain classical xcorrelation, fd_classic: frequency-domain classical xcorrelation, pcc: phase correlation -->
-        <corr_type>pcc</corr_type>
+        <corr_type>ccc</corr_type>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
     </correlations>  
