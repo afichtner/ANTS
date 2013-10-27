@@ -109,8 +109,8 @@ def prep(xmlinput,content=None):
         if inp1['first_step']=='decimate':
             #- taper edges ========================================================================
     
-            if inp1['processing']['taper']['doit']=='1':
-                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
+#            if inp1['processing']['taper']['doit']=='1':
+#                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
                 
             #- trim ===============================================================================
             
@@ -121,10 +121,10 @@ def prep(xmlinput,content=None):
             
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
+                #data.filter('lowpassCheby2', freq=float(new_fs[-1])*0.25, maxorder=8)
+                data=proc.lowpass(data,4,float(new_fs[-1])*0.2,verbose )
                 
                 for fs in new_fs:
-                    data.filter('lowpassCheby2', freq=float(fs)*0.25, maxorder=4)
-                    #data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose )
                     data=proc.downsample(data,float(fs),verbose)
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
@@ -139,11 +139,6 @@ def prep(xmlinput,content=None):
         #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if inp1['first_step']=='split':
-            #- taper edges ========================================================================
-    
-            if inp1['processing']['taper']['doit']=='1':
-                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
-                
             #- trim ===============================================================================
             
             if inp1['processing']['trim']=='1':
@@ -173,7 +168,7 @@ def prep(xmlinput,content=None):
             if check==True:
                 print '* trace before processing'
                 trace.plot()
-                print '*spectrum before processing'
+                print '* spectrum before processing'
                 psd.plot_psd(trace,100, trace_original)
     
             #==================================================================================
@@ -198,16 +193,19 @@ def prep(xmlinput,content=None):
                 
             #- detrend ============================================================================
     
-            if inp1['processing']['detrend']=='1':
-    
-                trace=proc.detrend(trace,verbose)
-                
+#            if inp1['processing']['detrend']=='1':
+#    
+#                trace=proc.detrend(trace,verbose)
+#                
             #- demean============================================================================
     
             if inp1['processing']['demean']=='1':
     
                 trace=proc.demean(trace,verbose)
-                
+            if inp1['processing']['detrend']=='1':
+    
+                trace=proc.detrend(trace,verbose)
+                    
     
             #- taper edges ========================================================================
     
@@ -260,7 +258,7 @@ def prep(xmlinput,content=None):
             if inp1['processing']['taper']['doit']=='1':
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
-                
+               
                 if check==True:
                     print '* spectrum after bandpass nr 2 and taper'
                     psd.plot_psd(trace,100, trace_original)
