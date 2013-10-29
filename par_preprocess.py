@@ -24,10 +24,8 @@ import par_preprocess as p
 
 if __name__=='__main__':
     xmlin=str(sys.argv[1])
-    print 'XML input file: '+ xmlin
     try:
         rawdata=str(sys.argv[2])
-        print 'Raw data files '+ rawdata
     except IndexError:
         rawdata=None
     p.prep(xmlin, rawdata)
