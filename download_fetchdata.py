@@ -30,7 +30,9 @@ def download_fetchdata(xmlinput):
         vfetchdata='-v '
     else:
         vfetchdata=''
-
+    # Directory where executable is located
+    exdir=dat1['exdir']
+    
     # network, channel, location and station list
     networks=dat1['data']['networks'].strip().split(' ')
     channels=dat1['data']['channels'].strip().split(' ')
@@ -80,6 +82,6 @@ def download_fetchdata(xmlinput):
                         print network + station + location + channel
                         #-Formulate a polite request
                         filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                        reqstring='./FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
                         print reqstring
                         os.system(reqstring)
