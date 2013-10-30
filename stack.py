@@ -1,16 +1,31 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 from obspy.core import read
 from obspy.core import stream
 from obspy.core import trace
 from obspy.core import  UTCDateTime
+
 import os
 import shutil
 import re
-import matplotlib.pyplot as plt
-import TOOLS.read_xml as rxml
-import TOOLS.correlations as corr
+import sys
+
 from math import log
 from glob import glob
+
+import TOOLS.read_xml as rxml
+import TOOLS.correlations as corr
+
+
+
+
+if __name__=='__main__':
+    import stack as st
+    xmlin=str(sys.argv[1])
+    st.stack(xmlin)
+
+
 
 def stack(xmlinput):
 
