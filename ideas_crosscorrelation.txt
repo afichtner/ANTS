@@ -1,7 +1,0 @@
-- how to deal with stations that have no data on a given day (or data gaps during day): loop through all possible correlations, before correlation of station with another station 2 is actually performed, check if that day holds the necessary time series at station 2
-
-- how to deal with the vveeeery subtle time differences in start- and endtime of time series: 
-	- download slightly lower time series and use obspy trim
-	- problem: trim can only trim to same start time if the samples are actually taken at the exact same time --> need to find some way to check/impose that
-
-

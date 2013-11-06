@@ -4,15 +4,35 @@ import obspy as obs
 from scipy.signal import welch
 import matplotlib.pyplot as plt
 import numpy as np
+import TOOLS.peterson as pete
+import os
+
+def plot_spectra(indir):
+    files=os.listdir(indir)
+    stream=obs.Stream()
+    
+    for file in files:
+        
+        try:
+            str=obs.read(os.path.join(indir+file))
+            
+            for tr in str:
+                plot_psd(tr, 100)
+            
+        except (IOError, TypeError):
+            print 'Cannot read file.'
+            continue
 
 
 def plot_psd(input, numwin, input2=None):
     
     if type(input)==str:
         trace1=obs.read(input)[0]
-    else:
+    elif isinstance(input, obs.Trace):
         trace1=input
-    
+    elif isinstance(input, obs.Stream):
+        trace1=input[0]
+        
     if input2 is not None:
         if type(input2)==str:
             trace2=obs.read(input2)[0]
@@ -20,6 +40,7 @@ def plot_psd(input, numwin, input2=None):
             trace2=input2
         
     
+    P1, nh, P2, nl=pete.peterson(False)
     freq1, psd1=get_psd(trace1, numwin)
     
     
@@ -34,11 +55,19 @@ def plot_psd(input, numwin, input2=None):
         axarr[1].loglog(freq2, np.sqrt(psd2))
         plt.show()
     else:
+        #Linear spectrum
         plt.figure()
         plt.loglog(freq1, np.sqrt(psd1))
         plt.xlabel('frequency [Hz]')
         plt.ylabel('Linear spectrum [V RMS]')
         plt.show()
+        #Power spectral density
+        plt.figure()
+        per1=1/freq1
+        plt.loglog(per1, psd1)
+        plt.semilogx(P1, nh, P2, nl)
+        plt.show()
+        
     
     
     

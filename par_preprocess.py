@@ -174,7 +174,7 @@ def prep(xmlinput,content=None):
             
         
         if verbose==True:
-            print 'contains '+str(n_traces)+' trace(s)'
+            ofid.write('contains '+str(n_traces)+' trace(s)\n')
     
         #data_original=data.copy()
         colloc_data=Stream()
@@ -186,7 +186,8 @@ def prep(xmlinput,content=None):
     
             trace=data[k]
             
-            if verbose==True: print '-----------------------------------------------------------'
+            if verbose==True: 
+                ofid.write('-----------------------------------------------------------\n')
     
     
             #==================================================================================

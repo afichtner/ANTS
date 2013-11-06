@@ -2,15 +2,28 @@
 import obspy as obs
 import os
 
-def plot_traces(indir):
+
+def plot_traces(indir, num_traces=None):
     
     files=os.listdir(indir)
     stream=obs.Stream()
-  
     
+    if type(num_traces)==int:
+            cnt=1
     
     for file in files:
         
+        
+        if cnt>num_traces:
+            try:
+                stream.plot()
+            except ValueError:
+                print 'WTF?'
+            
+            stream.clear()
+            cnt=1
+            #raw_input('Wanna see more? Hit Enter ')
+            
         
         try:
             str=obs.read(os.path.join(indir+file))
@@ -22,8 +35,13 @@ def plot_traces(indir):
                 stream.append(str[0])
                 
             else:
-                stream.plot()
-                stream=obs.Stream()
+                try:
+                    stream.plot()
+                except ValueError:
+                    print 'WTF?'
+                stream.clear()
+            
+            cnt+=1
             
         except (IOError, TypeError):
             print 'Cannot read file.'

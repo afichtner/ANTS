@@ -138,6 +138,9 @@ def stack(xmlinput):
         fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
         fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
         mdfilename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
+        mdfilename_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'.metadata'
+        if os.path.exists(mdfilename_rev)==True:
+            mdfilename=mdfilename_rev
         
         if os.path.exists(mdfilename)==False:
             fid=open(mdfilename,'w')
@@ -184,15 +187,15 @@ def stack(xmlinput):
             tr_coherence_stack_imag=trace.Trace()
 
             tr_correlation_stack.stats.sampling_rate=dat1.stats.sampling_rate
-            tr_correlation_stack.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            #tr_correlation_stack.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
             tr_correlation_stack.data=correlation_stack
 
             tr_coherence_stack_real.stats.sampling_rate=dat1.stats.sampling_rate
-            tr_coherence_stack_real.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            #tr_coherence_stack_real.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
             tr_coherence_stack_real.data=np.real(coherence_stack)
 
             tr_coherence_stack_imag.stats.sampling_rate=dat1.stats.sampling_rate
-            tr_coherence_stack_imag.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+            #tr_coherence_stack_imag.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
             tr_coherence_stack_imag.data=np.imag(coherence_stack.imag)
 
 
@@ -200,6 +203,20 @@ def stack(xmlinput):
             fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'_stack.MSEED'
             fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.MSEED'
             fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.MSEED'
+            if fn1!=fn2:
+                fileid_correlation_stack_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'_stack.MSEED'
+                fileid_coherence_stack_real_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_real.MSEED'
+                fileid_coherence_stack_imag_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_imag.MSEED'
+                if os.path.exists(fileid_correlation_stack_rev)==True:
+                    fileid_correlation_stack=fileid_correlation_stack_rev
+                    tr_correlation_stack.data=tr_correlation_stack_data[::-1]
+                if os.path.exists(fileid_coherence_stack_real_rev)==True:
+                    fileid_coherence_stack_real=fileid_coherence_stack_real_rev
+                    tr_coherence_stack_real.data=tr_coherence_stack_real.data[::-1]
+                if os.path.exists(fileid_coherence_stack_imag_rev)==True:
+                    fileid_coherence_stack_imag=fileid_coherence_stack_imag_rev
+                    tr_coherence_stack_imag.data=tr_coherence_stack_imag.data[::-1]
+                    
 
             #- linear stack
             if os.path.exists(fileid_correlation_stack)==True:
@@ -217,7 +234,7 @@ def stack(xmlinput):
                     print "Real part of coherence stack already exists. Add to previous one."
                 tr_old=read(fileid_coherence_stack_real)
                 tr_coherence_stack_real.data=tr_coherence_stack_real.data+tr_old[0].data
-                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")
+                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")   
             else:
                 tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")
 
@@ -342,7 +359,6 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     from scipy.signal import hilbert
 
     #- initialisations ----------------------------------------------------------------------------
-    if verbose: print 'Hi from stacking routine.'
    
     #- Get sampling frequency
     Fs=dat1.stats.sampling_rate
