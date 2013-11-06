@@ -22,10 +22,8 @@ import preprocessing as p
 
 if __name__=='__main__':
     xmlin=str(sys.argv[1])
-    rawdata=str(sys.argv[2])
     print 'XML input file: '+ xmlin
-    print 'Raw data files '+ rawdata
-    p.prep(xmlin, rawdata)
+    p.prep(xmlin)
 
 
 def prep(xmlinput,content=None):
