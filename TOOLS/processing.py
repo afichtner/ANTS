@@ -5,7 +5,7 @@ from obspy.signal import bandpass
 from scipy.interpolate import interp1d
 from obspy.core import Trace, Stream, UTCDateTime
 from scipy.signal import cheby2,  cheb2ord,  filtfilt
-from mpi4py import MPI
+
 
 #==================================================================================================
 # SPLIT TRACES INTO SHORTER SEGMENTS
