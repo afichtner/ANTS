@@ -18,9 +18,10 @@ import TOOLS.testinput as ti
 import TOOLS.psd_estimate as psd
 
 
-import preprocessing as p
+
 
 if __name__=='__main__':
+    import preprocessing as p
     xmlin=str(sys.argv[1])
     print 'XML input file: '+ xmlin
     p.prep(xmlin)
