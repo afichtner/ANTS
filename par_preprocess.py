@@ -84,7 +84,7 @@ def prep(xmlinput,content=None):
             
             
             
-    elif rank!=0:
+    else:
         content=list()
         inp1=list()    
 
@@ -106,24 +106,30 @@ def prep(xmlinput,content=None):
     #==================================================================================
     verbose=bool(int(inp1['verbose']))
     outdir=inp1['directories']['outdir']
+    outfile=outdir+'/rank'+str(rank)+'.v_out'
+    ofid=open(outfile, 'w')
     if verbose:
-        print 'Hi I am rank number ', rank, ' and I am processing the following files for you: ', mycontent
-    
+        ofid.write('\nHi I am rank number %d and I am processing the following files for you: \n' %rank)
+        for fname in mycontent:
+            ofid.write(fname+'\n')
+        
     for filepath in mycontent:
         filename=filepath.split('/')[-1]
         
     
         if verbose==True:
-            print '\nopening file: '+filepath
+            ofid.write('\nopening file: '+filepath)
             
         #- read data
         try:
             data=read(filepath)
         except TypeError:
-            if verbose==True: print 'file could not be opened, skip.'
+            if verbose==True: 
+                ofid.write('\nfile could not be opened, skip.')
             continue
         except IOError:
-            if verbose: print 'file could not be opened, skip.'
+            if verbose: 
+                ofid.write('\nile could not be opened, skip.')
             continue
         
         
@@ -134,24 +140,24 @@ def prep(xmlinput,content=None):
             #- trim ===============================================================================
             
             if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data,verbose)
+                data=proc.trim_next_sec(data,verbose, ofid)
                 
             #- downsampling =======================================================================
             
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
                 #data.filter('lowpassCheby2', freq=float(new_fs[-1])*0.25, maxorder=8)
-                data=proc.lowpass(data,4,float(new_fs[-1])*0.2,verbose )
+                data=proc.lowpass(data,4,float(new_fs[-1])*0.2,verbose, ofid)
                 
                 for fs in new_fs:
-                    data=proc.downsample(data,float(fs),verbose)
+                    data=proc.downsample(data,float(fs),verbose,ofid)
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
         
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
-            data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose)
+            data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,ofid)
         n_traces=len(data)
         
         
@@ -161,7 +167,7 @@ def prep(xmlinput,content=None):
             #- trim ===============================================================================
             
             if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data,verbose)
+                data=proc.trim_next_sec(data,verbose,ofid)
         #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             
             
@@ -189,15 +195,18 @@ def prep(xmlinput,content=None):
     
             #- check NaN
             if True in np.isnan(trace.data):
-                if verbose==True: print '** trace contains NaN, discarded'
+                if verbose==True:
+                    ofid.write('** trace contains NaN, discarded\n')
                 continue
     
             #- check infinity
             if True in np.isinf(trace.data):
-                if verbose==True: print '** trace contains infinity, discarded'
+                if verbose==True:
+                    ofid.write('** trace contains infinity, discarded\n')
                 continue
     
-            if verbose==True: print '* number of points: '+str(trace.stats.npts)
+            if verbose==True:
+                ofid.write('* number of points: '+str(trace.stats.npts)+'\n')
     
             #==================================================================================
             # processing (detrending, filtering, response removal, decimation)
@@ -207,27 +216,27 @@ def prep(xmlinput,content=None):
     
             if inp1['processing']['demean']=='1':
     
-                trace=proc.demean(trace,verbose)
+                trace=proc.demean(trace,verbose,ofid)
              
             #- detrend ============================================================================
             
             if inp1['processing']['detrend']=='1':
     
-                trace=proc.detrend(trace,verbose)
+                trace=proc.detrend(trace,verbose,ofid)
                     
     
             #- taper edges ========================================================================
     
             if inp1['processing']['taper']['doit']=='1':
     
-                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
+                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                 
           
             #- bandpass, first stage ==============================================================
     
             if inp1['processing']['bandpass_1']['doit']=='1':
     
-                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose)
+                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose,ofid)
                
             #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -235,7 +244,7 @@ def prep(xmlinput,content=None):
             #- downsampling =======================================================================
             
                 if inp1['processing']['decimation']['doit']=='1':
-                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose)
+                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose,ofid)
                 
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             
@@ -244,22 +253,22 @@ def prep(xmlinput,content=None):
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
-                removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose)
+                removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose,ofid)
                 if True in np.isnan(trace):
-                    print 'Deconvolution seems unstable! Trace discarded.'
+                    ofid.write('Deconvolution seems unstable! Trace discarded.')
                     continue
                
             #- bandpass, second stage =============================================================
     
             if inp1['processing']['bandpass_2']['doit']=='1':
     
-                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose)
+                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,ofid)
     
             #- taper edges ========================================================================
     
             if inp1['processing']['taper']['doit']=='1':
     
-                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose)
+                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                
                   
             #======================================================================================
@@ -309,7 +318,7 @@ def prep(xmlinput,content=None):
             if (inp1['saveprep']=='1'):
                 for k in range(len(colloc_data)):
                     if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):
-                        rn.rename_seismic_data(colloc_data[k], outdir, True, verbose)
+                        rn.rename_seismic_data(colloc_data[k], outdir, True, verbose,ofid)
                     
     
     
