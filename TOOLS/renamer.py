@@ -1,6 +1,6 @@
 import obspy
 
-def rename_seismic_data(data,targetdir,processed,verbose):
+def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
 
     """
     rename file to network.station.location.channel_starttime_endtime_samplingrate_format
@@ -10,6 +10,7 @@ def rename_seismic_data(data,targetdir,processed,verbose):
         targetdir: directory where files are written
         processed: True for processed data, False for original data
         verbose: print screen output (True)
+        ofid: file id of an open file that output can be written to instead of stdout
     """
     
     #- read statistics
@@ -26,7 +27,10 @@ def rename_seismic_data(data,targetdir,processed,verbose):
         endtime=data.stats.endtime
         stats=data.stats
     else:
-        print 'Nothing saved: Object is not a trace or stream.'
+        if ofid==None:
+            print 'Nothing saved: Object is not a trace or stream.'
+        else:
+            ofid.write('Nothing saved: Object is not a trace or stream.')
         return
         
         
@@ -48,4 +52,8 @@ def rename_seismic_data(data,targetdir,processed,verbose):
     
     #- write to file
     data.write(filepathnew,format)
-    if verbose==True: print '* renamed file: '+filepathnew   
+    if verbose==True:
+        if ofid==None:
+            print '* renamed file: '+filepathnew 
+        else:
+            ofid.write('* renamed file: '+filepathnew )
