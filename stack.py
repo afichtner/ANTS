@@ -209,7 +209,7 @@ def stack(xmlinput):
                 fileid_coherence_stack_imag_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_imag.MSEED'
                 if os.path.exists(fileid_correlation_stack_rev)==True:
                     fileid_correlation_stack=fileid_correlation_stack_rev
-                    tr_correlation_stack.data=tr_correlation_stack_data[::-1]
+                    tr_correlation_stack.data=tr_correlation_stack.data[::-1]
                 if os.path.exists(fileid_coherence_stack_real_rev)==True:
                     fileid_coherence_stack_real=fileid_coherence_stack_real_rev
                     tr_coherence_stack_real.data=tr_coherence_stack_real.data[::-1]
