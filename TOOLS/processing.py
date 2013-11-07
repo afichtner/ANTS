@@ -1,5 +1,6 @@
 import os as os
 import numpy as np
+
 from obspy.core import read
 from obspy.signal import bandpass
 from scipy.interpolate import interp1d
@@ -21,6 +22,7 @@ def split_traces(s,length_in_sec,min_len, verbose, ofid=None):
             print '* split into traces of '+str(length_in_sec)+' s length'
         else:
             ofid.write('* split into traces of '+str(length_in_sec)+' s length\n')
+            
 
     s_new=Stream()
     

@@ -3,6 +3,7 @@
 import os
 import sys
 import shutil
+import time
 
 from obspy.core import read
 from obspy import Stream,  Trace
@@ -46,7 +47,7 @@ def prep(xmlinput,content=None):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size=comm.Get_size()
-
+    t0=time.time()
     #==============================================================================================
     #- MASTER process:
     #- reads in xmlinput
@@ -91,16 +92,17 @@ def prep(xmlinput,content=None):
 
 
     #- broadcast the input; and the list of files
+    t1=time.time()-t0
     content=comm.bcast(content, root=0)
     inp1=comm.bcast(inp1, root=0)
-    
+    t2=time.time()-t0-t1
     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
     clen=int(ceil(float(len(content))/float(size)))
     chunk=(rank*clen, (rank+1)*clen)
     mycontent=content[chunk[0]:chunk[1]]
-       
+    t3=time.time()-t0-t2   
     #==================================================================================
     # Input files loop
     #==================================================================================
@@ -109,6 +111,11 @@ def prep(xmlinput,content=None):
     outfile=outdir+'/rank'+str(rank)+'.v_out'
     ofid=open(outfile, 'w')
     if verbose:
+        ofid.write('Time at start was '+str(t0)+'\n')
+        ofid.write('Rank 0 took '+str(t1)+' seconds to read in input\n')
+        ofid.write('Broadcasting took '+str(t2)+' seconds \n')
+        ofid.write('I got my task assigned in '+str(t3)+' seconds \n')
+        
         ofid.write('\nHi I am rank number %d and I am processing the following files for you: \n' %rank)
         for fname in mycontent:
             ofid.write(fname+'\n')
@@ -118,8 +125,9 @@ def prep(xmlinput,content=None):
         
     
         if verbose==True:
-            ofid.write('\nopening file: '+filepath)
-            
+            ofid.write('\nopening file: '+filepath+'\n')
+            t=time.time()-t0
+            ofid.write('Time elapsed since start: '+str(t)+'\n')
         #- read data
         try:
             data=read(filepath)
@@ -314,7 +322,10 @@ def prep(xmlinput,content=None):
             colloc_data+=trace
         
         colloc_data._cleanup()
-        
+        if verbose==True:
+            t=time.time()-t0
+            ofid.write('Time elapsed since start: '+str(t)+'\n')
+            
         if len(colloc_data)>0:
             if (inp1['saveprep']=='1'):
                 for k in range(len(colloc_data)):
