@@ -4,7 +4,6 @@ import obspy as obs
 from scipy.signal import welch
 import matplotlib.pyplot as plt
 import numpy as np
-import TOOLS.peterson as pete
 import os
 
 def plot_spectra(indir):
@@ -40,8 +39,6 @@ def plot_psd(input, numwin, input2=None):
             trace2=input2
         
     
-    P1, nh, P2, nl=pete.peterson(False)
-    freq1, psd1=get_psd(trace1, numwin)
     
     
     if input2 is not None:
@@ -79,7 +76,7 @@ def get_psd(trace, numwin):
     win_len=round(len(trace.data)/numwin)
     win_len=wl_adjust(win_len, fs)
     freq, psd=welch(trace.data, fs, window='hanning', nperseg=win_len, noverlap=None, nfft=None, detrend='constant', return_onesided=True, scaling='spectrum', axis=-1)
-    return freq,  psd
+    return freq, psd
     
     
 

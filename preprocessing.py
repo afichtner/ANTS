@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 
+
 from obspy.core import read
 from obspy import Stream,  Trace
 from obspy.signal import filter
@@ -21,6 +22,7 @@ import TOOLS.psd_estimate as psd
 
 
 if __name__=='__main__':
+    
     import preprocessing as p
     xmlin=str(sys.argv[1])
     print 'XML input file: '+ xmlin

@@ -8,25 +8,24 @@ def plot_traces(indir, num_traces=None):
     files=os.listdir(indir)
     stream=obs.Stream()
     
-    if type(num_traces)==int:
-            cnt=1
+    cnt=1
     
     for file in files:
         
-        
-        if cnt>num_traces:
-            try:
-                stream.plot()
-            except ValueError:
-                print 'WTF?'
-            
-            stream.clear()
-            cnt=1
-            #raw_input('Wanna see more? Hit Enter ')
-            
+        if type(num_traces)==int:
+            if cnt==num_traces:
+                try:
+                    stream.plot()
+                except ValueError:
+                    print 'WTF?'
+                stream.clear()
+                cnt=1
+                continue
+   
         
         try:
             str=obs.read(os.path.join(indir+file))
+            print str[0]
             
             if len(stream)==0: 
                 stream=str
@@ -39,12 +38,19 @@ def plot_traces(indir, num_traces=None):
                     stream.plot()
                 except ValueError:
                     print 'WTF?'
-                stream.clear()
+                stream=str
             
             cnt+=1
             
         except (IOError, TypeError):
             print 'Cannot read file.'
+            try:
+                stream.plot()
+            except ValueError, IndexError:
+                print 'WTF?'
+            stream.clear()
+            
+            
             continue
             
    

@@ -196,7 +196,7 @@ def stack(xmlinput):
 
             tr_coherence_stack_imag.stats.sampling_rate=dat1.stats.sampling_rate
             #tr_coherence_stack_imag.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
-            tr_coherence_stack_imag.data=np.imag(coherence_stack.imag)
+            tr_coherence_stack_imag.data=np.imag(coherence_stack)
 
 
             #- open file and write correlation function
@@ -445,7 +445,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
 
             #- phase coherence stack ==============================================================
             coherence=hilbert(correlation)
-            tol=np.mean(np.abs(coherence))/10.0
+            tol=np.mean(np.abs(coherence))/1000.0
             coherence=coherence/(np.abs(coherence)+tol)
             if n==1:
                 coherence_stack=coherence

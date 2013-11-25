@@ -1,12 +1,12 @@
 #Stacking monthly stacks....
-import obspy as obs
+from obspy import read,  Trace
 import os
 import sys
 import re
 from shutil import copy
+from glob import glob
 
-
-def st_res(list_dirs, outdir, fileform, verbose=False):
+def st_res(list_dirs, fileform, outdir, verbose=False):
     
     """
     Cross-correlation and phase stack results from specified directories are added and saved in a new directory
@@ -49,13 +49,8 @@ def st_res(list_dirs, outdir, fileform, verbose=False):
                     print '---------------------------------------------------------'
                     print 'Stacking ', file
                 
-                
-                
-                
-                    
                 infile=os.path.join(dir, file)
                 outfile=os.path.join(outdir, file)
-               
                 
                 if os.path.exists(outfile)==False:
                     copy(infile, outdir)
@@ -65,8 +60,8 @@ def st_res(list_dirs, outdir, fileform, verbose=False):
                     
                     elif inf[8]=='MSEED':  
                         try:
-                            trace1=obs.read(infile)[0]
-                            trace2=obs.read(outfile)[0]
+                            trace1=read(infile)[0]
+                            trace2=read(outfile)[0]
                         except (IOError, TypeError):    
                             if verbose: print 'Wrong file type. Skipping this file.'
                             continue
@@ -83,8 +78,113 @@ def st_res(list_dirs, outdir, fileform, verbose=False):
                         
                     elif inf[8]=='metadata':
                         #Add windows
-                        cmd=('cat '+infile+' >> '+outfile)
+                        cmd=('cat '+infile+ ' | grep \'^[0-9, ]*$\'' + ' >> '+outfile)
                         os.system(cmd)
                         
                         
                 
+def cl_corr(indir, form, merge_loc=False, verbose=False):
+    files=glob(indir+'/*.?cc_stack.'+form)
+   
+    for file in files:
+        if verbose:
+            print '---------------------------------------------------'
+        
+        corrtype=file.split('/')[-1].split('.')[-2].rstrip('stack').rstrip('_')
+        corr=file.split('/')[-1].rstrip(form).rstrip('.'+corrtype+'_stack.')
+        net1=file.split('/')[-1].split('.')[0]
+        net2=file.split('/')[-1].split('.')[3].split('-')[1]
+        sta1=file.split('/')[-1].split('.')[1]
+        sta2=file.split('/')[-1].split('.')[4]
+        loc1=file.split('/')[-1].split('.')[2]
+        loc2=file.split('/')[-1].split('.')[5]
+        cha1=file.split('/')[-1].split('.')[3].split('-')[0]
+        cha2=file.split('/')[-1].split('.')[6]
+       
+        if verbose:
+            print sta1,  sta2
+        if sta1==sta2: continue
+        
+        #- If different locations should be merged, wildcard the location
+        comp=[]
+        if merge_loc==True:
+            corr_loc=net1+'.'+sta1+'.*.'+cha1+'-'+net2+'.'+sta2+'.*.'+cha2
+            corr_rev=net2+'.'+sta2+'.*.'+cha2+'-'+net1+'.'+sta1+'.*.'+cha1
+            comp+=(glob(indir+'/'+corr_loc+'.'+corrtype+'_stack.'+form))
+            comp+=(glob(indir+'/'+corr_rev+'.'+corrtype+'_stack.'+form))
+            
+        else:
+            corr_rev=corr.split('-')[1]+'-'+corr.split('-')[0]
+            comp+=(glob(indir+'/'+corr_rev+'.'+corrtype+'_stack.'+form))
+      
+        
+        
+        
+        
+        
+        for file2 in comp:
+            
+            if file2==file:
+                continue
+            
+            if os.path.exists(file)==False: 
+                continue
+            
+            compname=file2.split('/')[-1].rstrip(form).rstrip('.'+corrtype+'_stack.')
+            
+            if verbose:
+                print 'Merging '+corr+' and '+compname
+            
+            #- Merge the data themselves
+            tr1=read(file)[0]
+            tr2=read(file2)[0]
+            
+            if file2.split('/')[-1].split('.')[1]==sta2:
+                tr1.data+=tr2.data[::-1]
+            elif file2.split('/')[-1].split('.')[1]==sta1:
+                tr1.data+=tr2.data
+            else:
+                print 'An Error occured. Go to lunch.'
+                continue
+                
+            tr1.write(file, form)
+            os.system('rm '+file2)
+            
+            #- Merge the coherence stacks
+            coh_re1=read(indir+'/'+corr+'.coherence_stack_real.'+form)[0]
+            coh_im1=read(indir+'/'+corr+'.coherence_stack_imag.'+form)[0]
+            
+            coh_re2=read(indir+'/'+compname+'.coherence_stack_real.'+form)[0]
+            coh_im2=read(indir+'/'+compname+'.coherence_stack_imag.'+form)[0]
+            
+            coh_re1.data+=coh_re2.data[::-1]
+            coh_im1.data+=coh_im2.data[::-1]
+            
+            coh_re1.write(indir+'/'+corr+'.coherence_stack_real.'+form, form)
+            coh_im1.write(indir+'/'+corr+'.coherence_stack_imag.'+form, form)
+            
+            os.system('rm '+indir+'/'+compname+'.coherence_stack_real.'+form)
+            os.system('rm '+indir+'/'+compname+'.coherence_stack_imag.'+form)
+            
+            #- Merge the metadata
+            md1=indir+'/'+corr+'.'+corrtype+'.metadata'
+            md2=indir+'/'+compname+'.'+corrtype+'.metadata'
+            cmd=('cat '+md2+ ' | grep \'^[0-9, ]*$\'' + ' >> '+md1)
+            os.system(cmd)
+            os.system('rm '+md2)
+         
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        
+       
+        
+        
+        
