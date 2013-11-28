@@ -258,15 +258,15 @@ def prep(xmlinput,content=None):
                 
             #- remove instrument response =========================================================
     
-            ta=time.time()
-            rn.rename_seismic_data(trace, outdir, True, verbose, ofid)
+            #ta=time.time()
+            #rn.rename_seismic_data(trace, outdir, True, verbose, ofid)
             if inp1['processing']['instrument_response']['doit']=='1':
     
                 removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose,ofid)
                 if ((True in np.isnan(trace)) or (removed==0)):
                     ofid.write('Deconvolution seems unstable! Trace discarded.')
                     continue
-            ofid.write('+++++++++ '+str(time.time()-ta)+'\n')
+            #ofid.write('+++++++++ '+str(time.time()-ta)+'\n')
             #- bandpass, second stage =============================================================
     
             if inp1['processing']['bandpass_2']['doit']=='1':

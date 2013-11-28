@@ -194,7 +194,11 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
     Return 1 if successful. Return 0 otherwise.
     """
 
+    import time
+    ta=time.time()
+
     #- RESP file ==================================================================================
+
     resp_file=respdir+'/RESP.'+data.stats.network+'.'+data.stats.station+'.'+data.stats.location+'.'+data.stats.channel
 
     if verbose==True:
@@ -202,6 +206,8 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
             print '* RESP file: '+resp_file
         else:
             ofid.write('* RESP file: '+resp_file+'\n')
+
+    print '+1++++++++ '+str(time.time()-ta)
 
     #- try to remove response if the RESP file exists =============================================
 
@@ -217,8 +223,11 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
                     
         resp_dict = {"filename": resp_file, "units": unit, "date": data.stats.starttime}
 
+        print '+2++++++++ '+str(time.time()-ta)
+
         try:
             data.simulate(seedresp=resp_dict, water_level=float(waterlevel))
+            print '+3++++++++ '+str(time.time()-ta)
         except ValueError:
             if verbose==True: 
                 if ofid==None:
