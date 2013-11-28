@@ -170,7 +170,6 @@ def zerophase_chebychev_lowpass_filter(trace, freqmax, verbose, ofid=None):
 # BUTTERWORTH LOWPASS FILTER
 #==================================================================================================
 
-
 def lowpass(data,corners,f_max,verbose, ofid=None):
 
     if verbose==True:
@@ -182,7 +181,6 @@ def lowpass(data,corners,f_max,verbose, ofid=None):
     
 
     return data
-
 
 #==================================================================================================
 # REMOVE INSTRUMENT RESPONSE

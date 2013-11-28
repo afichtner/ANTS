@@ -44,16 +44,19 @@ def prep(xmlinput,content=None):
     #==============================================================================================
     # preliminaries
     #==============================================================================================
+
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size=comm.Get_size()
     t0=time.time()
+
     #==============================================================================================
     #- MASTER process:
     #- reads in xmlinput
     #- creates output directory
     #- creates a list of input files
     #==============================================================================================
+    
     if rank==0:
         inp1=rxml.read_xml(xmlinput)[1]
         if ti.testinput(inp1)==False:
@@ -68,7 +71,7 @@ def prep(xmlinput,content=None):
     
         #- copy the input xml to the output directory for documentation ===============================
         shutil.copy(xmlinput,outdir)
-        
+
         #- check what input is, list input from different directories =================================
         if content==None:
             indirs=inp1['directories']['indirs'].strip().split(' ')
@@ -89,27 +92,30 @@ def prep(xmlinput,content=None):
         content=list()
         inp1=list()    
 
-
-
     #- broadcast the input; and the list of files
     t1=time.time()-t0
     content=comm.bcast(content, root=0)
     inp1=comm.bcast(inp1, root=0)
     t2=time.time()-t0-t1
+
     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
+
     clen=int(ceil(float(len(content))/float(size)))
     chunk=(rank*clen, (rank+1)*clen)
     mycontent=content[chunk[0]:chunk[1]]
     t3=time.time()-t0-t2   
+
     #==================================================================================
     # Input files loop
     #==================================================================================
+    
     verbose=bool(int(inp1['verbose']))
     outdir=inp1['directories']['outdir']
     outfile=outdir+'/rank'+str(rank)+'.v_out'
     ofid=open(outfile, 'w')
+    
     if verbose:
         ofid.write('Time at start was '+str(t0)+'\n')
         ofid.write('Rank 0 took '+str(t1)+' seconds to read in input\n')
@@ -122,10 +128,10 @@ def prep(xmlinput,content=None):
         
     for filepath in mycontent:
         filename=filepath.split('/')[-1]
-        
     
         if verbose==True:
-            ofid.write('\nopening file: '+filepath+'\n')
+            ofid.write('\n========================================================================================\n')
+            ofid.write('opening file: '+filepath+'\n')
             t=time.time()-t0
             ofid.write('Time elapsed since start: '+str(t)+'\n')
         #- read data
@@ -133,13 +139,12 @@ def prep(xmlinput,content=None):
             data=read(filepath)
         except TypeError:
             if verbose==True: 
-                ofid.write('\nfile could not be opened, skip.')
+                ofid.write('file could not be opened, skip.')
             continue
         except IOError:
             if verbose: 
-                ofid.write('\nile could not be opened, skip.')
+                ofid.write('file could not be opened, skip.')
             continue
-        
         
         #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -159,15 +164,13 @@ def prep(xmlinput,content=None):
                 
                 for fs in new_fs:
                     data=proc.downsample(data,float(fs),verbose,ofid)
+
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
-        
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
             data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,ofid)
         n_traces=len(data)
-        
         
         #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -176,15 +179,11 @@ def prep(xmlinput,content=None):
             
             if inp1['processing']['trim']=='1':
                 data=proc.trim_next_sec(data,verbose,ofid)
-        #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            
-            
-            
+        #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  
         
         if verbose==True:
             ofid.write('contains '+str(n_traces)+' trace(s)\n')
     
-        #data_original=data.copy()
         colloc_data=Stream()
         
         #==================================================================================
@@ -192,11 +191,12 @@ def prep(xmlinput,content=None):
         #==================================================================================
         for k in np.arange(n_traces):
     
+            t_start=time.time()
+
             trace=data[k]
             
             if verbose==True: 
-                ofid.write('-----------------------------------------------------------\n')
-    
+                ofid.write('- trace '+str(k+1)+' ----------------------------------------------------\n')
     
             #==================================================================================
             # basic quality checks
@@ -216,7 +216,7 @@ def prep(xmlinput,content=None):
     
             if verbose==True:
                 ofid.write('* number of points: '+str(trace.stats.npts)+'\n')
-    
+
             #==================================================================================
             # processing (detrending, filtering, response removal, decimation)
             #==================================================================================
@@ -228,19 +228,17 @@ def prep(xmlinput,content=None):
                 trace=proc.demean(trace,verbose,ofid)
              
             #- detrend ============================================================================
-            
+          
             if inp1['processing']['detrend']=='1':
     
                 trace=proc.detrend(trace,verbose,ofid)
-                    
-    
+
             #- taper edges ========================================================================
     
             if inp1['processing']['taper']['doit']=='1':
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                 
-          
             #- bandpass, first stage ==============================================================
     
             if inp1['processing']['bandpass_1']['doit']=='1':
@@ -260,26 +258,27 @@ def prep(xmlinput,content=None):
                 
             #- remove instrument response =========================================================
     
+            ta=time.time()
+            rn.rename_seismic_data(trace, outdir, True, verbose, ofid)
             if inp1['processing']['instrument_response']['doit']=='1':
     
                 removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose,ofid)
-                if True in np.isnan(trace):
+                if ((True in np.isnan(trace)) or (removed==0)):
                     ofid.write('Deconvolution seems unstable! Trace discarded.')
                     continue
-               
+            ofid.write('+++++++++ '+str(time.time()-ta)+'\n')
             #- bandpass, second stage =============================================================
     
             if inp1['processing']['bandpass_2']['doit']=='1':
     
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,ofid)
-    
+
             #- taper edges ========================================================================
-    
+
             if inp1['processing']['taper']['doit']=='1':
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                
-                  
             #======================================================================================
             # normalisations (whitening, averages, ...)
             #======================================================================================
@@ -313,24 +312,28 @@ def prep(xmlinput,content=None):
             if inp1['normalisation']['whitening']['doit']=='1':
     
                 trace=nrm.whiten(trace,float(inp1['normalisation']['whitening']['smoothing']),verbose)
-    
+
             #======================================================================================
-            # store results
+            # timing and storage of results
             #======================================================================================
             
-            #merge all into final trace
+            if verbose==True:
+                t_end=time.time()
+                ofid.write('time per trace: '+str(t_end-t_start)+' s\n')
+
+            #- merge all into final trace
             colloc_data+=trace
         
         colloc_data._cleanup()
         if verbose==True:
             t=time.time()-t0
-            ofid.write('Time elapsed since start: '+str(t)+'\n')
+            ofid.write('- rename and store ------------------------------------------------------\n')
+            ofid.write('time elapsed since start: '+str(t)+'\n')
             
         if len(colloc_data)>0:
             if (inp1['saveprep']=='1'):
                 for k in range(len(colloc_data)):
-                    if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1'):
-                        rn.rename_seismic_data(colloc_data[k], outdir, True, verbose,ofid)
+                    rn.rename_seismic_data(colloc_data[k], outdir, True, verbose, ofid)
                     
     
     

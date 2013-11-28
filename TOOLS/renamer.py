@@ -56,4 +56,4 @@ def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
         if ofid==None:
             print '* renamed file: '+filepathnew 
         else:
-            ofid.write('* renamed file: '+filepathnew+'\n\n')
+            ofid.write('* renamed file: '+filepathnew+'\n')
