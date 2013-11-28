@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import time
+from glob import glob
 
 from obspy.core import read
 from obspy import Stream,  Trace
@@ -75,11 +76,12 @@ def prep(xmlinput,content=None):
         #- check what input is, list input from different directories =================================
         if content==None:
             indirs=inp1['directories']['indirs'].strip().split(' ')
+            print indirs
             content=list()
             for indir in indirs:
-                content.extend(os.listdir(indir))
-                for k in range(len(content)):
-                    content[k]=indir+'/'+content[k]
+                print indir
+                content.extend(glob(indir+'/*'))
+               
     
         elif type(content)==str: 
             filename=content
@@ -335,5 +337,5 @@ def prep(xmlinput,content=None):
                 for k in range(len(colloc_data)):
                     rn.rename_seismic_data(colloc_data[k], outdir, True, verbose, ofid)
                     
-    
+    ofid.close()
     
