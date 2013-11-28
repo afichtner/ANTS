@@ -12,31 +12,40 @@ from scipy.signal import cheby2,  cheb2ord,  filtfilt
 # SPLIT TRACES INTO SHORTER SEGMENTS
 #==================================================================================================
 
-def split_traces(s,length_in_sec,min_len, verbose, ofid=None):
+def split_traces(s, length_in_sec, min_len, verbose, ofid=None):
     """
     Split an ObsPy stream object with multiple traces into a stream with traces of a predefined
     maximum length.
     """
+
+    #- compute length of segments that produces a number of samples close to 2**n -----------------
+
+    power=np.floor(np.log2(length_in_sec*s[0].stats.sampling_rate))
+    n_samples=2**power
+
+    new_length_in_sec=n_samples*s[0].stats.delta
+
+    #- print information --------------------------------------------------------------------------
+
     if verbose==True:
         if ofid==None:
-            print '* split into traces of '+str(length_in_sec)+' s length'
+            print '* split into traces of '+str(new_length_in_sec)+' s length'
         else:
-            ofid.write('* split into traces of '+str(length_in_sec)+' s length\n')
+            ofid.write('* split into traces of '+str(new_length_in_sec)+' s length\n')
             
-
     s_new=Stream()
     
     #- loop through traces ------------------------------------------------------------------------
+    
     for k in np.arange(len(s)):
-        
-          
+           
         #- set initial start time
         start=s[k].stats.starttime
         
         #- march through the trace until the endtime is reached
         while start<s[k].stats.endtime-min_len:
             s_copy=s[k].copy()
-            s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
+            s_copy.trim(start,start+new_length_in_sec-1/(s[k].stats.sampling_rate))
             
             if (s_copy.stats.endtime-s_copy.stats.starttime)<min_len:
                 if verbose==True:
