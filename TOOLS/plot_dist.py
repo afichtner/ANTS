@@ -70,7 +70,9 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
 
     #For all these files find the interstation distance, and plot accordingly
     dist_old=0
+  
     for file in stalist:
+        
         if verbose: print file
         inf=file.split('-')[0].split('.')+file.split('-')[1].split('.')
         
@@ -86,7 +88,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         correlation=read(indir+'/'+file)[0]
         
         if corrtype=='both':
-            print indir2+'/'+file.rstrip('.SAC').rstrip('.MSEED').rstrip('ccc_stack')+'pcc_stack'
+            #print indir2+'/'+file.rstrip('.SAC').rstrip('.MSEED').rstrip('ccc_stack')+'pcc_stack'
             try:
                 correlation2=read((glob(indir2+'/'+file.rstrip('.SAC').rstrip('.MSEED').rstrip('ccc_stack')+'pcc_stack.*')[0]))[0]
             except IndexError:
@@ -112,8 +114,16 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             fhre=ctype.sub('coherence_stack_real', file)
             fhim=ctype.sub('coherence_stack_imag', file)
             
-            phre=read(indir+'/'+fhre)[0].data
-            phim=read(indir+'/'+fhim)[0].data
+            phre=read(indir+'/'+fhre)[0]
+            phim=read(indir+'/'+fhim)[0]
+            if prefilter is not None:
+                phre.taper(p=0.1)
+                phre.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
+                phim.taper(p=0.1)
+                phim.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
+            phre=phre.data
+            phim=phim.data
+            
             #Calculate the phase stack
             pstack=np.power(np.sqrt(np.multiply(phre, phre)+np.multiply(phim, phim)), ps_nu)
             
@@ -126,6 +136,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         
         if stafile1==stafile2:
            dist=0
+           
         else:
             try:
                inf1=read_xml(stafile1)[1]
@@ -138,7 +149,6 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             except IOError:
                 if verbose: print 'No station xml file found, skipping this station.'
                 
-        
         
         correlation.data/=np.max(np.abs(correlation.data))
         plt.plot(taxis, correlation.data+dist/dist_scaling)
@@ -156,7 +166,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
     plt.xlabel('Lag Time (sec)')
     plt.ylabel("Interstation distance (%g m)" %(dist_scaling))   
   
-    plt.title(corrtype+" from "+indir.strip('/').split('/')[-1])
+    plt.title(corrtype+" from "+indir.strip('/').split('/')[-1]+'\nPrefilter: '+str(prefilter))
     if r_speed is not None:
         plt.plot(taxis, np.abs(taxis*r_speed/dist_scaling), linewidth=5.0, color='0.8')
     plt.xlim(-maxlag, maxlag)
@@ -167,7 +177,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         if outdir==None:
             figname=indir+'/'+indir.strip('/').split('/')[-1]+'.'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.png'
         else:
-            figname=outdir+'/'+indir.strip('/').split('/')[-1]+'.'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.png'
+            figname=outdir+'/'+indir.strip('/').split('/')[-1]+'.'+station+'.'+channel+'.'+stacktype+'.'+corrtype+'.'+str(prefilter)+'.png'
         
         plt.savefig(figname, format='png', dpi=200)
         

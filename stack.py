@@ -4,19 +4,22 @@ import matplotlib.pyplot as plt
 from obspy.core import read
 from obspy.core import stream
 from obspy.core import trace
-from obspy.core import  UTCDateTime
+from obspy.core import UTCDateTime
+
 
 import os
 import shutil
 import re
 import sys
+import time
 
 from math import log
 from glob import glob
+from datetime import datetime
 
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
-
+import TOOLS.iris_meta as irme
 
 
 
@@ -37,12 +40,15 @@ def stack(xmlinput):
     #==============================================================================================
     # Initialize
     #==============================================================================================
-
+    #- One common metadata table, iris style
+    md_iris=open('correlation_project.txt', 'w')
+    cnt=0
     #- Read the input from xml file----------------------------------------------------------------
     inp1=rxml.read_xml(xmlinput)
     inp1=inp1[1]
 
     indir=inp1['directories']['indir']
+    xmldir=inp1['directories']['xmldir']
     outdir=inp1['directories']['outdir']
     fformat=inp1['directories']['format']
     if os.path.isdir(outdir)==False:
@@ -126,7 +132,7 @@ def stack(xmlinput):
             continue
             
         #- Compute stacked correlations ===========================================================
-        (correlation_stack, coherence_stack, windows, n, n_skip)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,  verbose)
+        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,  verbose)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
@@ -155,6 +161,10 @@ def stack(xmlinput):
             fid.write('channel_2: '+dat2.stats.channel+'\n')
             fid.write('= contributing time windows ==========================\n')
             fid.close()
+        
+        
+        
+            
 
         
         #==========================================================================================
@@ -162,6 +172,19 @@ def stack(xmlinput):
         #==========================================================================================    
 
         if n>0:
+            cnt+=1
+            t1=datetime.strptime(inp1['timethings']['startdate'], '%Y%m%d')
+            t1=t1.timetuple().tm_yday
+            t2=datetime.strptime(inp1['timethings']['enddate'], '%Y%m%d')
+            t2=t2.timetuple().tm_yday
+            today=time.time()
+            (lat1, lon1, lat2, lon2, dist)=get_coord_dist(dat1.stats.network,dat1.stats.station , dat2.stats.network, dat2.stats.station,  xmldir)
+            
+            #- Write iris metadata ================================================================
+            md_iris.write(dat1.stats.station.ljust(6)+' '+dat1.stats.network.ljust(8)+' '+dat2.stats.station.ljust(6)+' '+dat2.stats.network.ljust(8)+ \
+            ' '+dat1.stats.channel.ljust(8)+' '+dat2.stats.channel.ljust(8)+' '+str("%12.3f"%(-maxlag)).ljust(12)+' '+str("%8i"%cnt).ljust(8)+' '+str("%12.3f"%maxlag).ljust(12)+' '+str(maxlag*Fs*2+1).ljust(8)+ \
+            ' '+str("%11.7f"%Fs).ljust(11)+' '+str("%16.6f"%1.0).ljust(16)+' '+str("%16.6f"%-1.0).ljust(16)+' '+str("%8i"%t1).ljust(8)+' '+str("%8i"%t2).ljust(8)+' '+str("%6i"%n).ljust(6)+' '+str("%10.3f"%dist).ljust(10)+ \
+            ' '+str("%14.4f"%tslen).ljust(14)+' '+'f? '+'./'.ljust(32)+' '+(fn1+'-'+fn2+'.'+corr_type+'_stack.MSEED').ljust(48)+' '+str(632).ljust(10)+str("%17.5f"%today).ljust(17)+'\n')
 
             #- plot correlation function, if wanted ===============================================
 
@@ -254,7 +277,7 @@ def stack(xmlinput):
             for window in windows:
                fid.write(str(window[0].year)+' '+str(window[0].month)+' '+str(window[0].day)+' '+str(window[0].hour)+' '+str(window[0].minute)+' '+str(window[0].second)+', '+str(window[1].year)+' '+str(window[1].month)+' '+str(window[1].day)+' '+str(window[1].hour)+' '+str(window[1].minute)+' '+str(window[1].second)+'\n')
             fid.close()
-
+    irme.write_stationlst(outdir, xmldir, outdir)
 
 #==================================================================================================
 # find pairs of recordings
@@ -353,6 +376,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     windows:            time windows used in the stack
     n:                  number of successfully stacked correlations
     n_skip:             number of discarded time windows
+    tslen:              Length of the stacked time series (total) in seconds
 
     """
    
@@ -368,7 +392,9 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
 
     #- Counter for failed time windows
     n_skip=0
-
+    
+    #- Counter for seconds in the time series stacked
+    tslen=0
     #- check how far the traces go!
     startday=max(startday, dat1.stats.starttime, dat2.stats.starttime)
     endday=min(endday, dat1.stats.endtime, dat2.stats.endtime)
@@ -381,7 +407,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
 
     if corr_type not in ['ccc', 'fcc','pcc']:
         if verbose: 'Correlation type '+corr_type+' not supported'
-        return([], [], [], 0, 0)
+        return([], [], [], 0, 0, 0)
         
     
 
@@ -436,6 +462,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         
             #- update statistics
             n+=1
+            tslen+=len(tr1.data)
 
             #- linear stack =======================================================================
             if n==1:
@@ -462,9 +489,9 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         t2=t1+win_len
         
     if n==0:
-        return([], [], [], n, n_skip)
+        return([], [], [], n, n_skip, 0)
     else:
-        return(correlation_stack, coherence_stack, windows, n, n_skip)
+        return(correlation_stack, coherence_stack, windows, n, n_skip, tslen)
         
         
 #==================================================================================================
@@ -485,3 +512,35 @@ def wl_adjust(win_len, Fs, verbose):
         if verbose:
             print 'Window length adjusted to '+str(nwl)
     return nwl
+
+
+#==================================================================================================
+# Get the station coordinates and distance
+#==================================================================================================
+from obspy.iris import Client
+from obspy.core.util.geodetics import gps2DistAzimuth
+def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
+    try:
+        stafile1=glob(xmldir+'/'+net1+'.'+sta1+'*')[0]
+        stafile2=glob(xmldir+'/'+net2+'.'+sta2+'*')[0]
+    except IndexError:
+        client=Client()
+        stafile1=xmldir+'/'+net1+'.'+sta1+'.sta_info.xml'
+        stafile2=xmldir+'/'+net2+'.'+sta2+'.sta_info.xml'
+        client.station(net, sta, filename=stafile2)
+            
+    try:
+        inf1=rxml.read_xml(stafile1)[1]
+        inf2=rxml.read_xml(stafile2)[1]
+        lat1=float(inf1['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
+        lon1=float(inf1['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
+        lat2=float(inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
+        lon2=float( inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
+        dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
+    except IOError:
+        (lat1, lon1, lat2, lon2, dist)=('?', '?','?','?','?')
+    
+    return (lat1, lon1, lat2, lon2, dist)
+    
+   
+
