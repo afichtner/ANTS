@@ -39,14 +39,14 @@ def plot_psd(input, numwin, input2=None):
             trace2=input2
         
     
-    
+    freq1, psd1=get_psd(trace1, numwin)
     
     if input2 is not None:
         freq2, psd2=get_psd(trace2, numwin)
         # Two subplots, the axes array is 1-d
         f, axarr = plt.subplots(2, sharex=True)
         axarr[0].loglog(freq1, np.sqrt(psd1))
-        axarr[0].set_title('Power spectral densities')
+        axarr[0].set_title('Comparison of spectra')
         plt.xlabel('frequency [Hz]')
         plt.ylabel('Linear spectrum [V RMS]')
         axarr[1].loglog(freq2, np.sqrt(psd2))
@@ -58,16 +58,7 @@ def plot_psd(input, numwin, input2=None):
         plt.xlabel('frequency [Hz]')
         plt.ylabel('Linear spectrum [V RMS]')
         plt.show()
-        #Power spectral density
-        plt.figure()
-        per1=1/freq1
-        plt.loglog(per1, psd1)
-        plt.semilogx(P1, nh, P2, nl)
-        plt.show()
-        
-    
-    
-    
+
 
 def get_psd(trace, numwin):
     trace.detrend('linear')

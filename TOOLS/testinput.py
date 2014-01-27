@@ -5,14 +5,49 @@ def testinput(inp):
     
     niceinput=True
     
+    if len(inp['prepname'])==0:
+        print 'A valid name must be provided for this processing run.'
+        niceinput=False
+        return niceinput
+        
+    if len(inp['comment'])==0:
+        print 'Sorry, it is necessary that you provide a comment on this preprocessing run.'
+        niceinput=False
+        return niceinput
+    
+    
     if inp['verbose']!='1' and inp['verbose']!='0':
         print 'Verbose must be 1 or 0.'
         niceinput=False
+        return niceinput
     
     if inp['check']!='1' and inp['check']!='0':
         print 'check must be 1 or 0.'
         niceinput=False
+        return niceinput
         
+    try:
+        sm=int(inp['input']['startyr'])
+        if sm<1970:
+            print 'Start year must be format YYYY, no earlier than 1970.'
+            niceinput=False
+            return niceinput
+    except ValueError:
+        print 'Start year must be an integer, format YYYY.'
+        niceinput=False
+        return niceinput
+        
+    try:
+        em=int(inp['input']['endyr'])
+        if em<1970:
+            print 'End year year must be format YYYY, no earlier than 1970.'
+            niceinput=False
+            return niceinput
+    except ValueError:
+        print 'End year must be an integer, format YYYY.'
+        niceinput=False
+        return niceinput
+    
         
     try:
         ml=int(inp['quality']['min_length_in_sec'])
@@ -61,8 +96,6 @@ def testinput(inp):
     
     try:
         tw=float(inp['processing']['taper']['taper_width'])
-        if tw>0.05:
-            print 'More than 5% of trace will be tapered.'
     except ValueError:
         print 'taper width must be a number.'
         niceinput=False

@@ -6,8 +6,12 @@ import os
 import re
 from TOOLS.read_xml import read_xml
 import matplotlib.pyplot as plt
+import matplotlib
+font={'size':24,  'family':'normal',  'weight':'bold'}
+matplotlib.rc('font', **font)
 import numpy as np
 from glob import glob
+
 
 def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=10000,maxlag=200, r_speed=None, prefilter=None, verbose=False, savefig=False, outdir=None, indir2=None):
     """
@@ -31,6 +35,8 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
     fig=plt.figure(figsize=(12, 16))
     fig.hold()
     plt.subplot(111)
+    annotpos='r'
+    
     
     if channel=="BH*" or channel=="LH*":
         plt.rc('axes', color_cycle=['b', 'g', 'k'])
@@ -43,7 +49,10 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         corrtype2='pcc'
     
     #Find the files containing a correlation of the 'reference' station
-    sta=re.compile(station)
+    if station=='all':
+        sta=re.compile('.')
+    else:
+        sta=re.compile(station)
     if corrtype=='both':
         ctype=re.compile(corrtype1+'_stack')
     else:
@@ -63,7 +72,7 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             continue
             
     if len(stalist)==0:
-        if verbose: print 'No matching file found. Try another reference station.'
+        if verbose: print 'No matching file found. Try another reference station or \'all\'.'
         return
     
    
@@ -72,6 +81,8 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
     dist_old=0
   
     for file in stalist:
+        
+        
         
         if verbose: print file
         inf=file.split('-')[0].split('.')+file.split('-')[1].split('.')
@@ -82,7 +93,9 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
         except IndexError:
             if verbose: print 'No station xml found. Skipping this correlation.'
             continue
-    
+            
+        if station=='all' and stafile1==stafile2:
+            continue
     
         
         correlation=read(indir+'/'+file)[0]
@@ -94,18 +107,6 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             except IndexError:
                 print 'notfound'
                 continue
-            
-     
-        
-        
-        
-        if prefilter is not None:
-            correlation.taper(p=0.1)
-            correlation.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
-            if 'correlation2' in locals():
-                correlation2.taper(p=0.1)
-                correlation2.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
-        
         
         if ps_nu==0:
             stacktype='ls'
@@ -116,21 +117,22 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             
             phre=read(indir+'/'+fhre)[0]
             phim=read(indir+'/'+fhim)[0]
-            if prefilter is not None:
-                phre.taper(p=0.1)
-                phre.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
-                phim.taper(p=0.1)
-                phim.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
             phre=phre.data
             phim=phim.data
             
             #Calculate the phase stack
             pstack=np.power(np.sqrt(np.multiply(phre, phre)+np.multiply(phim, phim)), ps_nu)
-            
             correlation.data=np.multiply(correlation.data, pstack)
             if 'correlation2' in locals():
                 correlation2.data=np.multiply(correlation2.data, pstack)
             
+        if prefilter is not None:
+            correlation.taper(p=0.1)
+            correlation.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
+            if 'correlation2' in locals():
+                correlation2.taper(p=0.1)
+                correlation2.filter('bandpass', freqmin=prefilter[0], freqmax=prefilter[1], corners=prefilter[2], zerophase=True)
+        
             
         taxis=np.linspace(-(len(correlation.data)-1)/2/correlation.stats.sampling_rate,(len(correlation.data)-1)/2/correlation.stats.sampling_rate, len(correlation.data))
         
@@ -156,17 +158,22 @@ def plot_dist(indir, xmldir, station, channel, corrtype, ps_nu,dist_scaling=1000
             correlation2.data/=np.max(np.abs(correlation2.data))
             plt.plot(taxis, correlation2.data+dist/dist_scaling, 'r')
         
-        if dist_old-dist>=1:
-            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[0]-100, dist/dist_scaling+0.1), fontsize=12 )
+        if dist_old-dist<=1 and annotpos=='l':
+            annotpos='r'
+        elif dist_old-dist<=1 and annotpos=='r':
+            annotpos='l'
+            
+        if annotpos=='l':
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[0]-100, dist/dist_scaling+0.1), fontsize=24)
         else:
-            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[-1:]-100, dist/dist_scaling+0.1), fontsize=12)
+            plt.annotate(inf[1]+'-'+inf[5], xy=(taxis[0], dist/dist_scaling) , xytext=(taxis[-1:]-7500, dist/dist_scaling+0.1), fontsize=24)
         if dist>dist_old: max_dist=dist
         dist_old=dist
             
-    plt.xlabel('Lag Time (sec)')
-    plt.ylabel("Interstation distance (%g m)" %(dist_scaling))   
-  
-    plt.title(corrtype+" from "+indir.strip('/').split('/')[-1]+'\nPrefilter: '+str(prefilter))
+    plt.xlabel('Lag Time (sec)', fontsize=24, fontweight='bold')
+    plt.ylabel("Interstation distance (%g m)" %(dist_scaling), fontsize=24, fontweight='bold')   
+    plt.xticks([-20000,  -10000,  0,  10000,  20000])
+    plt.title(corrtype+" from "+indir.strip('/').split('/')[-1]+'\nPrefilter: '+str(prefilter), fontsize=24)
     if r_speed is not None:
         plt.plot(taxis, np.abs(taxis*r_speed/dist_scaling), linewidth=5.0, color='0.8')
     plt.xlim(-maxlag, maxlag)

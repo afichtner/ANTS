@@ -130,7 +130,7 @@ def prep(xmlinput,content=None):
         
     for filepath in mycontent:
         filename=filepath.split('/')[-1]
-    
+  
         if verbose==True:
             ofid.write('\n========================================================================================\n')
             ofid.write('opening file: '+filepath+'\n')
@@ -162,7 +162,7 @@ def prep(xmlinput,content=None):
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
                 #data.filter('lowpassCheby2', freq=float(new_fs[-1])*0.25, maxorder=8)
-                data=proc.lowpass(data,4,float(new_fs[-1])*0.2,verbose, ofid)
+                data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose, ofid)
                 
                 for fs in new_fs:
                     data=proc.downsample(data,float(fs),verbose,ofid)

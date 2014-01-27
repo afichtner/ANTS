@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os as os
 import numpy as np
 
@@ -6,13 +7,14 @@ from obspy.signal import bandpass
 from scipy.interpolate import interp1d
 from obspy.core import Trace, Stream, UTCDateTime
 from scipy.signal import cheby2,  cheb2ord,  filtfilt
+from glob import glob
 
 
 #==================================================================================================
 # SPLIT TRACES INTO SHORTER SEGMENTS
 #==================================================================================================
 
-def split_traces(s, length_in_sec, min_len, verbose, ofid=None):
+def split_traces(s, length_in_sec, min_len, verbose, ofid):
     """
     Split an ObsPy stream object with multiple traces into a stream with traces of a predefined
     maximum length.
@@ -28,10 +30,7 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid=None):
     #- print information --------------------------------------------------------------------------
 
     if verbose==True:
-        if ofid==None:
-            print '* split into traces of '+str(new_length_in_sec)+' s length'
-        else:
-            ofid.write('* split into traces of '+str(new_length_in_sec)+' s length\n')
+        print('* split into traces of '+str(new_length_in_sec)+' s length\n',file=ofid)
             
     s_new=Stream()
     
@@ -49,10 +48,7 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid=None):
             
             if (s_copy.stats.endtime-s_copy.stats.starttime)<min_len:
                 if verbose==True:
-                    if ofid==None:
-                        print '** trace too short, discarded'
-                    else:
-                        ofid.write('** trace too short, discarded\n')
+                    print('** trace too short, discarded\n',file=ofid)
             else:
                 s_new.append(s_copy)
            
@@ -66,13 +62,10 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid=None):
 # TAPER
 #==================================================================================================
 
-def taper(data,width,verbose, ofid=None):
+def taper(data,width,verbose,ofid):
 
     if verbose==True:
-        if ofid==None:
-            print '* taper '+str(100*width)+' percent of trace'
-        else:
-            ofid.write('* taper '+str(100*width)+' percent of trace\n')
+        print('* taper '+str(100*width)+' percent of trace\n',file=ofid)
     data.taper('cosine',p=width)
     
     return data
@@ -82,13 +75,10 @@ def taper(data,width,verbose, ofid=None):
 # DETREND
 #==================================================================================================
 
-def detrend(data,verbose, ofid=None):
+def detrend(data,verbose, ofid):
 
     if verbose==True:
-        if ofid==None:
-            print '* detrend'
-        else:
-            ofid.write('* detrend\n')
+        print('* detrend\n',file=ofid)
         
     data.detrend('linear')
     
@@ -98,13 +88,11 @@ def detrend(data,verbose, ofid=None):
 # DEMEAN
 #==================================================================================================
 
-def demean(data,verbose, ofid=None):
+def demean(data,verbose, ofid):
 
     if verbose==True: 
-        if ofid==None:
-            print '* demean'
-        else:
-            ofid.write('* demean\n')
+        print('* demean\n',file=ofid)
+        
     data.detrend('demean')
 
     return data
@@ -113,13 +101,11 @@ def demean(data,verbose, ofid=None):
 # BANDPASS FILTER
 #==================================================================================================
 
-def bandpass(data,corners,f_min,f_max,verbose, ofid=None):
+def bandpass(data,corners,f_min,f_max,verbose, ofid):
     
     if verbose==True: 
-        if ofid==None:
-            print '* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz'
-        else:
-            ofid.write('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz\n')
+        print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz\n',file=ofid)
+        
     data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
     
     return data
@@ -128,7 +114,7 @@ def bandpass(data,corners,f_min,f_max,verbose, ofid=None):
 # CHEBYCHEFF LOWPASS FILTER
 #==================================================================================================
 
-def antialias(data, freqmax, verbose, ofid=None):
+def antialias(data, freqmax, verbose, ofid):
     if isinstance(data,Trace):
         zerophase_chebychev_lowpass_filter(data, freqmax, verbose)
     elif isinstance(data,Stream):
@@ -170,22 +156,17 @@ def zerophase_chebychev_lowpass_filter(trace, freqmax, verbose, ofid=None):
     # Apply twice to get rid of the phase distortion.
     trace.data = filtfilt(b, a, trace.data)
     if verbose: 
-        if ofid==None:
-            print '* Applied low-pass Chebychev filter with corner freq. ', freqmax
-        else:
-            ofid.write('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n')
+        print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
 
 #==================================================================================================
 # BUTTERWORTH LOWPASS FILTER
 #==================================================================================================
 
-def lowpass(data,corners,f_max,verbose, ofid=None):
+def lowpass(data,corners,f_max,verbose, ofid):
 
     if verbose==True:
-        if ofid==None:
-            print '* lowpass below '+str(f_max)+' Hz'
-        else:
-            ofid.write('* lowpass below '+str(f_max)+' Hz\n')
+        print('* lowpass below '+str(f_max)+' Hz\n',file=ofid)
+        
     data.filter('lowpass', freq=f_max,corners=corners,zerophase=False)
     
 
@@ -195,7 +176,7 @@ def lowpass(data,corners,f_max,verbose, ofid=None):
 # REMOVE INSTRUMENT RESPONSE
 #==================================================================================================
 
-def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
+def remove_response(data,respdir,unit,waterlevel,verbose, ofid):
 
     """
     Remove instrument response located in respdir from data. Unit is displacement (DIS), velocity (VEL) or acceleration (ACC).
@@ -208,10 +189,7 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
     resp_file=respdir+'/RESP.'+data.stats.network+'.'+data.stats.station+'.'+data.stats.location+'.'+data.stats.channel
 
     if verbose==True:
-        if ofid==None:
-            print '* RESP file: '+resp_file
-        else:
-            ofid.write('* RESP file: '+resp_file+'\n')
+        print('* RESP file: '+resp_file+'\n',file=ofid)
 
     #- try to remove response if the RESP file exists =============================================
 
@@ -220,31 +198,22 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
         success=1
 
         if verbose==True:
-            if ofid==None:
-                print '* remove instrument response, unit='+unit
-            else:
-                ofid.write('* remove instrument response, unit='+unit+'\n')
+            print('* remove instrument response, unit='+unit+'\n',file=ofid)
                     
         resp_dict = {"filename": resp_file, "units": unit, "date": data.stats.starttime}
 
         try:
-            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True)
+            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True, simulate_sensitivity=False)
         except ValueError:
             if verbose==True: 
-                if ofid==None:
-                    print '** could not remove instrument response'
-                else:
-                    ofid.write('** could not remove instrument response\n')
+                print('** could not remove instrument response\n',file=ofid)
             success=0
 
     #- response cannot be removed because RESP file does not exist
 
     else:
         if verbose==True: 
-            if ofid==None:
-                print '** could not find correct RESP file'
-            else:
-                ofid.write('** could not find correct RESP file\n')
+            print('** could not find correct RESP file\n',file=ofid)
             
         success=0
 
@@ -310,7 +279,7 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid=None):
 # TRIM TO NEXT FULL SECOND
 #==================================================================================================
 
-def trim_next_sec(data,verbose, ofid=None):
+def trim_next_sec(data,verbose,ofid):
     
     """ 
     Trim data to the full second and add a little buffer. Ensures that recordings start and end with a full second.
@@ -320,14 +289,12 @@ def trim_next_sec(data,verbose, ofid=None):
 
     data:       Is an obspy stream or trace. The returned stream/trace is a bit shorter.
     verbose:    Talk or not.
+    ofid: Output file in 'check' mode; otherwise, 'None' is the default inherited from main.
     
     """
 
     if verbose: 
-        if ofid==None:
-            print '* Trimming to full second.'#' Add small buffer around the edges.'
-        else:
-            ofid.write('* Trimming to full second.\n')
+            print('* Trimming to full second.\n',file=ofid)
 
     if isinstance(data,Trace):
         starttime=data.stats.starttime
@@ -364,7 +331,7 @@ def trim_next_sec(data,verbose, ofid=None):
 # DOWNSAMPLING
 #==================================================================================================
 
-def downsample(data, Fsnew, verbose, ofid=None):
+def downsample(data, Fsnew, verbose, ofid):
 
     """
     Downsample data to a new sampling rate.
@@ -394,10 +361,7 @@ def downsample(data, Fsnew, verbose, ofid=None):
 
     if Fs==Fsnew:
         if verbose==True:
-            if ofid==None:
-                print '* Current and new sampling rate are equal. No downsampling performed.'
-            else:
-                ofid.write('* Current and new sampling rate are equal. No downsampling performed.\n')
+            print('* Current and new sampling rate are equal. No downsampling performed.\n',file=ofid)
 
     #- Downsampling ===============================================================================
 
@@ -412,10 +376,7 @@ def downsample(data, Fsnew, verbose, ofid=None):
             tl=len(data_new[0].data)
         
         if verbose==True:
-            if ofid==None:
-                print '* downsampling by factor '+str(dec)+', length of new trace: '+str(tl)
-            else:
-                ofid.write('* downsampling by factor '+str(dec)+', length of new trace: '+str(tl)+'\n')
+            print('* downsampling by factor '+str(dec)+', length of new trace: '+str(tl)+'\n',file=ofid)
 
     return data_new
     

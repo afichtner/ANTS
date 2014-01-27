@@ -1,6 +1,7 @@
+from __future__ import print_function
 import obspy
 
-def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
+def rename_seismic_data(data,prepname,verbose, ofid):
 
     """
     rename file to network.station.location.channel_starttime_endtime_samplingrate_format
@@ -8,7 +9,7 @@ def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
     input:
         data: ObsPy data stream
         targetdir: directory where files are written
-        processed: True for processed data, False for original data
+        prepname: name of preprocessing run
         verbose: print screen output (True)
         ofid: file id of an open file that output can be written to instead of stdout
     """
@@ -27,11 +28,7 @@ def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
         endtime=data.stats.endtime
         stats=data.stats
     else:
-        if ofid==None:
-            print 'Nothing saved: Object is not a trace or stream.'
-        else:
-            ofid.write('Nothing saved: Object is not a trace or stream.')
-        return
+        print('** Nothing saved: Object is not a trace or stream.',file=ofid)
         
         
     samplerate=stats.sampling_rate
@@ -42,18 +39,14 @@ def rename_seismic_data(data,targetdir,processed,verbose, ofid=None):
     format=stats._format
         
     #- convert time objects to string
-    t1=starttime.strftime('%Y%m%d%H%M%S')
-    t2=endtime.strftime('%Y%m%d%H%M%S')
+    t1=starttime.strftime('%Y.%j.%H.%M.%S')
+    yr=str(t1[0:4])
+    t2=endtime.strftime('%Y.%j.%H.%M.%S')
 
-    if processed==True:
-        filepathnew=targetdir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.proc.'+ format
-    else:
-        filepathnew=targetdir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2 +'.'+ format
+    filepathnew='DATA/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format
     
     #- write to file
     data.write(filepathnew,format)
     if verbose==True:
-        if ofid==None:
-            print '* renamed file: '+filepathnew 
-        else:
-            ofid.write('* renamed file: '+filepathnew+'\n')
+        print('* renamed file: '+filepathnew,file=ofid)
+        

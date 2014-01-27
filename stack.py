@@ -40,9 +40,7 @@ def stack(xmlinput):
     #==============================================================================================
     # Initialize
     #==============================================================================================
-    #- One common metadata table, iris style
-    md_iris=open('correlation_project.txt', 'w')
-    cnt=0
+    
     #- Read the input from xml file----------------------------------------------------------------
     inp1=rxml.read_xml(xmlinput)
     inp1=inp1[1]
@@ -51,6 +49,7 @@ def stack(xmlinput):
     xmldir=inp1['directories']['xmldir']
     outdir=inp1['directories']['outdir']
     fformat=inp1['directories']['format']
+    tformat=inp1['directories']['tformat'].upper()
     if os.path.isdir(outdir)==False:
         os.mkdir(outdir)
         
@@ -82,6 +81,10 @@ def stack(xmlinput):
     #- Force maximum lag to be integer. In seconds:
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
+    
+    #- One common metadata table, iris style
+    md_iris=open(outdir+'/correlation_project.txt', 'w')
+    cnt=0
     
     
     #- copy the input xml to the output directory for documentation
@@ -175,16 +178,18 @@ def stack(xmlinput):
             cnt+=1
             t1=datetime.strptime(inp1['timethings']['startdate'], '%Y%m%d')
             t1=t1.timetuple().tm_yday
+            t1=inp1['timethings']['startdate'][0:4]+str(t1)
             t2=datetime.strptime(inp1['timethings']['enddate'], '%Y%m%d')
             t2=t2.timetuple().tm_yday
+            t2=inp1['timethings']['enddate'][0:4]+str(t2)
             today=time.time()
-            (lat1, lon1, lat2, lon2, dist)=get_coord_dist(dat1.stats.network,dat1.stats.station , dat2.stats.network, dat2.stats.station,  xmldir)
+            (lat1, lon1, lat2, lon2, dist, az, baz)=get_coord_dist(dat1.stats.network,dat1.stats.station , dat2.stats.network, dat2.stats.station,  xmldir)
             
             #- Write iris metadata ================================================================
             md_iris.write(dat1.stats.station.ljust(6)+' '+dat1.stats.network.ljust(8)+' '+dat2.stats.station.ljust(6)+' '+dat2.stats.network.ljust(8)+ \
             ' '+dat1.stats.channel.ljust(8)+' '+dat2.stats.channel.ljust(8)+' '+str("%12.3f"%(-maxlag)).ljust(12)+' '+str("%8i"%cnt).ljust(8)+' '+str("%12.3f"%maxlag).ljust(12)+' '+str(maxlag*Fs*2+1).ljust(8)+ \
-            ' '+str("%11.7f"%Fs).ljust(11)+' '+str("%16.6f"%1.0).ljust(16)+' '+str("%16.6f"%-1.0).ljust(16)+' '+str("%8i"%t1).ljust(8)+' '+str("%8i"%t2).ljust(8)+' '+str("%6i"%n).ljust(6)+' '+str("%10.3f"%dist).ljust(10)+ \
-            ' '+str("%14.4f"%tslen).ljust(14)+' '+'f? '+'./'.ljust(32)+' '+(fn1+'-'+fn2+'.'+corr_type+'_stack.MSEED').ljust(48)+' '+str(632).ljust(10)+str("%17.5f"%today).ljust(17)+'\n')
+            ' '+str("%11.7f"%Fs).ljust(11)+' '+str("%16.6f"%1.0).ljust(16)+' '+str("%16.6f"%-1.0).ljust(16)+' '+t1.ljust(8)+' '+t2.ljust(8)+' '+str("%6i"%n).ljust(6)+' '+str("%10i"%int(dist)).ljust(10)+ \
+            ' '+str("%20.0f"%tslen).ljust(20)+' '+'f4 '+'./'.ljust(32)+' '+(fn1+'-'+fn2+'.'+corr_type+'_stack.'+tformat).ljust(48)+' '+str(632).ljust(10)+str("%17.5f"%today).ljust(17)+'\n')
 
             #- plot correlation function, if wanted ===============================================
 
@@ -223,16 +228,26 @@ def stack(xmlinput):
 
 
             #- open file and write correlation function
-            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'_stack.MSEED'
-            fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.MSEED'
-            fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.MSEED'
+            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'_stack.'+tformat
+            fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.'+tformat
+            fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.'+tformat
             if fn1!=fn2:
-                fileid_correlation_stack_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'_stack.MSEED'
-                fileid_coherence_stack_real_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_real.MSEED'
-                fileid_coherence_stack_imag_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_imag.MSEED'
+                fileid_correlation_stack_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'_stack.'+tformat
+                fileid_coherence_stack_real_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_real.'+tformat
+                fileid_coherence_stack_imag_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_imag.'+tformat
                 if os.path.exists(fileid_correlation_stack_rev)==True:
                     fileid_correlation_stack=fileid_correlation_stack_rev
+                    dv=fn1
+                    fn1=fn2
+                    fn2=dv
+                    dv=(lat1, lon1)
+                    (lat1, lon1)=(lat2, lon2)
+                    (lat2, lon2)=dv
+                    dv=az
+                    az=baz
+                    baz=dv
                     tr_correlation_stack.data=tr_correlation_stack.data[::-1]
+                   
                 if os.path.exists(fileid_coherence_stack_real_rev)==True:
                     fileid_coherence_stack_real=fileid_coherence_stack_real_rev
                     tr_coherence_stack_real.data=tr_coherence_stack_real.data[::-1]
@@ -245,11 +260,46 @@ def stack(xmlinput):
             if os.path.exists(fileid_correlation_stack)==True:
                 if verbose: 
                     print "Correlation stack already exists. Add to previous one."
-                tr_old=read(fileid_correlation_stack)
-                tr_correlation_stack.data=tr_correlation_stack.data+tr_old[0].data
-                tr_correlation_stack.write(fileid_correlation_stack, format="MSEED")
+                tr_old=read(fileid_correlation_stack)[0]
+                tr_correlation_stack.data=tr_correlation_stack.data+tr_old.data
+                
+                if tformat=='SAC':
+                    tr_correlation_stack.stats=tr_old.stats
+                    tr_correlation_stack.stats.sac['user0']=n
+                    tr_correlation_stack.stats.sac['user1']=tslen
+                tr_correlation_stack.write(fileid_correlation_stack, format=tformat)
             else:
-                tr_correlation_stack.write(fileid_correlation_stack, format="MSEED")
+                if tformat=='SAC':
+                    tr_correlation_stack.stats.sac={}
+                    tr_correlation_stack.stats.starttime=UTCDateTime(2000, 01, 01)-maxlag
+                    tr_correlation_stack.stats.network=dat1.stats.network
+                    tr_correlation_stack.stats.station=dat2.stats.station
+                    tr_correlation_stack.stats.channel=dat1.stats.channel
+                    
+                    tr_correlation_stack.stats.sac['b']=-maxlag
+                    tr_correlation_stack.stats.sac['e']=maxlag
+                    tr_correlation_stack.stats.sac['idep']=5
+                    tr_correlation_stack.stats.sac['stla']=lat2
+                    tr_correlation_stack.stats.sac['stlo']=lon2
+                    tr_correlation_stack.stats.sac['kevnm']=dat1.stats.station
+                    tr_correlation_stack.stats.sac['evla']=lat1
+                    tr_correlation_stack.stats.sac['evlo']=lon1
+                    tr_correlation_stack.stats.sac['dist']=dist
+                    tr_correlation_stack.stats.sac['az']=az
+                    tr_correlation_stack.stats.sac['baz']=baz
+                    tr_correlation_stack.stats.sac['kuser1']=dat2.stats.network
+                    tr_correlation_stack.stats.sac['kuser2']=dat2.stats.channel
+                    tr_correlation_stack.stats.sac['kt0']=t1
+                    tr_correlation_stack.stats.sac['kt1']=t2
+                    
+                tr_correlation_stack.write(fileid_correlation_stack, format=tformat)
+                
+                    
+                    
+                    
+                    
+                    
+                    
 
             #- real part of coherence stack
             if os.path.exists(fileid_coherence_stack_real)==True:
@@ -257,9 +307,9 @@ def stack(xmlinput):
                     print "Real part of coherence stack already exists. Add to previous one."
                 tr_old=read(fileid_coherence_stack_real)
                 tr_coherence_stack_real.data=tr_coherence_stack_real.data+tr_old[0].data
-                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")   
+                tr_coherence_stack_real.write(fileid_coherence_stack_real, format=tformat)   
             else:
-                tr_coherence_stack_real.write(fileid_coherence_stack_real, format="MSEED")
+                tr_coherence_stack_real.write(fileid_coherence_stack_real, format=tformat)
 
             #- imaginary part of coherence stack
             if os.path.exists(fileid_coherence_stack_imag)==True:
@@ -267,9 +317,9 @@ def stack(xmlinput):
                     print "Imaginary part of coherence stack already exists. Add to previous one."
                 tr_old=read(fileid_coherence_stack_imag)
                 tr_coherence_stack_imag.data=tr_coherence_stack_imag.data+tr_old[0].data
-                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
+                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format=tformat)
             else:
-                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format="MSEED")
+                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format=tformat)
 
             #- Write time windows to a file for documentation =====================================
             #filename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
@@ -527,7 +577,8 @@ def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
         client=Client()
         stafile1=xmldir+'/'+net1+'.'+sta1+'.sta_info.xml'
         stafile2=xmldir+'/'+net2+'.'+sta2+'.sta_info.xml'
-        client.station(net, sta, filename=stafile2)
+        client.station(net1, sta1, filename=stafile1)
+        client.station(net2, sta2, filename=stafile2)
             
     try:
         inf1=rxml.read_xml(stafile1)[1]
@@ -537,10 +588,13 @@ def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
         lat2=float(inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
         lon2=float( inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
         dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
+        az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]
+        baz=gps2DistAzimuth(lat1, lon1, lat2, lon2)[2]
+        
     except IOError:
         (lat1, lon1, lat2, lon2, dist)=('?', '?','?','?','?')
     
-    return (lat1, lon1, lat2, lon2, dist)
+    return (lat1, lon1, lat2, lon2, dist, az, baz)
     
    
 
