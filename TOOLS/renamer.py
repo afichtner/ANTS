@@ -43,7 +43,7 @@ def rename_seismic_data(data,prepname,verbose, ofid):
     yr=str(t1[0:4])
     t2=endtime.strftime('%Y.%j.%H.%M.%S')
 
-    filepathnew='DATA/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format
+    filepathnew='DATA/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format
     
     #- write to file
     data.write(filepathnew,format)

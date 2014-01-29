@@ -62,11 +62,11 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
 # TAPER
 #==================================================================================================
 
-def taper(data,width,verbose,ofid):
+def taper(data,width,verbose,ofid,ttype='cosine'):
 
     if verbose==True:
         print('* taper '+str(100*width)+' percent of trace\n',file=ofid)
-    data.taper('cosine',p=width)
+    data.taper(max_percentage=width/2.0,type=ttype)
     
     return data
 

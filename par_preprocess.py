@@ -59,27 +59,33 @@ def prep(xmlinput,content=None):
     #==============================================================================================
     
     if rank==0:
+        
         inp1=rxml.read_xml(xmlinput)[1]
         if ti.testinput(inp1)==False:
-            print 'Problems in xmlinput, forced to interrupt.'
+            print 'Problems in xmlinput, forced to interrupt.' 
             return
-        
-        outdir=inp1['directories']['outdir']
-        
-        #- make target directory if it does not exist =================================================
-        if os.path.exists(outdir)==False:
-            os.mkdir(outdir)
-    
+        startyr=int(inp1['input']['startyr'][0:4])
+        endyr=int(inp1['input']['endyr'][0:4])
+        prepname=inp1['prepname']
         #- copy the input xml to the output directory for documentation ===============================
-        shutil.copy(xmlinput,outdir)
+        if os.path.exists('DATA/processed/xmlinput/proc.'+prepname+'.xml')==True:
+            print '\n\nChoose a new name or delete inputfile of the name: proc.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n'
+            return
+        else:       
+            shutil.copy(xmlinput,'DATA/processed/xmlinput/proc.'+prepname+'.xml')
+        
+        #- create yearly directories if not present===================================================
+        for i in range(startyr-1,endyr+1):
+            if os.path.exists('DATA/processed/'+str(i)+'/')==False:
+                os.mkdir('DATA/processed/'+str(i))
+                
+        
 
         #- check what input is, list input from different directories =================================
         if content==None:
-            indirs=inp1['directories']['indirs'].strip().split(' ')
-            print indirs
+            indirs=inp1['input']['indirs'].strip().split(' ')
             content=list()
             for indir in indirs:
-                print indir
                 content.extend(glob(indir+'/*'))
                
     
@@ -88,18 +94,28 @@ def prep(xmlinput,content=None):
             content=list()
             content.append(filename)
             
-            
-            
+  #==============================================================================================
+  #- All processes:
+  #- broadcast the input; and the list of files
+  #- read variables from broadcasted input
+  #==============================================================================================       
     else:
         content=list()
         inp1=list()    
-
-    #- broadcast the input; and the list of files
+       
     t1=time.time()-t0
     content=comm.bcast(content, root=0)
     inp1=comm.bcast(inp1, root=0)
     t2=time.time()-t0-t1
-
+    
+    verbose=bool(int(inp1['verbose']))
+    check=bool(int(inp1['check']))
+    prepname=inp1['prepname']
+    saveplot=bool(int(inp1['saveplot']))
+    startyr=int(inp1['input']['startyr'][0:4])
+    endyr=int(inp1['input']['endyr'][0:4])
+    ofid=open('DATA/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
+    
     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
@@ -107,17 +123,16 @@ def prep(xmlinput,content=None):
     clen=int(ceil(float(len(content))/float(size)))
     chunk=(rank*clen, (rank+1)*clen)
     mycontent=content[chunk[0]:chunk[1]]
+    if check==True:
+        mycontent=[mycontent[0]]
     t3=time.time()-t0-t2   
 
     #==================================================================================
     # Input files loop
     #==================================================================================
     
-    verbose=bool(int(inp1['verbose']))
-    outdir=inp1['directories']['outdir']
-    outfile=outdir+'/rank'+str(rank)+'.v_out'
-    ofid=open(outfile, 'w')
     
+    #- Print some nice comments to output file ----------------------------------------       
     if verbose:
         ofid.write('Time at start was '+str(t0)+'\n')
         ofid.write('Rank 0 took '+str(t1)+' seconds to read in input\n')
@@ -129,6 +144,7 @@ def prep(xmlinput,content=None):
             ofid.write(fname+'\n')
         
     for filepath in mycontent:
+        
         filename=filepath.split('/')[-1]
   
         if verbose==True:
@@ -148,6 +164,13 @@ def prep(xmlinput,content=None):
                 ofid.write('file could not be opened, skip.')
             continue
         
+        #- initialize a stream that is plotted in case check option is set
+        if check==True:
+            cstr=Stream()
+        #- initialize the stream that recollects the trace segments
+        colloc_data=Stream()
+        
+        #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if inp1['first_step']=='decimate':
@@ -166,14 +189,17 @@ def prep(xmlinput,content=None):
                 
                 for fs in new_fs:
                     data=proc.downsample(data,float(fs),verbose,ofid)
-
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
             data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,ofid)
-        n_traces=len(data)
+        if check==True:
+            n_traces=3
+        else:
+            n_traces=len(data)
         
+        #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if inp1['first_step']=='split':
@@ -186,7 +212,6 @@ def prep(xmlinput,content=None):
         if verbose==True:
             ofid.write('contains '+str(n_traces)+' trace(s)\n')
     
-        colloc_data=Stream()
         
         #==================================================================================
         # trace loop
@@ -197,6 +222,11 @@ def prep(xmlinput,content=None):
 
             trace=data[k]
             
+            if check:
+                ctr=Trace(data=trace.data)
+                ctr.stats.network='Original Data'
+                cstr.append(ctr)
+                
             if verbose==True: 
                 ofid.write('- trace '+str(k+1)+' ----------------------------------------------------\n')
     
@@ -246,7 +276,12 @@ def prep(xmlinput,content=None):
             if inp1['processing']['bandpass_1']['doit']=='1':
     
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose,ofid)
-               
+                
+                if check:
+                    ctr=Trace(data=trace.data)
+                    ctr.stats.network='After Bandpass 1'
+                    cstr.append(ctr)
+                    
             #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             if inp1['first_step']=='split':
@@ -261,19 +296,28 @@ def prep(xmlinput,content=None):
             #- remove instrument response =========================================================
     
             #ta=time.time()
-            #rn.rename_seismic_data(trace, outdir, True, verbose, ofid)
             if inp1['processing']['instrument_response']['doit']=='1':
     
                 removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose,ofid)
                 if ((True in np.isnan(trace)) or (removed==0)):
                     ofid.write('Deconvolution seems unstable! Trace discarded.')
                     continue
+                if check:
+                    ctr=Trace(data=trace.data)
+                    ctr.stats.network='After IC to '+inp1['processing']['instrument_response']['unit']
+                    cstr.append(ctr)
+                    
             #ofid.write('+++++++++ '+str(time.time()-ta)+'\n')
             #- bandpass, second stage =============================================================
     
             if inp1['processing']['bandpass_2']['doit']=='1':
     
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,ofid)
+                
+                if check:
+                    ctr=Trace(data=trace.data)
+                    ctr.stats.network='After Bandpass 2'
+                    cstr.append(ctr)
 
             #- taper edges ========================================================================
 
@@ -318,7 +362,15 @@ def prep(xmlinput,content=None):
             #======================================================================================
             # timing and storage of results
             #======================================================================================
-            
+            if check:
+                ctr=Trace(data=trace.data)
+                ctr.stats.network='After preprocessing'
+                cstr.append(ctr)
+                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+str(k)+'.'+prepname+'.png',equal_scale=False)
+                cstr.trim(endtime=cstr[0].stats.starttime+3600)
+                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+str(k)+'.'+prepname+'.1hr.png',equal_scale=False)
+                
+                
             if verbose==True:
                 t_end=time.time()
                 ofid.write('time per trace: '+str(t_end-t_start)+' s\n')
@@ -327,6 +379,8 @@ def prep(xmlinput,content=None):
             colloc_data+=trace
         
         colloc_data._cleanup()
+        
+        
         if verbose==True:
             t=time.time()-t0
             ofid.write('- rename and store ------------------------------------------------------\n')
@@ -335,7 +389,7 @@ def prep(xmlinput,content=None):
         if len(colloc_data)>0:
             if (inp1['saveprep']=='1'):
                 for k in range(len(colloc_data)):
-                    rn.rename_seismic_data(colloc_data[k], outdir, True, verbose, ofid)
+                    rn.rename_seismic_data(colloc_data[k], prepname, verbose, ofid)
                     
     ofid.close()
     

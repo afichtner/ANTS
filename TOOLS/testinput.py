@@ -5,12 +5,12 @@ def testinput(inp):
     
     niceinput=True
     
-    if len(inp['prepname'])==0:
+    if not inp['prepname']:
         print 'A valid name must be provided for this processing run.'
         niceinput=False
         return niceinput
         
-    if len(inp['comment'])==0:
+    if not inp['comment']:
         print 'Sorry, it is necessary that you provide a comment on this preprocessing run.'
         niceinput=False
         return niceinput

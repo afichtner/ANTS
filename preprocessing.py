@@ -62,17 +62,20 @@ def prep(xmlinput,content=None):
     endyr=int(inp1['input']['endyr'][0:4])
     
     if check==True or outf==True:
-        outfile=open('DATA/out/'+prepname+'.txt','w')
+        outfile=open('DATA/processed/out/proc.'+prepname+'.txt','w')
     else:
         outfile=None
     
     for i in range(startyr-1,endyr+1):
-        if os.path.exists('DATA/'+str(i)+'/')==False:
-            os.mkdir('DATA/'+str(i))
+        if os.path.exists('DATA/processed/'+str(i)+'/')==False:
+            os.mkdir('DATA/processed/'+str(i))
     
     #- copy the input xml to the output directory for documentation ===============================
-    
-    shutil.copy(xmlinput,'DATA/xmlinput/'+prepname+'.xml')
+    if os.path.exists('DATA/processed/xmlinput/proc.'+prepname+'.xml')==True:
+        print('\n\nChoose a new name or delete inputfile of the name: proc.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
+        return
+        
+    shutil.copy(xmlinput,'DATA/processed/xmlinput/proc.'+prepname+'.xml')
     
     #- check what input is, list input from different directories =================================
     if content==None:
@@ -104,9 +107,7 @@ def prep(xmlinput,content=None):
             print('===========================================================',file=outfile)
             print('* opening file: '+filepath+'\n',file=outfile)
             
-        if check:
-            cstr=Stream()
-            
+        
         #- read data
         try:
             data=read(filepath)
@@ -117,7 +118,10 @@ def prep(xmlinput,content=None):
             if verbose: print('** file could not be opened, skip.',file=outfile)
             continue
         
-        
+        #- initialize two streams: One to 'recollect' the split traces and one, only if check options is set, to collect traces at various processing steps to be plotted
+        if check:
+            cstr=Stream()
+        colloc_data=Stream()
         
         #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -166,7 +170,7 @@ def prep(xmlinput,content=None):
         if verbose==True:
             print('* contains '+str(n_traces)+' trace(s)',file=outfile)
     
-        colloc_data=Stream()
+        
         
         #==================================================================================
         # trace loop
@@ -267,7 +271,7 @@ def prep(xmlinput,content=None):
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,outfile)
                 if check:
                     ctr=Trace(data=trace.data)
-                    ctr.stats.network='After bandpass 2'
+                    ctr.stats.network='After Bandpass 2'
                     cstr.append(ctr)
                     
             #- taper edges ========================================================================
@@ -317,13 +321,14 @@ def prep(xmlinput,content=None):
                 ctr=Trace(data=trace.data)
                 ctr.stats.network='After preprocessing'
                 cstr.append(ctr)
-                cstr.plot(outfile='DATA/out/'+filepath.split('/')[-1]+'.'+prepname+'.png')
-            
+                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
+                cstr.trim(endtime=cstr[0].stats.starttime+3600)
+                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
             #merge all into final trace
             colloc_data+=trace
         
         colloc_data._cleanup()
-        print('* traces after processing are:\n',colloc_data,'\n',file=outfile)
+        print('* Done Preprocessing. Output are:\n',len(colloc_data),' traces.',file=outfile)
         
                     
                    

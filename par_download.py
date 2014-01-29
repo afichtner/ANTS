@@ -37,9 +37,10 @@ def download_fetchdata(xmlinput):
     #==============================================================================================
     if rank==0:
         dat1=rxml.read_xml(xmlinput)[1]
+        network=dat1['data']['networks'].strip().split(' ')[0]
         # storage of the data
-        targetloc=dat1['storage']['downloadloc']
-        respfileloc=dat1['storage']['respfileloc']
+        targetloc='./DATA/raw/'+network
+        respfileloc='./DATA/resp/'
         
         if os.path.isdir(targetloc)==False:
             cmd='mkdir '+targetloc
@@ -83,14 +84,15 @@ def download_fetchdata(xmlinput):
     # Directory where executable is located
     exdir=dat1['exdir']
     
-    # Storage
-    targetloc=dat1['storage']['downloadloc']
-    respfileloc=dat1['storage']['respfileloc']
-
+    
     # network, channel, location and station list
     network=dat1['data']['networks'].strip().split(' ')[0]
     channels=dat1['data']['channels'].strip().split(' ')
     locations=dat1['data']['locations'].strip().split(' ')
+    
+    # Folders
+    targetloc='./DATA/raw/'+network
+    respfileloc='./DATA/resp/'
     
     # time interval of request
     t1=dat1['time']['starttime']
