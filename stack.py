@@ -1,3 +1,4 @@
+# A script to obtain different versions of cross-correlations
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -24,10 +25,9 @@ import TOOLS.iris_meta as irme
 
 
 if __name__=='__main__':
-    import stack as st
+    import stack_mod as st
     xmlin=str(sys.argv[1])
     st.stack(xmlin)
-
 
 
 def stack(xmlinput):
@@ -46,16 +46,16 @@ def stack(xmlinput):
     inp1=inp1[1]
 
     indir=inp1['directories']['indir']
-    xmldir=inp1['directories']['xmldir']
-    outdir=inp1['directories']['outdir']
-    fformat=inp1['directories']['format']
+    #fformat=inp1['directories']['format']
     tformat=inp1['directories']['tformat'].upper()
-    if os.path.isdir(outdir)==False:
-        os.mkdir(outdir)
-        
-    verbose=bool(int(inp1['verbose']))
-    plotting=bool(int(inp1['plotting']))
+    xmldir=inp1['directories']['xmldir']
     
+    networks=inp1['selection']['network'].split(' ')
+    prepnames=inp1['selection']['prepname'].split(' ')
+    
+    verbose=bool(int(inp1['verbose']))
+    corrname=inp1['corrname']
+    check=bool(int(inp1['check']))
     
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
@@ -69,7 +69,7 @@ def stack(xmlinput):
     mix_channels=bool(int(inp1['channels']['mix_channels']))
     
     if verbose:
-        print 'startday = ',  startday
+        print 'startday = ', startday
         print 'endday = ',  endday
         print 'Window length = ', win_len, ' s'
         print 'Overlap = ', olap, ' s'
@@ -82,25 +82,41 @@ def stack(xmlinput):
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
     
+   
+    #- copy the input xml to the output directory for documentation
+    if os.path.exists('DATA/correlations/xmlinput/corr.'+corrname+'.xml')==True:
+        print '\n\nChoose a new name or delete inputfile of the name: corr.'+corrname+'.xml in ./DATA/correlations/xmlinput. Be aware this may cause chaos. Aborting.\n\n'
+        return
+    else:
+        shutil.copy(xmlinput,'DATA/correlations/xmlinput/corr.'+corrname+'.xml')
+    
+    #- Create the output directories, if necessary
+    sds=startday.strftime('%Y.%j')
+    eds=endday.strftime('%Y.%j')
+  
+    if os.path.exists('DATA/correlations/'+sds[0:4]+'/')==False:
+        os.mkdir('DATA/correlations/'+sds[0:4])
+        os.mkdir('DATA/correlations/'+sds[0:4]+'/metadata')
+        os.mkdir('DATA/correlations/'+sds[0:4]+'/stacks')
+        os.mkdir('DATA/correlations/'+sds[0:4]+'/ps')
+        
+    outdir='DATA/correlations/'+sds[0:4]
+          
     #- One common metadata table, iris style
-    md_iris=open(outdir+'/correlation_project.txt', 'w')
+    md_iris=open(outdir+'/metadata/'+corrname+'.txt', 'w')
     cnt=0
     
-    
-    #- copy the input xml to the output directory for documentation
-    shutil.copy(xmlinput,outdir)
-    #copy also the preprocessing input to the output directory
-    #This overwrites the first file if they are called the same! Dont call them the same!
-    xmlfile=glob(indir+"/*.xml")
-    for f in xmlfile:
-        shutil.copy(f, outdir)
-    
-
+      
     #- list of available data files (should be one per channel)
-    record_list=os.listdir(indir+'/')
-
+    record_list=[]
+    for network in networks:
+        for prepname in prepnames:
+            for channel in channels:
+                record_list+=glob(indir+'/*'+network+'*'+channel+'*'+prepname+'*')
+           
     #- Find out what are the relevant combinations. This returns a list of tuples with identifiers that are to be correlated (e. g. ('G.ECH.00.BHE','G.CAN.00.BHE'))
-    corr_ch=find_pairs(record_list,fformat, channels,mix_channels,win_len, verbose)
+    corr_ch=find_pairs(record_list,mix_channels,win_len,verbose)
+    print corr_ch
 
     if verbose:
         print 'number of potential correlations: '+str(len(corr_ch))
@@ -123,8 +139,8 @@ def stack(xmlinput):
             
         #- Open files. Assumes one trace per file, which should be done by the preprocessing
         try:
-            dat1=read(indir+'/'+chpair[0])[0]
-            dat2=read(indir+'/'+chpair[1])[0]
+            dat1=read(chpair[0])[0]
+            dat2=read(chpair[1])[0]
         except (IOError,TypeError):
             if verbose: print 'One or both files not found. Skipping this correlation.'
             continue
@@ -135,7 +151,7 @@ def stack(xmlinput):
             continue
             
         #- Compute stacked correlations ===========================================================
-        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,  verbose)
+        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, verbose)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
@@ -146,10 +162,7 @@ def stack(xmlinput):
 
         fn1=dat1.stats.network+'.'+dat1.stats.station+'.'+dat1.stats.location+'.'+dat1.stats.channel
         fn2=dat2.stats.network+'.'+dat2.stats.station+'.'+dat2.stats.location+'.'+dat2.stats.channel
-        mdfilename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
-        mdfilename_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'.metadata'
-        if os.path.exists(mdfilename_rev)==True:
-            mdfilename=mdfilename_rev
+        mdfilename=outdir+'/metadata/'+fn1+'.'+fn2+'.'+corr_type+'.'+corrname+'.md'
         
         if os.path.exists(mdfilename)==False:
             fid=open(mdfilename,'w')
@@ -165,9 +178,7 @@ def stack(xmlinput):
             fid.write('= contributing time windows ==========================\n')
             fid.close()
         
-        
-        
-            
+       
 
         
         #==========================================================================================
@@ -193,7 +204,7 @@ def stack(xmlinput):
 
             #- plot correlation function, if wanted ===============================================
 
-            if plotting:
+            if check:
                 t=np.linspace(-maxlag*dat1.stats.sampling_rate,maxlag*dat1.stats.sampling_rate, len(correlation_stack))
                 plt.subplot(311)
                 plt.plot(correlation_stack)
@@ -228,34 +239,10 @@ def stack(xmlinput):
 
 
             #- open file and write correlation function
-            fileid_correlation_stack=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'_stack.'+tformat
-            fileid_coherence_stack_real=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_real.'+tformat
-            fileid_coherence_stack_imag=outdir+'/'+fn1+'-'+fn2+'.coherence_stack_imag.'+tformat
-            if fn1!=fn2:
-                fileid_correlation_stack_rev=outdir+'/'+fn2+'-'+fn1+'.'+corr_type+'_stack.'+tformat
-                fileid_coherence_stack_real_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_real.'+tformat
-                fileid_coherence_stack_imag_rev=outdir+'/'+fn2+'-'+fn1+'.coherence_stack_imag.'+tformat
-                if os.path.exists(fileid_correlation_stack_rev)==True:
-                    fileid_correlation_stack=fileid_correlation_stack_rev
-                    dv=fn1
-                    fn1=fn2
-                    fn2=dv
-                    dv=(lat1, lon1)
-                    (lat1, lon1)=(lat2, lon2)
-                    (lat2, lon2)=dv
-                    dv=az
-                    az=baz
-                    baz=dv
-                    tr_correlation_stack.data=tr_correlation_stack.data[::-1]
-                   
-                if os.path.exists(fileid_coherence_stack_real_rev)==True:
-                    fileid_coherence_stack_real=fileid_coherence_stack_real_rev
-                    tr_coherence_stack_real.data=tr_coherence_stack_real.data[::-1]
-                if os.path.exists(fileid_coherence_stack_imag_rev)==True:
-                    fileid_coherence_stack_imag=fileid_coherence_stack_imag_rev
-                    tr_coherence_stack_imag.data=tr_coherence_stack_imag.data[::-1]
-                    
-
+            fileid_correlation_stack=outdir+'/stacks/'+fn1+'.'+fn2+'.'+corr_type+'.'+corrname+'.'+tformat
+            fileid_coherence_stack_real=outdir+'/ps/'+fn1+'.'+fn2+'.psr.'+corrname+'.'+tformat
+            fileid_coherence_stack_imag=outdir+'/ps/'+fn1+'.'+fn2+'.psi.'+corrname+'.'+tformat
+            
             #- linear stack
             if os.path.exists(fileid_correlation_stack)==True:
                 if verbose: 
@@ -293,13 +280,7 @@ def stack(xmlinput):
                     tr_correlation_stack.stats.sac['kt1']=t2
                     
                 tr_correlation_stack.write(fileid_correlation_stack, format=tformat)
-                
-                    
-                    
-                    
-                    
-                    
-                    
+     
 
             #- real part of coherence stack
             if os.path.exists(fileid_coherence_stack_real)==True:
@@ -327,13 +308,13 @@ def stack(xmlinput):
             for window in windows:
                fid.write(str(window[0].year)+' '+str(window[0].month)+' '+str(window[0].day)+' '+str(window[0].hour)+' '+str(window[0].minute)+' '+str(window[0].second)+', '+str(window[1].year)+' '+str(window[1].month)+' '+str(window[1].day)+' '+str(window[1].hour)+' '+str(window[1].minute)+' '+str(window[1].second)+'\n')
             fid.close()
-    irme.write_stationlst(outdir, xmldir, outdir)
+    irme.write_stationlst(outdir+'/stacks/', xmldir, outdir+'/metadata/',corrname)
 
 #==================================================================================================
 # find pairs of recordings
 #==================================================================================================
 
-def find_pairs(record_list,format,channels,mix_channels,win_len,verbose):
+def find_pairs(record_list,mix_channels,win_len,verbose):
     
     """
     Find pairs of recordings with overlapping time windows.
@@ -341,8 +322,7 @@ def find_pairs(record_list,format,channels,mix_channels,win_len,verbose):
     ccpairs=find_pairs(record_list,channels,mix_channels):
 
     record_list:    list of seismogram files following the naming convention network.station.location.channel
-    format:         string specifying the file format, mseed/sac
-    channels:       list of channels to be considered, e.g. ['BHZ','LHE']
+                    (as their names are in the input directory)
     mix_channels:   boolean parameter determining if pairs are allowed to have different channels
     win_len:        length of the time windows to be correlated in seconds, used to check minimum length of traces
 
@@ -351,13 +331,9 @@ def find_pairs(record_list,format,channels,mix_channels,win_len,verbose):
     """
 
     ccpairs=[]
-    format=re.compile(format, re.I)
-    
     for i in range(len(record_list)):
         for j in range(len(record_list)):
             if i<j: continue
-            if format.search(record_list[i]) is None: continue
-
             #- get station and channel names, as well as start and end times ----------------------
 
             #- stations
@@ -369,33 +345,36 @@ def find_pairs(record_list,format,channels,mix_channels,win_len,verbose):
             cha2=record_list[j].split('.')[3]
 
             #- times
-            t11=UTCDateTime(record_list[i].split('.')[4])
-            t12=UTCDateTime(record_list[i].split('.')[5])
-            t21=UTCDateTime(record_list[j].split('.')[4])
-            t22=UTCDateTime(record_list[j].split('.')[5])
+            t11=UTCDateTime(str(record_list[i].split('.')[4])+','+str(record_list[i].split('.')[5])+','+str(record_list[i].split('.')[6]))
+            t12=UTCDateTime(str(record_list[i].split('.')[9])+','+str(record_list[i].split('.')[10])+','+str(record_list[i].split('.')[11]))
+            t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6]))
+            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11]))
+            
+            #- check whether sequences overlap, and if not, continue
+            if t11>=t22 or t21>=t12:
+                continue
 
-            chcomb=()
-            make_pair=False
-
+        
             #- perform tests to compile the station pair list -------------------------------------
-
-            if (cha1 in channels) & (cha2 in channels) & (t12>=t11+win_len) & (t22>=t21+win_len):
+            make_pair=False
+            if (t12>=t11+win_len) & (t22>=t21+win_len):
 
                 #- if channels differ, make pair only when channel mixing is allowed
                 if (cha1!=cha2 and mix_channels):
-                    if (t12>t21) and (t11<t12):
-                        make_pair=True
+                    make_pair=True
                 #- make a pair when channels are identical
                 elif (cha1==cha2):
-                    if (t12>t21) and (t11<t12):
-                        make_pair=True
+                    make_pair=True
 
             #- add to the list of pairs -----------------------------------------------------------
     
             if make_pair:
-                chcomb=(record_list[i],record_list[j])
-                ccpairs.append(chcomb)
-                    
+                
+                if record_list[i][0]<record_list[j][0]:
+                    ccpairs.append((record_list[i],record_list[j]))
+                else:
+                    ccpairs.append((record_list[j],record_list[i]))
+                 
     return ccpairs
     
     
@@ -567,7 +546,7 @@ def wl_adjust(win_len, Fs, verbose):
 #==================================================================================================
 # Get the station coordinates and distance
 #==================================================================================================
-from obspy.iris import Client
+from obspy.fdsn import Client
 from obspy.core.util.geodetics import gps2DistAzimuth
 def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
     try:
@@ -575,18 +554,15 @@ def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
         stafile2=glob(xmldir+'/'+net2+'.'+sta2+'*')[0]
     except IndexError:
         client=Client()
-        stafile1=xmldir+'/'+net1+'.'+sta1+'.sta_info.xml'
-        stafile2=xmldir+'/'+net2+'.'+sta2+'.sta_info.xml'
-        client.station(net1, sta1, filename=stafile1)
-        client.station(net2, sta2, filename=stafile2)
+        stafile1=xmldir+'/'+net1+'.'+sta1+'.xml'
+        stafile2=xmldir+'/'+net2+'.'+sta2+'.xml'
+        client.get_stations(net1, sta1, filename=stafile1)
+        client.get_stations(net2, sta2, filename=stafile2)
             
     try:
-        inf1=rxml.read_xml(stafile1)[1]
-        inf2=rxml.read_xml(stafile2)[1]
-        lat1=float(inf1['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
-        lon1=float(inf1['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
-        lat2=float(inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lat'])
-        lon2=float( inf2['{http://www.data.scec.org/xml/station/}Network']['{http://www.data.scec.org/xml/station/}Station']['{http://www.data.scec.org/xml/station/}StationEpoch']['{http://www.data.scec.org/xml/station/}Lon'])
+        (staname1,lat1,lon1)=rxml.find_coord(stafile1)
+        (staname2,lat2,lon2)=rxml.find_coord(stafile1)
+    
         dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
         az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]
         baz=gps2DistAzimuth(lat1, lon1, lat2, lon2)[2]

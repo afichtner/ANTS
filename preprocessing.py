@@ -23,7 +23,7 @@ import TOOLS.psd_estimate as psd
 
 
 if __name__=='__main__':
-    import preprocessing_mod as p
+    import preprocessing as p
     xmlin=str(sys.argv[1])
     print('XML input file: '+ xmlin,file=None)
     p.prep(xmlin)
