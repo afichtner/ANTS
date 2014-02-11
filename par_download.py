@@ -120,6 +120,6 @@ def download_fetchdata(xmlinput):
                 if station=='': continue
                 #-Formulate a polite request
                 filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+' -S '+station+' -L '+location + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
                 if v: print reqstring
                 os.system(reqstring)
