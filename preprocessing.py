@@ -93,7 +93,7 @@ def prep(xmlinput,content=None):
         
     #- If only a check run is performed, then only three files are preprocessed
     if check:
-        content=[content[0],content[1],content[len(content)-1]]
+        content=[content[0],content[1],content[2],content[len(content)-2],content[len(content)-1]]
         
    
     #==================================================================================
@@ -126,11 +126,6 @@ def prep(xmlinput,content=None):
         #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         if inp1['first_step']=='decimate':
-            #- taper edges ========================================================================
-    
-#            if inp1['processing']['taper']['doit']=='1':
-#                data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose)
-                
             #- trim ===============================================================================
             
             if inp1['processing']['trim']=='1':
@@ -140,10 +135,8 @@ def prep(xmlinput,content=None):
             
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
-                #data.filter('lowpassCheby2', freq=float(new_fs[-1])*0.25, maxorder=8)
-                data=proc.lowpass(data,4,float(new_fs[-1])*0.2,verbose,outfile)
-                
                 for fs in new_fs:
+                    data=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,outfile)
                     data=proc.downsample(data,float(fs),verbose,outfile)
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
@@ -152,7 +145,11 @@ def prep(xmlinput,content=None):
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
             data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,outfile)
-        n_traces=len(data)
+        
+        if check:
+            n_traces=min(3,len(data))
+        else:
+            n_traces=len(data)
         
         
         #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -180,9 +177,13 @@ def prep(xmlinput,content=None):
             trace=data[k]
             
             if check:
-                ctr=Trace(data=trace.data)
+                ctr=trace.copy()
                 ctr.stats.network='Original Data'
+                ctr.stats.station=''
+                ctr.stats.location=''
+                ctr.stats.channel=''
                 cstr.append(ctr)
+                
             
             if verbose==True: print('-----------------------------------------------------------',file=outfile)
     
@@ -205,13 +206,7 @@ def prep(xmlinput,content=None):
             #==================================================================================
             # processing (detrending, filtering, response removal, decimation)
             #==================================================================================
-                
-            #- detrend ============================================================================
-    
-#            if inp1['processing']['detrend']=='1':
-#    
-#                trace=proc.detrend(trace,verbose)
-#                
+                              
             #- demean============================================================================
     
             if inp1['processing']['demean']=='1':
@@ -236,8 +231,11 @@ def prep(xmlinput,content=None):
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose,outfile)
                 
                 if check:
-                    ctr=Trace(data=trace.data)
+                    ctr=trace.copy()
                     ctr.stats.network='After Bandpass 1'
+                    ctr.stats.station=''
+                    ctr.stats.location=''
+                    ctr.stats.channel=''
                     cstr.append(ctr)
                 
             #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -260,8 +258,11 @@ def prep(xmlinput,content=None):
                     print('** Deconvolution seems unstable! Trace discarded.',file=outfile)
                     continue
                 if check:
-                    ctr=Trace(data=trace.data)
+                    ctr=trace.copy()
                     ctr.stats.network='After IC to '+inp1['processing']['instrument_response']['unit']
+                    ctr.stats.station=''
+                    ctr.stats.location=''
+                    ctr.stats.channel=''
                     cstr.append(ctr)
               
             #- bandpass, second stage =============================================================
@@ -270,8 +271,11 @@ def prep(xmlinput,content=None):
     
                 trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,outfile)
                 if check:
-                    ctr=Trace(data=trace.data)
+                    ctr=trace.copy()
                     ctr.stats.network='After Bandpass 2'
+                    ctr.stats.station=''
+                    ctr.stats.location=''
+                    ctr.stats.channel=''
                     cstr.append(ctr)
                     
             #- taper edges ========================================================================
@@ -318,7 +322,7 @@ def prep(xmlinput,content=None):
             # plot and store results
             #======================================================================================
             if check:
-                ctr=Trace(data=trace.data)
+                ctr=trace.copy()
                 ctr.stats.network='After preprocessing'
                 cstr.append(ctr)
                 cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)

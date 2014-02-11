@@ -106,14 +106,13 @@ def testinput(inp):
         print 'Choice for bandpass_1 must be 0 or 1.'
         niceinput=False  
         
-        
-    try:
-        freq=float(inp['processing']['bandpass_1']['f_min'])
-        if freq<(10/ml):
-            print 'Warning, minimum window contains less than 10 cycles of lowest frequency.'
-            
-    except ValueError:
-        print 'Frequencies must be numbers.'
+    if inp['processing']['bandpass_1']['doit']!='0':    
+        try:
+            freq=float(inp['processing']['bandpass_1']['f_min'])
+            if freq<(10/ml):
+                print 'Warning, minimum window contains less than 10 cycles of lowest frequency.'  
+        except ValueError:
+            print 'Frequencies must be numbers.'
        
     
     if inp['processing']['decimation']['doit']!='0' and inp['processing']['decimation']['doit']!='1':

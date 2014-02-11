@@ -180,22 +180,24 @@ def prep(xmlinput,content=None):
             if inp1['processing']['trim']=='1':
                 data=proc.trim_next_sec(data,verbose, ofid)
                 
+                
             #- downsampling =======================================================================
             
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
-                #data.filter('lowpassCheby2', freq=float(new_fs[-1])*0.25, maxorder=8)
-                data=proc.lowpass(data,4,float(new_fs[-1])*0.25,verbose, ofid)
                 
                 for fs in new_fs:
+                    data=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                     data=proc.downsample(data,float(fs),verbose,ofid)
+            
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
             data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,ofid)
+        
         if check==True:
-            n_traces=3
+            n_traces=min(3,len(data))
         else:
             n_traces=len(data)
         
@@ -207,6 +209,7 @@ def prep(xmlinput,content=None):
             
             if inp1['processing']['trim']=='1':
                 data=proc.trim_next_sec(data,verbose,ofid)
+            
         #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  
         
         if verbose==True:
@@ -282,15 +285,6 @@ def prep(xmlinput,content=None):
                     ctr.stats.network='After Bandpass 1'
                     cstr.append(ctr)
                     
-            #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            if inp1['first_step']=='split':
-            #- downsampling =======================================================================
-            
-                if inp1['processing']['decimation']['doit']=='1':
-                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose,ofid)
-                
-            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             
                 
             #- remove instrument response =========================================================
@@ -300,13 +294,26 @@ def prep(xmlinput,content=None):
     
                 removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['waterlevel'],verbose,ofid)
                 if ((True in np.isnan(trace)) or (removed==0)):
-                    ofid.write('Deconvolution seems unstable! Trace discarded.')
+                    ofid.write('Deconvolution seems unstable or instrument response was without succes. Trace discarded.')
                     continue
                 if check:
                     ctr=Trace(data=trace.data)
                     ctr.stats.network='After IC to '+inp1['processing']['instrument_response']['unit']
                     cstr.append(ctr)
-                    
+                
+            #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            if inp1['first_step']=='split':
+            #- downsampling =======================================================================
+            
+                if inp1['processing']['decimation']['doit']=='1':
+                    new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
+                    for fs in new_fs:
+                        data=proc.downsample(data,float(fs),verbose,ofid)
+                
+            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            
+            
             #ofid.write('+++++++++ '+str(time.time()-ta)+'\n')
             #- bandpass, second stage =============================================================
     

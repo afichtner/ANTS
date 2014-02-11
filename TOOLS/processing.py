@@ -30,6 +30,8 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
     #- print information --------------------------------------------------------------------------
 
     if verbose==True:
+        if new_length_in_sec!=length_in_sec:
+            print('* window length adjusted for fft use\n',file=ofid)
         print('* split into traces of '+str(new_length_in_sec)+' s length\n',file=ofid)
             
     s_new=Stream()
@@ -104,7 +106,7 @@ def demean(data,verbose, ofid):
 def bandpass(data,corners,f_min,f_max,verbose, ofid):
     
     if verbose==True: 
-        print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz\n',file=ofid)
+        print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz with '+str(corners)+'th order\n',file=ofid)
         
     data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
     
@@ -353,9 +355,7 @@ def downsample(data, Fsnew, verbose, ofid):
         Fs=float(data[0].stats.sampling_rate)
     
     Fsnew=float(Fsnew)
-    f_max=Fsnew/4
     
-    data_new=data.copy()
 
     #- Check if data already have the desired sampling rate =======================================
 
@@ -368,16 +368,16 @@ def downsample(data, Fsnew, verbose, ofid):
     else:
         
         dec=int(Fs/Fsnew)
-        data_new.decimate(dec, no_filter=True)
+        data.decimate(dec, no_filter=False)
         
         try:
-            tl=len(data_new.data)
+            tl=len(data.data)
         except AttributeError:
-            tl=len(data_new[0].data)
+            tl=len(data[0].data)
         
         if verbose==True:
             print('* downsampling by factor '+str(dec)+', length of new trace: '+str(tl)+'\n',file=ofid)
 
-    return data_new
+    return data
     
     
