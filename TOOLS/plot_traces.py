@@ -1,56 +1,52 @@
 #Plot several preprocessed traces in a directory for convenient short check
 import obspy as obs
-import os
+from glob import glob
 
 
-def plot_traces(indir, num_traces=None):
+def plot_traces(indir,keyw='*',num_traces=10):
+    """
+    Little convenience function to obspy-plot all the traces in a directory the name of which contains the key expression keyw.
+    indir: Directory where to look for traces
+    keyw: string, an expression to filter by
+    num_traces: How many traces should be plotted in one panel
+    """
     
-    files=os.listdir(indir)
+    files=glob(indir+'/*'+keyw+'*')
     stream=obs.Stream()
-    
-    cnt=1
+    legstr=['...']
+    cnt=0
     
     for file in files:
         
-        if type(num_traces)==int:
-            if cnt==num_traces:
-                try:
-                    stream.plot()
-                except ValueError:
-                    print 'WTF?'
-                stream.clear()
-                cnt=1
-                continue
-   
+        if cnt<num_traces:
+           try:
+               stre=obs.read(file)
+               print stre
+               
+               if len(stream)==0:
+                   stre[0].stats.channel+='.'+str(cnt)+str(stre[0].stats.starttime.strftime('.%Y.%j'))
+                   stream=stre
+                   cnt+=1
+                   
+               else: 
+                   for tr in stre:
+                 
+                       tr.stats.channel+='.'+str(cnt)+str(tr.stats.starttime.strftime('.%Y.%j'))
+                       tr.stats.starttime=stream[0].stats.starttime
+                       stream.append(tr)
+                       
+                       cnt+=1
+                   
+
+           except IOError, TypeError:
+               print 'Cannot read file.'
+               continue
+               
+        elif cnt==num_traces:            
+           stream.plot(equal_scale=False)
+           stream=obs.Stream()
+           cnt=0
+           
+        continue
         
-        try:
-            str=obs.read(os.path.join(indir+file))
-            print str[0]
-            
-            if len(stream)==0: 
-                stream=str
-                
-            elif (str[0].stats.station==stream[0].stats.station):
-                stream.append(str[0])
-                
-            else:
-                try:
-                    stream.plot()
-                except ValueError:
-                    print 'WTF?'
-                stream=str
-            
-            cnt+=1
-            
-        except (IOError, TypeError):
-            print 'Cannot read file.'
-            try:
-                stream.plot()
-            except ValueError, IndexError:
-                print 'WTF?'
-            stream.clear()
-            
-            
-            continue
-            
    

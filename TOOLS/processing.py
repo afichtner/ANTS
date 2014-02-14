@@ -19,20 +19,6 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
     Split an ObsPy stream object with multiple traces into a stream with traces of a predefined
     maximum length.
     """
-
-    #- compute length of segments that produces a number of samples close to 2**n -----------------
-
-    power=np.floor(np.log2(length_in_sec*s[0].stats.sampling_rate))
-    n_samples=2**power
-
-    new_length_in_sec=n_samples*s[0].stats.delta
-
-    #- print information --------------------------------------------------------------------------
-
-    if verbose==True:
-        if new_length_in_sec!=length_in_sec:
-            print('* window length adjusted for fft use\n',file=ofid)
-        print('* split into traces of '+str(new_length_in_sec)+' s length\n',file=ofid)
             
     s_new=Stream()
     
@@ -46,15 +32,8 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
         #- march through the trace until the endtime is reached
         while start<s[k].stats.endtime-min_len:
             s_copy=s[k].copy()
-            s_copy.trim(start,start+new_length_in_sec-1/(s[k].stats.sampling_rate))
-            
-            if (s_copy.stats.endtime-s_copy.stats.starttime)<min_len:
-                if verbose==True:
-                    print('** trace too short, discarded\n',file=ofid)
-            else:
-                s_new.append(s_copy)
-           
-            
+            s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
+            s_new.append(s_copy)
             start+=length_in_sec
 
     return s_new
@@ -106,7 +85,8 @@ def demean(data,verbose, ofid):
 def bandpass(data,corners,f_min,f_max,verbose, ofid):
     
     if verbose==True: 
-        print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz with '+str(corners)+'th order\n',file=ofid)
+        print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz\n',file=ofid)
+        print ('* filter order '+str(corners)+' \n',file=ofid)
         
     data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
     
@@ -220,60 +200,6 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid):
         success=0
 
     return success, data
-
-
-
-#==================================================================================================
-# REMOVE INSTRUMENT RESPONSE
-#==================================================================================================
-
-#def ic_sac(data,respdir,unit,verbose):
-#    import subprocess
-#
-#   """
-#   Remove instrument response located in respdir from data. Unit is displacement (DIS), velocity (VEL) or acceleration (ACC).
-#
-#   Return 1 if successful. Return 0 otherwise.
-#   """
-#
-#   #- RESP file ==================================================================================
-#   resp_file=respdir+'/RESP.'+data.stats.network+'.'+data.stats.station+'.'+data.stats.location+'.'+data.stats.channel
-#
-#   if verbose==True: print '* RESP file: '+resp_file
-#
-#   #- try to remove response if the RESP file exists =============================================
-#
-#   if os.path.exists(resp_file):
-#
-#       success=1
-#
-#       if verbose==True: print '* remove instrument response, unit='+unit
-#
-#        p = subprocess.Popen(['sac'],
-#                             stdout = subprocess.PIPE,
-#                             stdin  = subprocess.PIPE,
-#                             stderr = subprocess.STDOUT )
-#                             
-#        s = \
-#        'setbb resp ../Resp/' + resp_file.split('/')[-1] + '\n' + \
-#        'read ../BH_RAW/' + trace.split('/')[-1] + '\n' + \
-#        'rtrend' + '\n' + \
-#        'taper' + '\n' + \
-#        'rmean' + '\n' + \
-#        'trans from evalresp fname %resp to ' + unit_sac + ' freqlim ' + freqlim + '\n' + \
-#        'write ' + unit.lower() + '.' + trace_info[1] + '.' + trace_info[2] + \
-#                                            '.' + trace_info[3] + '\n' + \
-#        'quit\n'
-#
-#
-#   #- response cannot be removed because RESP file does not exist
-#
-#   else:
-#       if verbose==True: print '** could not find correct RESP file'
-#       success=0
-#
-#   return success, data
-#
 
 
 

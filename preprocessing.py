@@ -91,9 +91,9 @@ def prep(xmlinput,content=None):
         content=list()
         content.append(filename)
         
-    #- If only a check run is performed, then only three files are preprocessed
+    #- If only a check run is performed, then only a couple of files are preprocessed
     if check:
-        content=[content[0],content[1],content[2],content[len(content)-2],content[len(content)-1]]
+        content=[content[0],content[1],content[len(content)-2],content[len(content)-1]]
         
    
     #==================================================================================
@@ -118,9 +118,8 @@ def prep(xmlinput,content=None):
             if verbose: print('** file could not be opened, skip.',file=outfile)
             continue
         
-        #- initialize two streams: One to 'recollect' the split traces and one, only if check options is set, to collect traces at various processing steps to be plotted
-        if check:
-            cstr=Stream()
+        #- initialize stream to 'recollect' the split traces
+
         colloc_data=Stream()
         
         #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -136,7 +135,7 @@ def prep(xmlinput,content=None):
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
                 for fs in new_fs:
-                    data=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,outfile)
+                    data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose,outfile)
                     data=proc.downsample(data,float(fs),verbose,outfile)
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
@@ -182,7 +181,7 @@ def prep(xmlinput,content=None):
                 ctr.stats.station=''
                 ctr.stats.location=''
                 ctr.stats.channel=''
-                cstr.append(ctr)
+                cstr=Stream(ctr)
                 
             
             if verbose==True: print('-----------------------------------------------------------',file=outfile)

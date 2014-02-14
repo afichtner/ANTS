@@ -25,12 +25,14 @@ import TOOLS.iris_meta as irme
 
 
 if __name__=='__main__':
-    import stack_mod as st
+    import stack as st
     xmlin=str(sys.argv[1])
     st.stack(xmlin)
 
 
 def stack(xmlinput):
+    
+    
 
     """
     A routine to calculate and stack cross-correlations/phase cross-correlations.
@@ -109,15 +111,15 @@ def stack(xmlinput):
       
     #- list of available data files (should be one per channel)
     record_list=[]
+    
     for network in networks:
         for prepname in prepnames:
             for channel in channels:
                 record_list+=glob(indir+'/*'+network+'*'+channel+'*'+prepname+'*')
-           
+       
     #- Find out what are the relevant combinations. This returns a list of tuples with identifiers that are to be correlated (e. g. ('G.ECH.00.BHE','G.CAN.00.BHE'))
     corr_ch=find_pairs(record_list,mix_channels,win_len,verbose)
-    print corr_ch
-
+   
     if verbose:
         print 'number of potential correlations: '+str(len(corr_ch))
 
@@ -204,7 +206,7 @@ def stack(xmlinput):
 
             #- plot correlation function, if wanted ===============================================
 
-            if check:
+            if check and cnt%100==0:
                 t=np.linspace(-maxlag*dat1.stats.sampling_rate,maxlag*dat1.stats.sampling_rate, len(correlation_stack))
                 plt.subplot(311)
                 plt.plot(correlation_stack)
@@ -329,7 +331,7 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
     ccpairs:        list of seismogram pairs
 
     """
-
+    
     ccpairs=[]
     for i in range(len(record_list)):
         for j in range(len(record_list)):
@@ -345,10 +347,10 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
             cha2=record_list[j].split('.')[3]
 
             #- times
-            t11=UTCDateTime(str(record_list[i].split('.')[4])+','+str(record_list[i].split('.')[5])+','+str(record_list[i].split('.')[6]))
-            t12=UTCDateTime(str(record_list[i].split('.')[9])+','+str(record_list[i].split('.')[10])+','+str(record_list[i].split('.')[11]))
-            t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6]))
-            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11]))
+            t11=UTCDateTime(str(record_list[i].split('.')[4])+','+str(record_list[i].split('.')[5])+','+str(record_list[i].split('.')[6])+':'+str(record_list[i].split('.')[7])+':'+str(record_list[i].split('.')[8]))
+            t12=UTCDateTime(str(record_list[i].split('.')[9])+','+str(record_list[i].split('.')[10])+','+str(record_list[i].split('.')[11])+':'+str(record_list[i].split('.')[12])+':'+str(record_list[i].split('.')[13]))
+            t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
+            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
             
             #- check whether sequences overlap, and if not, continue
             if t11>=t22 or t21>=t12:
@@ -549,19 +551,31 @@ def wl_adjust(win_len, Fs, verbose):
 from obspy.fdsn import Client
 from obspy.core.util.geodetics import gps2DistAzimuth
 def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
+    
+    
     try:
-        stafile1=glob(xmldir+'/'+net1+'.'+sta1+'*')[0]
-        stafile2=glob(xmldir+'/'+net2+'.'+sta2+'*')[0]
+        stafile1=glob(xmldir+'/'+net1+'.'+sta1+'*.xml')[0]
+    
     except IndexError:
+        print 'Have to go get stationxml nr. 1'
         client=Client()
         stafile1=xmldir+'/'+net1+'.'+sta1+'.xml'
+        client.get_stations(network=net1, station=sta1, filename=stafile1)
+        os.system('./TOOLS/ch_rootelem.sh '+stafile1)
+    
+    try:
+        stafile2=glob(xmldir+'/'+net2+'.'+sta2+'*.xml')[0]    
+        
+    except IndexError:
+        print 'Have to go get stationxml nr. 2'
+        client=Client()
         stafile2=xmldir+'/'+net2+'.'+sta2+'.xml'
-        client.get_stations(net1, sta1, filename=stafile1)
-        client.get_stations(net2, sta2, filename=stafile2)
+        client.get_stations(network=net2, station=sta2, filename=stafile2)
+        os.system('./TOOLS/ch_rootelem.sh '+stafile2)
             
     try:
         (staname1,lat1,lon1)=rxml.find_coord(stafile1)
-        (staname2,lat2,lon2)=rxml.find_coord(stafile1)
+        (staname2,lat2,lon2)=rxml.find_coord(stafile2)
     
         dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
         az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]

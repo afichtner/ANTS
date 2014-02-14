@@ -187,7 +187,7 @@ def prep(xmlinput,content=None):
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
                 
                 for fs in new_fs:
-                    data=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
+                    data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
                     data=proc.downsample(data,float(fs),verbose,ofid)
             
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
