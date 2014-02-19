@@ -4,6 +4,8 @@ import os
 import sys
 import shutil
 import download_fetchdata as fd
+import antconfig as cfg
+
 
 if __name__=='__main__':
     xmlin=str(sys.argv[1])
@@ -19,6 +21,8 @@ def download_fetchdata(xmlinput):
     The download is based on the iris DMC FetchData script and takes as input an xml file that specifies the download parameters.
 
     """
+    
+    datadir=cfg.datadir
     
      #- read input file ============================================================================
 
@@ -57,8 +61,8 @@ def download_fetchdata(xmlinput):
     
     for network in networks:
         # storage of the data
-        targetloc='./DATA/raw/'+network
-        respfileloc='./DATA/resp/'
+        targetloc=datadir+'raw/'+network
+        respfileloc=datadir+'resp/'
         
         if os.path.isdir(targetloc)==False:
             cmd='mkdir '+targetloc
