@@ -1,5 +1,6 @@
 # setup script to create all the directories that PANOCO needs
 import os
+
 import antconfig as cfg
 
 datadir=cfg.datadir
