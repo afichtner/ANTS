@@ -61,6 +61,15 @@ def prep(xmlinput,content=None):
     startyr=int(inp1['input']['startyr'][0:4])
     endyr=int(inp1['input']['endyr'][0:4])
     
+    
+    
+    #- copy the input xml to the output directory for documentation ===============================
+    if os.path.exists('DATA/processed/xmlinput/proc.'+prepname+'.xml')==True:
+        print('\n\nChoose a new name or delete inputfile of the name: proc.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
+        return
+        
+    shutil.copy(xmlinput,'DATA/processed/xmlinput/proc.'+prepname+'.xml')
+    
     if check==True or outf==True:
         outfile=open('DATA/processed/out/proc.'+prepname+'.txt','w')
     else:
@@ -69,13 +78,6 @@ def prep(xmlinput,content=None):
     for i in range(startyr-1,endyr+1):
         if os.path.exists('DATA/processed/'+str(i)+'/')==False:
             os.mkdir('DATA/processed/'+str(i))
-    
-    #- copy the input xml to the output directory for documentation ===============================
-    if os.path.exists('DATA/processed/xmlinput/proc.'+prepname+'.xml')==True:
-        print('\n\nChoose a new name or delete inputfile of the name: proc.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
-        return
-        
-    shutil.copy(xmlinput,'DATA/processed/xmlinput/proc.'+prepname+'.xml')
     
     #- check what input is, list input from different directories =================================
     if content==None:
@@ -323,6 +325,9 @@ def prep(xmlinput,content=None):
             if check:
                 ctr=trace.copy()
                 ctr.stats.network='After preprocessing'
+                ctr.stats.station=''
+                ctr.stats.location=''
+                ctr.stats.channel=''
                 cstr.append(ctr)
                 cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
                 cstr.trim(endtime=cstr[0].stats.starttime+3600)

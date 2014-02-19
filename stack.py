@@ -58,6 +58,7 @@ def stack(xmlinput):
     verbose=bool(int(inp1['verbose']))
     corrname=inp1['corrname']
     check=bool(int(inp1['check']))
+    no_over=bool(int(inp1['no_overwrite']))
     
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
@@ -65,7 +66,7 @@ def stack(xmlinput):
     Fs=float(inp1['timethings']['Fs'])
     olap=int(inp1['timethings']['olap'])
     
-    win_len=wl_adjust(win_len, Fs, verbose)
+    #win_len=wl_adjust(win_len, Fs, verbose)
     
     channels=inp1['channels']['channel_list'].split(' ')
     mix_channels=bool(int(inp1['channels']['mix_channels']))
@@ -101,7 +102,7 @@ def stack(xmlinput):
         os.mkdir('DATA/correlations/'+sds[0:4]+'/metadata')
         os.mkdir('DATA/correlations/'+sds[0:4]+'/stacks')
         os.mkdir('DATA/correlations/'+sds[0:4]+'/ps')
-        
+      
     outdir='DATA/correlations/'+sds[0:4]
           
     #- One common metadata table, iris style
@@ -350,7 +351,7 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
             t11=UTCDateTime(str(record_list[i].split('.')[4])+','+str(record_list[i].split('.')[5])+','+str(record_list[i].split('.')[6])+':'+str(record_list[i].split('.')[7])+':'+str(record_list[i].split('.')[8]))
             t12=UTCDateTime(str(record_list[i].split('.')[9])+','+str(record_list[i].split('.')[10])+','+str(record_list[i].split('.')[11])+':'+str(record_list[i].split('.')[12])+':'+str(record_list[i].split('.')[13]))
             t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
-            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
+            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11])+':'+str(record_list[j].split('.')[12])+':'+str(record_list[j].split('.')[13]))
             
             #- check whether sequences overlap, and if not, continue
             if t11>=t22 or t21>=t12:
@@ -457,8 +458,11 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
          
             #- Perform a series of checks on the time series
             if len(tr1.data)!=len(tr2.data):
-                if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s, skipped" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
-                correlate=False
+                if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s!" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
+                if len(tr1.data)<len(tr2.data):
+                    tr2.data=tr2.data[0:len(tr1.data)]
+                else:
+                    tr1.data=tr1.data[0:len(tr2.data)]
             if len(tr1.data)==0:
                 if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
                 correlate=False

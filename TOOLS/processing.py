@@ -96,12 +96,12 @@ def bandpass(data,corners,f_min,f_max,verbose, ofid):
 # CHEBYCHEFF LOWPASS FILTER
 #==================================================================================================
 
-def antialias(data, freqmax, verbose, ofid):
+def antialias(data, freqmax, verbose, ofid=None):
     if isinstance(data,Trace):
-        zerophase_chebychev_lowpass_filter(data, freqmax, verbose)
+        zerophase_chebychev_lowpass_filter(data, freqmax, verbose,ofid)
     elif isinstance(data,Stream):
         for trace in data:
-            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose)
+            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose,ofid)
     
     return data
             
@@ -226,32 +226,20 @@ def trim_next_sec(data,verbose,ofid):
 
     if isinstance(data,Trace):
         starttime=data.stats.starttime
-        endtime=data.stats.endtime
-    
-        fullsecondtime_start=starttime.strftime('%Y%m%d%H%M%S')
-        fullsecondtime_start=UTCDateTime(fullsecondtime_start)#-10
-    
-        fullsecondtime_end=endtime.strftime('%Y%m%d%H%M%S')
-        fullsecondtime_end=UTCDateTime(fullsecondtime_end)#+10
-    
-        data.trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
-        data.trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
+        fullsecondtime_start=UTCDateTime(starttime,precision=0)
+        data.trim(starttime=fullsecondtime_start,nearest_sample=True)
         
     elif isinstance(data,Stream):
-        for k in range(len(data)):
-            starttime=data[k].stats.starttime
-            endtime=data[k].stats.endtime
-    
-            fullsecondtime_start=starttime.strftime('%Y%m%d%H%M%S')
-            fullsecondtime_start=UTCDateTime(fullsecondtime_start)#-10
-        
-            fullsecondtime_end=endtime.strftime('%Y%m%d%H%M%S')
-            fullsecondtime_end=UTCDateTime(fullsecondtime_end)#+10
-        
-            data[k].trim(starttime=fullsecondtime_start, pad=True, fill_value=0.0)
-            data[k].trim(endtime=fullsecondtime_end, pad=True, fill_value=0.0)
-
+        for tr in data:
+            starttime=tr.stats.starttime
+            fullsecondtime_start=UTCDateTime(starttime,precision=0)
+            tr.trim(starttime=fullsecondtime_start,nearest_sample=True)
+            
     return data
+            
+ 
+        
+
     
 
 
@@ -294,7 +282,8 @@ def downsample(data, Fsnew, verbose, ofid):
     else:
         
         dec=int(Fs/Fsnew)
-        data.decimate(dec, no_filter=False)
+        data=antialias(data,Fsnew*0.5,verbose,ofid)
+        data.decimate(dec, no_filter=True)
         
         try:
             tl=len(data.data)
