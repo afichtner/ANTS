@@ -1,181 +1,153 @@
-#Stacking monthly stacks....
-from obspy import read,  Trace
+#Stacking correlation windows
+
 import os
-import sys
-import re
-from shutil import copy
+import TOOLS.read_xml as rxml
+import antconfig as cfg
+
+from obspy import read,  Trace
 from glob import glob
 
-def st_res(list_dirs, fileform, outdir, verbose=False):
+def st_res(indirs, corrname, outdir,num_win, format='SAC',stackall=False,verbose=False):
     
     """
-    Cross-correlation and phase stack results from specified directories are added and saved in a new directory
-    list_dirs: list, full path all the directories to be searched (strings)
+    Cross-correlation and phase stack results from specified directories are added up to a 
+    specified correlation time length and saved in a new directory
+    indirs: python list object, containing the directories where to look for correlation files
+    corrname: string, the correlation run which to filter for
     outdir: string, name of directory to store the result in 
-    fileform: format of data files to look for (e. g. MSEED)
+    num_win: integer, number of single-window correlations that should be stacked.
+    stackall: Boolean, if False, the script exits after obtaining only one stack of the desired window length.
     """
-    #dirfile=open(list_dirs, 'r')
-    #dirs=dirfile.read().split('\n')
     
     #- output directory ======================================================
     if os.path.exists(outdir)==False:
         os.mkdir(outdir)
-    else:
-        print 'Target directory exists already! Stacks may not be added twice. Aborting.'
-        return
-        
-    #- Logfile ===============================================================
-    #logf=open(outdir+'/'+list_dirs.split('/')[-1]+'.txt', 'w')
+    #- Make sure stacks don't get added twice! If indir and outdir are not the same and files aren't reopened for stacking, this shouldnt be a problem though
+    
+    
     #- loop through the list of directories ==================================
+    #- For now I am ignoring the phase weights. Too complicated. Get there later.
     
-    for dir in list_dirs:
+    for dir in indirs:
         
-        content=os.listdir(dir)
+        pccs=glob(dir+'/*.pcc.'+corrname+'.'+format)
+        pccs.sort()
+        print pccs
         
+        print 'Number of pcc files: '
+        print len(pccs)
+        
+        cccs=glob(dir+'/*.ccc.'+corrname+'.'+format)
+        cccs.sort()
+        
+        print 'Number of ccc files: '
+        print len(cccs)
+        
+    if len(pccs)>=num_win:
+        stackup(pccs,num_win,outdir,stackall)
+        
+    if len(cccs)>=num_win:
+        stackup(cccs,num_win,outdir,stackall)
+        
+        
+        
+def stackup(filelist,num_win,outdir,stackall):
     
-    #- for each file there check if it is in other directories, too ==========
+    tcnt=0
     
-        for file in content:
-            #if verbose: print 'Opening file '+file
-            #Only start with correlation files, not metadata or coherence stacks
+    while tcnt<=len(filelist)-num_win:
+        
+        cnt=0
+    
+        print '========Stacking:=============================================================='
+        
+        
+        while cnt<num_win:
             
-            inf=file.split('.')
-            
-            #rudimentary check to exclude some files that are also there, like plot pngs
-            if 'metadata' in inf or 'MSEED' in inf:
+            try:
+                tr=read(filelist[tcnt])
                 
+                print filelist[tcnt]
                 
-                if verbose: 
-                    print '---------------------------------------------------------'
-                    print 'Stacking ', file
-                
-                infile=os.path.join(dir, file)
-                outfile=os.path.join(outdir, file)
-                
-                if os.path.exists(outfile)==False:
-                    copy(infile, outdir)
+                if cnt==0:
+                    filename=outdir+'/'+filelist[tcnt].split('/')[-1].rstrip('SAC')+str(num_win)+'.SAC'
+                    stack=tr[0]
                 else:
-                    if inf[7]=='metadata':
-                        continue
-                    
-                    elif inf[8]=='MSEED':  
-                        try:
-                            trace1=read(infile)[0]
-                            trace2=read(outfile)[0]
-                        except (IOError, TypeError):    
-                            if verbose: print 'Wrong file type. Skipping this file.'
-                            continue
-              
-                        #Add traces       
-                        trace1.data+=trace2.data
-                        try:
-                            
-                            trace1.write(outfile, format='MSEED')
-                            
-                        except NotImplementedError:
-                            print 'Warning: NonImplementedError occured.\n One or both files may contain masked array.'
-                            #logf.write('A problem occured with the stacking of '+dir+'/'+file+'\n')
-                        
-                    elif inf[8]=='metadata':
-                        #Add windows
-                        cmd=('cat '+infile+ ' | grep \'^[0-9, ]*$\'' + ' >> '+outfile)
-                        os.system(cmd)
-                        
-                        
+                    stack.data+=tr[0].data
+                cnt+=1
+                tcnt+=1
                 
-def cl_corr(indir, form, merge_loc=False, verbose=False):
-    files=glob(indir+'/*.?cc_stack.'+form)
-   
-    for file in files:
-        if verbose:
-            print '---------------------------------------------------'
+            except (IOError,TypeError):
+                print 'Some Error occured.'
+                tcnt+=1  
         
-        corrtype=file.split('/')[-1].split('.')[-2].rstrip('stack').rstrip('_')
-        corr=file.split('/')[-1].rstrip(form).rstrip('.'+corrtype+'_stack.')
-        net1=file.split('/')[-1].split('.')[0]
-        net2=file.split('/')[-1].split('.')[3].split('-')[1]
-        sta1=file.split('/')[-1].split('.')[1]
-        sta2=file.split('/')[-1].split('.')[4]
-        loc1=file.split('/')[-1].split('.')[2]
-        loc2=file.split('/')[-1].split('.')[5]
-        cha1=file.split('/')[-1].split('.')[3].split('-')[0]
-        cha2=file.split('/')[-1].split('.')[6]
-       
-        if verbose:
-            print sta1,  sta2
-        if sta1==sta2: continue
-        
-        #- If different locations should be merged, wildcard the location
-        comp=[]
-        if merge_loc==True:
-            corr_loc=net1+'.'+sta1+'.*.'+cha1+'-'+net2+'.'+sta2+'.*.'+cha2
-            corr_rev=net2+'.'+sta2+'.*.'+cha2+'-'+net1+'.'+sta1+'.*.'+cha1
-            comp+=(glob(indir+'/'+corr_loc+'.'+corrtype+'_stack.'+form))
-            comp+=(glob(indir+'/'+corr_rev+'.'+corrtype+'_stack.'+form))
+        print num_win
+        stack.data/num_win
+        stack.write(filename=filename,format='SAC')
+        if stackall==False: return()
             
-        else:
-            corr_rev=corr.split('-')[1]+'-'+corr.split('-')[0]
-            comp+=(glob(indir+'/'+corr_rev+'.'+corrtype+'_stack.'+form))
+# a very very simple get-the-convergence script, just to save some lines on plotting
+# Each stack length only contained once in the directory, not several times     
+            
+def convergetest(indir,corrname,start,dt):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from obspy.core import UTCDateTime
+    
+    
+    
+    lens=[]
+    mf=[]
+    ccoef=[]
+    
+    
+    filelist=glob(indir+'*'+corrname+'*.SAC')
+    for file in filelist:
+        lens.append(int(file.split('.')[-2]))
       
+    ref=filelist[np.argmax(lens)]
+    print 'reference: ',ref
+    
+    reftr=read(ref)[0]
+    print reftr.stats.starttime
+    print reftr.stats.endtime
+    print start+dt
+    reftr.trim(starttime=UTCDateTime(1970,01,01)+start,endtime=UTCDateTime(1970,01,01)+start+dt)
+    reftr=reftr.data
+    
+    filelist=[]
+    filelist=glob(indir+'*'+corrname+'*.SAC')
+    for file in filelist:
+        tr=read(file)[0]
+        tr.trim(starttime=UTCDateTime(1970,01,01)+start,endtime=UTCDateTime(1970,01,01)+start+dt)
+        tr=tr.data
+        #plt.plot(reftr)
+        #plt.plot(tr)
+        #plt.show()
+        mf.append(np.sum(np.power(np.abs(tr-reftr),2)))
+        ccoef.append(np.corrcoef(tr,reftr)[0,1])
+       
+    
+    plt.plot(lens,mf,'*',linewidth=2)
+    plt.xlabel('Number of time windows')
+    plt.ylabel('L2 misfit')
+    plt.show()
+    
+    plt.plot(lens,ccoef,'d',linewidth=2)
+    plt.xlabel('Number of time windows')
+    plt.ylabel('Correlation coefficient')
+    plt.show()
+    
+    
+    
+    
         
-        
-        
-        
-        
-        for file2 in comp:
-            
-            if file2==file:
-                continue
-            
-            if os.path.exists(file)==False: 
-                continue
-            
-            compname=file2.split('/')[-1].rstrip(form).rstrip('.'+corrtype+'_stack.')
-            
-            if verbose:
-                print 'Merging '+corr+' and '+compname
-            
-            #- Merge the data themselves
-            tr1=read(file)[0]
-            tr2=read(file2)[0]
-            
-            if file2.split('/')[-1].split('.')[1]==sta2:
-                tr1.data+=tr2.data[::-1]
-            elif file2.split('/')[-1].split('.')[1]==sta1:
-                tr1.data+=tr2.data
-            else:
-                print 'An Error occured. Go to lunch.'
-                continue
-                
-            tr1.write(file, form)
-            os.system('rm '+file2)
-            
-            #- Merge the coherence stacks
-            coh_re1=read(indir+'/'+corr+'.coherence_stack_real.'+form)[0]
-            coh_im1=read(indir+'/'+corr+'.coherence_stack_imag.'+form)[0]
-            
-            coh_re2=read(indir+'/'+compname+'.coherence_stack_real.'+form)[0]
-            coh_im2=read(indir+'/'+compname+'.coherence_stack_imag.'+form)[0]
-            
-            coh_re1.data+=coh_re2.data[::-1]
-            coh_im1.data+=coh_im2.data[::-1]
-            
-            coh_re1.write(indir+'/'+corr+'.coherence_stack_real.'+form, form)
-            coh_im1.write(indir+'/'+corr+'.coherence_stack_imag.'+form, form)
-            
-            os.system('rm '+indir+'/'+compname+'.coherence_stack_real.'+form)
-            os.system('rm '+indir+'/'+compname+'.coherence_stack_imag.'+form)
-            
-            #- Merge the metadata
-            md1=indir+'/'+corr+'.'+corrtype+'.metadata'
-            md2=indir+'/'+compname+'.'+corrtype+'.metadata'
-            cmd=('cat '+md2+ ' | grep \'^[0-9, ]*$\'' + ' >> '+md1)
-            os.system(cmd)
-            os.system('rm '+md2)
-         
-            
-            
-            
+    
+    
+    
+    
+    
+    
             
             
             

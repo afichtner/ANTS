@@ -88,7 +88,7 @@ def bandpass(data,corners,f_min,f_max,verbose, ofid):
         print('* bandpass between '+str(f_min)+' and '+str(f_max)+' Hz\n',file=ofid)
         print ('* filter order '+str(corners)+' \n',file=ofid)
         
-    data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=False)
+    data.filter('bandpass',freqmin=f_min, freqmax=f_max,corners=corners,zerophase=True)
     
     return data
 
@@ -102,6 +102,8 @@ def antialias(data, freqmax, verbose, ofid=None):
     elif isinstance(data,Stream):
         for trace in data:
             zerophase_chebychev_lowpass_filter(trace, freqmax, verbose,ofid)
+    if verbose: 
+        print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
     
     return data
             
@@ -137,9 +139,7 @@ def zerophase_chebychev_lowpass_filter(trace, freqmax, verbose, ofid=None):
 
     # Apply twice to get rid of the phase distortion.
     trace.data = filtfilt(b, a, trace.data)
-    if verbose: 
-        print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
-
+    
 #==================================================================================================
 # BUTTERWORTH LOWPASS FILTER
 #==================================================================================================
@@ -158,7 +158,7 @@ def lowpass(data,corners,f_max,verbose, ofid):
 # REMOVE INSTRUMENT RESPONSE
 #==================================================================================================
 
-def remove_response(data,respdir,unit,waterlevel,verbose, ofid):
+def remove_response(data,respdir,unit,frstr,waterlevel,verbose, ofid):
 
     """
     Remove instrument response located in respdir from data. Unit is displacement (DIS), velocity (VEL) or acceleration (ACC).
@@ -183,9 +183,12 @@ def remove_response(data,respdir,unit,waterlevel,verbose, ofid):
             print('* remove instrument response, unit='+unit+'\n',file=ofid)
                     
         resp_dict = {"filename": resp_file, "units": unit, "date": data.stats.starttime}
-
+        freqs=[]
+        for fr in frstr.split(' '):
+            freqs.append(float(fr))
+        print(freqs,file=None)
         try:
-            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True, simulate_sensitivity=False)
+            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True, simulate_sensitivity=False,pre_filt=tuple(freqs),pitsasim=False,sacsim=True)
         except ValueError:
             if verbose==True: 
                 print('** could not remove instrument response\n',file=ofid)

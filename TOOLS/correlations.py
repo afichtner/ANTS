@@ -1,5 +1,6 @@
 
 from obspy.core import trace
+from math import sqrt
 import numpy as np
 import time
 
@@ -56,15 +57,14 @@ def xcorrelation_td2(dat1, dat2, max_lag):
     
     xcorr_td2=np.zeros((2*max_lag+1, ))
     
-    #- loop over positive time lags
+    #- loop over time lags
     for k in range(0, max_lag+1):
-        s=np.abs(s1[k:]*s2[:(n-k)])
-        xcorr_td2[max_lag+k]=np.sum(s)
-    #- loop over negative time lags
-    for k in range(1,max_lag+1):
-        s=np.abs(s2[k:]*s1[:(n-k)])
-        xcorr_td2[max_lag-k]=np.sum(s)
-    
+        
+        xcorr_td2[max_lag+k]=np.sum(s1[k:]*s2[:(n-k)])
+        norm[max_lag+k]=sqrt(np.sum(s1[k:]))
+        xcorr_td2[max_lag-k]=np.sum(s2[k:]*s1[:(n-k)])
+        #norm[max_lag-k]
+   
     return xcorr_td2
 
 

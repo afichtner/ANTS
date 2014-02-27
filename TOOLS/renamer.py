@@ -1,5 +1,6 @@
 from __future__ import print_function
 import obspy
+import antconfig as cfg
 
 def rename_seismic_data(data,prepname,verbose, ofid):
 
@@ -13,7 +14,7 @@ def rename_seismic_data(data,prepname,verbose, ofid):
         verbose: print screen output (True)
         ofid: file id of an open file that output can be written to instead of stdout
     """
-    
+   
     #- read statistics
     if isinstance(data, obspy.Stream) and len(data)>1:
         starttime=data[0].stats.starttime
@@ -43,7 +44,7 @@ def rename_seismic_data(data,prepname,verbose, ofid):
     yr=str(t1[0:4])
     t2=endtime.strftime('%Y.%j.%H.%M.%S')
 
-    filepathnew='DATA/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format
+    filepathnew=cfg.datadir+'/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format
     
     #- write to file
     data.write(filepathnew,format)

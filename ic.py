@@ -19,17 +19,17 @@ import TOOLS.renamer as rn
 import TOOLS.testinput as ti
 from  TOOLS.plot_spectra import plotpsdwpete
 import TOOLS.psd_estimate as psd
-
+import antconfig as cfg
 
 
 if __name__=='__main__':
-    import preprocessing as p
+    import ic
     xmlin=str(sys.argv[1])
     print('XML input file: '+ xmlin,file=None)
-    p.prep(xmlin)
+    ic.ic(xmlin)
 
 
-def prep(xmlinput,content=None):
+def ic(xmlinput,content=None):
     
     """
     
@@ -44,11 +44,9 @@ def prep(xmlinput,content=None):
    
     #- read input files ===========================================================================
     
-    
-    inp1=rxml.read_xml(xmlinput)
-    inp1=inp1[1]
-        
-    if ti.testinput(inp1)==False:
+    datadir=cfg.datadir
+    inp1=rxml.read_xml(xmlinput)[1]
+    if testinput(inp1)==False:
         print('Problems in xmlinput, forced to interrupt.', file=None)
         return
     
@@ -60,24 +58,28 @@ def prep(xmlinput,content=None):
     saveplot=bool(int(inp1['saveplot']))
     startyr=int(inp1['input']['startyr'][0:4])
     endyr=int(inp1['input']['endyr'][0:4])
-    
-    
+    respdir=inp1['processing']['instrument_response']['respdir']
+    unit=inp1['processing']['instrument_response']['unit']
+    freqs=inp1['processing']['instrument_response']['freqs']
+    wl=inp1['processing']['instrument_response']['waterlevel']
+    seglen=float(inp1['processing']['split']['length_in_sec'])
+    minlen=float(inp1['quality']['min_length_in_sec'])
     
     #- copy the input xml to the output directory for documentation ===============================
-    if os.path.exists('DATA/processed/xmlinput/proc.'+prepname+'.xml')==True:
-        print('\n\nChoose a new name or delete inputfile of the name: proc.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
+    if os.path.exists(datadir+'/processed/xmlinput/ic.'+prepname+'.xml')==True:
+        print('\n\nChoose a new name or delete inputfile of the name: ic.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
         return
         
-    shutil.copy(xmlinput,'DATA/processed/xmlinput/proc.'+prepname+'.xml')
+    shutil.copy(xmlinput,datadir+'/processed/xmlinput.ic.'+prepname+'.xml')
     
     if check==True or outf==True:
-        outfile=open('DATA/processed/out/proc.'+prepname+'.txt','w')
+        outfile=open(datadir+'/processed/out/ic.'+prepname+'.txt','w')
     else:
         outfile=None
     
     for i in range(startyr-1,endyr+1):
-        if os.path.exists('DATA/processed/'+str(i)+'/')==False:
-            os.mkdir('DATA/processed/'+str(i))
+        if os.path.exists(datadir+'/processed/'+str(i)+'/')==False:
+            os.mkdir(datadir+'/processed/'+str(i))
     
     #- check what input is, list input from different directories =================================
     if content==None:
@@ -94,7 +96,7 @@ def prep(xmlinput,content=None):
         content.append(filename)
         
     #- If only a check run is performed, then only a couple of files are preprocessed
-    if check:
+    if check and len(content)>4:
         content=[content[0],content[1],content[len(content)-2],content[len(content)-1]]
         
    
@@ -137,7 +139,6 @@ def prep(xmlinput,content=None):
             if inp1['processing']['decimation']['doit']=='1':
                 new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
                 for fs in new_fs:
-                     #data=proc.taper(data,float(inp1['processing']['taper']['taper_width']),verbose,outfile)
                     data=proc.downsample(data,float(fs),verbose,outfile)
         #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
@@ -145,7 +146,7 @@ def prep(xmlinput,content=None):
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
-            data=proc.split_traces(data,float(inp1['processing']['split']['length_in_sec']),float(inp1['quality']['min_length_in_sec']),verbose,outfile)
+            data=proc.split_traces(data,seglen,minlen,verbose,outfile)
         
         if check:
             n_traces=min(3,len(data))
@@ -232,20 +233,6 @@ def prep(xmlinput,content=None):
                     cstr.append(ctr)
             
           
-            #- bandpass, first stage ==============================================================
-    
-            if inp1['processing']['bandpass_1']['doit']=='1':
-    
-                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_1']['corners']),float(inp1['processing']['bandpass_1']['f_min']),float(inp1['processing']['bandpass_1']['f_max']),verbose,outfile)
-                
-                if check:
-                    ctr=trace.copy()
-                    ctr.stats.network='After Bandpass 1'
-                    ctr.stats.station=''
-                    ctr.stats.location=''
-                    ctr.stats.channel=''
-                    cstr.append(ctr)
-                
             #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             if inp1['first_step']=='split':
@@ -261,89 +248,135 @@ def prep(xmlinput,content=None):
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
-                removed,trace=proc.remove_response(trace,inp1['processing']['instrument_response']['respdir'],inp1['processing']['instrument_response']['unit'],inp1['processing']['instrument_response']['freqs'],inp1['processing']['instrument_response']['waterlevel'],verbose,outfile)
+                removed,trace=proc.remove_response(trace,respdir,unit,freqs,wl,verbose,outfile)
                 if True in np.isnan(trace):
                     print('** Deconvolution seems unstable! Trace discarded.',file=outfile)
                     continue
                 if check:
                     ctr=trace.copy()
-                    ctr.stats.network='After IC to '+inp1['processing']['instrument_response']['unit']
+                    ctr.stats.network='After IC to '+unit
                     ctr.stats.station=''
                     ctr.stats.location=''
                     ctr.stats.channel=''
                     cstr.append(ctr)
               
-            #- bandpass, second stage =============================================================
-    
-            if inp1['processing']['bandpass_2']['doit']=='1':
-    
-                trace=proc.bandpass(trace,int(inp1['processing']['bandpass_2']['corners']),float(inp1['processing']['bandpass_2']['f_min']),float(inp1['processing']['bandpass_2']['f_max']),verbose,outfile)
-                if check:
-                    ctr=trace.copy()
-                    ctr.stats.network='After Bandpass 2'
-                    ctr.stats.station=''
-                    ctr.stats.location=''
-                    ctr.stats.channel=''
-                    cstr.append(ctr)
-                    
-            #- taper edges ========================================================================
-    
-            if inp1['processing']['taper']['doit']=='1':
-    
-                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,outfile)
-               
-            #======================================================================================
-            # normalisations (whitening, averages, ...)
-            #======================================================================================
-    
-            #- one-bit normalisation ==============================================================
-    
-            if inp1['normalisation']['onebit']=='1':
-            
-                trace=nrm.onebit(trace,verbose,outfile)
-    
-            #- rms clipping =======================================================================
-    
-            if inp1['normalisation']['rms_clipping']=='1':
-            
-                trace=nrm.clip(trace,verbose,outfile)
-    
-            #- running average normalisation ======================================================
-    
-            if inp1['normalisation']['ram_normal']['doit']=='1':
-    
-                trace=nrm.ram_normal(trace,float(inp1['normalisation']['ram_normal']['window_length']),verbose,outfile)
-    
-            #- iterative clipping above a multiple of the rma (waterlevel normalisation) ==========
-    
-            if inp1['normalisation']['waterlevel']['doit']=='1':
-    
-                trace=nrm.waterlevel(trace,float(inp1['normalisation']['waterlevel']['level']),verbose,outfile)
-    
-            #- spectral whitening =================================================================
-    
-            if inp1['normalisation']['whitening']['doit']=='1':
-    
-                trace=nrm.whiten(trace,float(inp1['normalisation']['whitening']['smoothing']),verbose,outfile)
-            
-            #======================================================================================
-            # plot and store results
-            #======================================================================================
+         
             if check:
-                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
+                cstr.plot(outfile=datadir+'/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
                 cstr.trim(endtime=cstr[0].stats.starttime+3600)
-                cstr.plot(outfile='DATA/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
+                cstr.plot(outfile=datadir+'/processed/out/'+filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
             #merge all into final trace
             colloc_data+=trace
         
         colloc_data._cleanup()
-        #print('* Done Preprocessing. Output are:\n',len(colloc_data),' traces.',file=outfile)
-        
-                    
-                   
+                  
         if (inp1['saveprep']=='1'):
             for k in range(len(colloc_data)):
                 if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1',outfile):
                     rn.rename_seismic_data(colloc_data[k],prepname,verbose,outfile)
     if outfile:
-        outfile.close()                  
+        outfile.close()
+        
+        
+def testinput(inp):
+    niceinput=True
+    
+    if not inp['prepname']:
+        print 'A valid name must be provided for this processing run.'
+        niceinput=False
+        
+    if not inp['comment']:
+        print 'It is necessary that you provide a comment on this preprocessing run.'
+        niceinput=False
+        
+    
+    if inp['verbose']!='1' and inp['verbose']!='0':
+        print 'Verbose must be 1 or 0.'
+        niceinput=False
+        
+    if inp['check']!='1' and inp['check']!='0':
+        print 'check must be 1 or 0.'
+        niceinput=False
+        
+    try:
+        sm=int(inp['input']['startyr'])
+        if sm<1970:
+            print 'Start year must be format YYYY, no earlier than 1970.'
+            niceinput=False
+         
+    except ValueError:
+        print 'Start year must be an integer, format YYYY.'
+        niceinput=False
+       
+        
+    try:
+        em=int(inp['input']['endyr'])
+        if em<1970:
+            print 'End year year must be format YYYY, no earlier than 1970.'
+            niceinput=False
+            
+    
+    except ValueError:
+        print 'End year must be an integer, format YYYY.'
+        niceinput=False
+        
+    try:
+        ml=int(inp['quality']['min_length_in_sec'])
+    except ValueError:
+        print 'min_length_in_sec must be a number.'
+        niceinput=False
+       
+    if inp['first_step']!='split' and inp['first_step']!='decimate':
+        print 'Invalid choice for first_step: Must be split or decimate.'
+        niceinput=False
+        
+    
+    if inp['processing']['split']['doit']!='0' and inp['processing']['split']['doit']!='1':
+        print 'Choice for split must be 0 or 1.'
+        niceinput=False
+    
+    try:
+        int(inp['processing']['split']['length_in_sec'])
+    except ValueError:
+        print 'length_in_sec must be a number.'
+        niceinput=False
+        
+        
+    if inp['processing']['detrend']!='0' and inp['processing']['detrend']!='1':
+        print 'Choice for detrend must be 0 or 1.'
+        niceinput=False    
+        
+        
+    if inp['processing']['demean']!='0' and inp['processing']['demean']!='1':
+        print 'Choice for demean must be 0 or 1.'
+        niceinput=False
+
+     
+    if inp['processing']['trim']!='0' and inp['processing']['trim']!='1':
+        print 'Choice for trim must be 0 or 1.'
+        niceinput=False  
+    
+    if inp['processing']['taper']['doit']!='0' and inp['processing']['taper']['doit']!='1':
+        print 'Choice for taper must be 0 or 1.'
+        niceinput=False
+    
+    try:
+        tw=float(inp['processing']['taper']['taper_width'])
+    except ValueError:
+        print 'taper width must be a number.'
+        niceinput=False
+
+    
+    if inp['processing']['decimation']['doit']!='0' and inp['processing']['decimation']['doit']!='1':
+        print 'Choice for decimation must be 0 or 1.'
+        niceinput=False
+        
+        
+    try:
+        fs_new=inp['processing']['decimation']['new_sampling_rate'].split(' ')
+        for fs in fs_new:
+            fs=float(fs)
+    except ValueError:
+        print 'Sampling frequency must be number.'
+    
+    return niceinput

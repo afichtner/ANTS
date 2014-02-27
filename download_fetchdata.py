@@ -43,7 +43,6 @@ def download_fetchdata(xmlinput):
     # network, channel, location and station list
     networks=dat1['data']['networks'].strip().split(' ')
     channels=dat1['data']['channels'].strip().split(' ')
-    locations=dat1['data']['locations'].strip().split(' ')
     stafile=dat1['data']['stations']
 
     # time interval of request
@@ -74,24 +73,24 @@ def download_fetchdata(xmlinput):
             
             
         for channel in channels:
-            for location in locations:
-
-                if stafile=="*":
-                    filename=targetloc+'/'+network+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+ ' -L '+location+' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+            
+            
+            if stafile=="*":
+                filename=targetloc+'/'+network+'.all..'+channel+'.'+t1str+'.'+t2str+'.mseed'
+                reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                print(reqstring)
+                os.system(reqstring)
+            
+            else:
+                fh=open(stafile, 'r')
+                stations=fh.read().split('\n')
+                for station in stations:
+                    if station=='': continue
+                    print network + station + channel
+                    #-Formulate a polite request
+                    filename=targetloc+'/'+network+'.'+station+'..'+channel+'.'+t1str+'.'+t2str+'.mseed'
+                    reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
                     print(reqstring)
                     os.system(reqstring)
-
-                else:
-                    fh=open(stafile, 'r')
-                    stations=fh.read().split('\n')
-                    for station in stations:
-                        if station=='': continue
-                        print network + station + location + channel
-                        #-Formulate a polite request
-                        filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -L '+location+' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
-                        print(reqstring)
-                        os.system(reqstring)
     
         return

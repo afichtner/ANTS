@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from obspy.core import read
-from obspy.core import stream
-from obspy.core import trace
+from obspy.core import Trace, Stats
 from obspy.core import UTCDateTime
 
 
@@ -21,7 +20,7 @@ from datetime import datetime
 import TOOLS.read_xml as rxml
 import TOOLS.correlations as corr
 import TOOLS.iris_meta as irme
-
+import antconfig as cfg
 
 
 if __name__=='__main__':
@@ -43,35 +42,59 @@ def stack(xmlinput):
     # Initialize
     #==============================================================================================
     
+    #- Some global variables
+    global verbose
+    global win_len
+    #- These arent called quite as often, could go back to local vars if thats helpful
+    global corrname
+    global no_over
+    global startday
+    global endday
+    global pcc_nu
+    global maxlag
+    global olap
+    global corr_type
+    global autocorr
+    
     #- Read the input from xml file----------------------------------------------------------------
     inp1=rxml.read_xml(xmlinput)
     inp1=inp1[1]
 
     indir=inp1['directories']['indir']
-    #fformat=inp1['directories']['format']
     tformat=inp1['directories']['tformat'].upper()
     xmldir=inp1['directories']['xmldir']
-    
     networks=inp1['selection']['network'].split(' ')
     prepnames=inp1['selection']['prepname'].split(' ')
-    
     verbose=bool(int(inp1['verbose']))
     corrname=inp1['corrname']
     check=bool(int(inp1['check']))
     no_over=bool(int(inp1['no_overwrite']))
-    
     startday=UTCDateTime(inp1['timethings']['startdate'])
     endday=UTCDateTime(inp1['timethings']['enddate'])
     win_len=int(inp1['timethings']['winlen'])
     Fs=float(inp1['timethings']['Fs'])
     olap=int(inp1['timethings']['olap'])
-    
-    #win_len=wl_adjust(win_len, Fs, verbose)
-    
     channels=inp1['channels']['channel_list'].split(' ')
     mix_channels=bool(int(inp1['channels']['mix_channels']))
+    autocorr=bool(int(inp1['correlations']['autocorr']))
+    corr_type=inp1['correlations']['corr_type']
+    maxlag=int(inp1['correlations']['max_lag'])
+    pcc_nu=int(inp1['correlations']['pcc_nu'])
+    bandpass=bool(int(inp1['bandpass']['doit']))
     
+   
+    #- copy the input xml to the output directory for documentation. If the correlation name is already         taken, exit (otherwise correlations would be stacked in a meaningless way.)
+    if os.path.exists(datadir+'/correlations/xmlinput/corr.'+corrname+'.xml')==True:
+        print '\n\nChoose a new name or delete inputfile of the name: corr.'+corrname+'.xml in xmlinput. Be aware this may cause chaos. Aborting.\n\n'
+        return
+    else:
+        shutil.copy(xmlinput,datadir+'/correlations/xmlinput/corr.'+corrname+'.xml')
+    
+    
+    #- Print some info  
     if verbose:
+        print '================================================================================'
+        print 'Welcome'
         print 'startday = ', startday
         print 'endday = ',  endday
         print 'Window length = ', win_len, ' s'
@@ -79,31 +102,22 @@ def stack(xmlinput):
         print 'Channels: ', channels
         print 'Mix channels:', mix_channels
     
-    #- Input parameters for correlation: Correlation type, maximum lag, nu parameter
-    corr_type=inp1['correlations']['corr_type']
-    #- Force maximum lag to be integer. In seconds:
-    maxlag=int(inp1['correlations']['max_lag'])
-    pcc_nu=int(inp1['correlations']['pcc_nu'])
     
-   
-    #- copy the input xml to the output directory for documentation
-    if os.path.exists('DATA/correlations/xmlinput/corr.'+corrname+'.xml')==True:
-        print '\n\nChoose a new name or delete inputfile of the name: corr.'+corrname+'.xml in ./DATA/correlations/xmlinput. Be aware this may cause chaos. Aborting.\n\n'
-        return
-    else:
-        shutil.copy(xmlinput,'DATA/correlations/xmlinput/corr.'+corrname+'.xml')
+    #==============================================================================================    
+    #- Files and directories are initialised
+    #==============================================================================================
     
     #- Create the output directories, if necessary
     sds=startday.strftime('%Y.%j')
     eds=endday.strftime('%Y.%j')
   
-    if os.path.exists('DATA/correlations/'+sds[0:4]+'/')==False:
-        os.mkdir('DATA/correlations/'+sds[0:4])
-        os.mkdir('DATA/correlations/'+sds[0:4]+'/metadata')
-        os.mkdir('DATA/correlations/'+sds[0:4]+'/stacks')
-        os.mkdir('DATA/correlations/'+sds[0:4]+'/ps')
+    if os.path.exists(datadir+'/correlations/'+sds[0:4]+'/')==False:
+        os.mkdir(datadir+'/correlations/'+sds[0:4])
+        os.mkdir(datadir+'/correlations/'+sds[0:4]+'/metadata')
+        os.mkdir(datadir+'/correlations/'+sds[0:4]+'/stacks')
+        os.mkdir(datadir+'/correlations/'+sds[0:4]+'/ps')
       
-    outdir='DATA/correlations/'+sds[0:4]
+    outdir=datadir+'/correlations/'+sds[0:4]
           
     #- One common metadata table, iris style
     md_iris=open(outdir+'/metadata/'+corrname+'.txt', 'w')
@@ -131,7 +145,7 @@ def stack(xmlinput):
     for chpair in corr_ch:
 
         #==========================================================================================
-        #- compute pairwise correlations
+        #- open and check traces pairwise, and filter if applicable
         #==========================================================================================
 
         if verbose:
@@ -152,12 +166,34 @@ def stack(xmlinput):
         if dat1.stats.sampling_rate!=dat2.stats.sampling_rate:
             if verbose: print 'Unequal sampling rates. Skipping this correlation.'
             continue
+        #- Test also if the chosen window length has power-of-2 samples, and if not, issue a warning.
+        nwl=wl_adjust(win_len,dat1.stats.sampling_rate,verbose)
+        if nwl!=win_len: 
+            print 'Warning: The closest window length that allows power-of-2 number of samples is:'
+            print nwl
             
-        #- Compute stacked correlations ===========================================================
-        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, verbose)
+            
+        #- Filter if applicable.
+        if bandpass==True:
+            freqmin=float(inp1['bandpass']['f_min'])
+            freqmax=float(inp1['bandpass']['f_max'])
+            corners=int(inp1['bandpass']['corners'])
+            
+            dat1.filter('bandpass',freqmin=freqmin,freqmax=freqmax,corners=corners,zerophase=True)
+            dat2.filter('bandpass',freqmin=freqmin,freqmax=freqmax,corners=corners,zerophase=True)
+            
+        #==========================================================================================    
+        #- Compute stacked correlations
+        #==========================================================================================
+       
+       
+        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
+            
+            
+            
 
         #==========================================================================================
         #- write metadata
@@ -224,20 +260,20 @@ def stack(xmlinput):
             #- Write correlation function to a file ===============================================
         
             #- Create a trace object and fill in the basic information
-            tr_correlation_stack=trace.Trace()
-            tr_coherence_stack_real=trace.Trace()
-            tr_coherence_stack_imag=trace.Trace()
+            tr_correlation_stack=Trace()
+            tr_coherence_stack_real=Trace()
+            tr_coherence_stack_imag=Trace()
 
             tr_correlation_stack.stats.sampling_rate=dat1.stats.sampling_rate
-            #tr_correlation_stack.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+
             tr_correlation_stack.data=correlation_stack
 
             tr_coherence_stack_real.stats.sampling_rate=dat1.stats.sampling_rate
-            #tr_coherence_stack_real.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+      
             tr_coherence_stack_real.data=np.real(coherence_stack)
 
             tr_coherence_stack_imag.stats.sampling_rate=dat1.stats.sampling_rate
-            #tr_coherence_stack_imag.stats.starttime=UTCDateTime(2000,1,1,0,0)-dat1.stats.delta*float((len(correlation_stack)-1))/2.0
+       
             tr_coherence_stack_imag.data=np.imag(coherence_stack)
 
 
@@ -353,31 +389,33 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
             t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
             t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11])+':'+str(record_list[j].split('.')[12])+':'+str(record_list[j].split('.')[13]))
             
-            #- check whether sequences overlap, and if not, continue
-            if t11>=t22 or t21>=t12:
-                continue
+            
+            
 
         
             #- perform tests to compile the station pair list -------------------------------------
-            make_pair=False
-            if (t12>=t11+win_len) & (t22>=t21+win_len):
-
-                #- if channels differ, make pair only when channel mixing is allowed
-                if (cha1!=cha2 and mix_channels):
-                    make_pair=True
-                #- make a pair when channels are identical
-                elif (cha1==cha2):
-                    make_pair=True
-
-            #- add to the list of pairs -----------------------------------------------------------
-    
-            if make_pair:
+            #- check whether sequences overlap, and if not, continue
+            if t11>=t22 or t21>=t12:
+                continue
+            #- also check whether each trace contains at least one window, otherwise continue
+            if (t12<t11+win_len):
+                continue    
+            if (t22<t21+win_len):
+                continue
+            #- also check whether this is an autocorrelation
+            if sta1==sta2 and autocorr==False:
+                continue
+            #- if channels differ, make pair only when channel mixing is allowed
+            if (cha1!=cha2 and mix_channels==False):
+                continue
                 
-                if record_list[i][0]<record_list[j][0]:
-                    ccpairs.append((record_list[i],record_list[j]))
-                else:
-                    ccpairs.append((record_list[j],record_list[i]))
-                 
+            #- if you got all the way to here, add to the list of pairs ----------------------------
+    
+            if record_list[i][0]<record_list[j][0]:
+                ccpairs.append((record_list[i],record_list[j]))
+            else:
+                ccpairs.append((record_list[j],record_list[i]))
+            
     return ccpairs
     
     
@@ -385,23 +423,15 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
 # Compute stacked correlation functions
 #==================================================================================================
 
-def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu,verbose):
+def stack_windows(dat1, dat2):
 
     """
     Compute stacked correlation functions.
 
-    correlation_stack,coherence_stack,windows,n,n_skip=stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag, pcc_nu, phase, verbose):
-
-    dat1:       first time series
-    dat2:       second time series
-    startday:   UTC starting time of the first correlation window
-    win_len:    length of the time windows to be correlated
-    olap:       overlap of time windows
-    endday:     UTC time when the last correlation window starts
-    corr_type:  type of correlation functions, ccc or pcc
-    maxlag:     maximum time lag in the correlation functions
-    pcc_nu:     exponent in the phase cross-correlation
-    verbose:    talk or not
+    correlation_stack,coherence_stack,windows,n,n_skip=stack_windows(dat1, dat2)
+    dat1:       obspy trace, first time series
+    dat2:       obspy trace, second time series
+    
 
     correlation_stack:  stacked correlations
     coherence_stack:    stacked phase coherences, this is the complex coherence before taking the absolute value
@@ -415,7 +445,7 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     from scipy.signal import hilbert
 
     #- initialisations ----------------------------------------------------------------------------
-   
+    
     #- Get sampling frequency
     Fs=dat1.stats.sampling_rate
     
@@ -427,12 +457,12 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
     
     #- Counter for seconds in the time series stacked
     tslen=0
+    
     #- check how far the traces go!
-    startday=max(startday, dat1.stats.starttime, dat2.stats.starttime)
-    endday=min(endday, dat1.stats.endtime, dat2.stats.endtime)
+    en=min(endday, dat1.stats.endtime, dat2.stats.endtime)
     
     #- Initial time window and initial time window pairs for documentation
-    t1=startday
+    t1=max(startday, dat1.stats.starttime, dat2.stats.starttime)
     t2=t1+win_len
    
     windows=[]
@@ -441,10 +471,16 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         if verbose: 'Correlation type '+corr_type+' not supported'
         return([], [], [], 0, 0, 0)
         
-    
-
+   #- If all intermediate results are written to file, create the necessary directories
+    if no_over==True:
+        id1=dat1.stats.network+'.'+dat1.stats.station
+        id2=dat2.stats.network+'.'+dat2.stats.station
+        if os.path.exists(datadir+'/correlations/interm/'+id1+'_'+id2+'/')==False:
+            os.mkdir(datadir+'/correlations/interm/'+id1+'_'+id2+'/')
+        
+   
     #- Loop over time windows and update stack ----------------------------------------------------
-    while t2<=endday:
+    while t2<=en:
         
         correlate=True
 
@@ -488,12 +524,40 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
         if correlate==False:
             n_skip+=1
         else:
+            
             if corr_type=='ccc':
                 correlation=corr.xcorrelation_td(tr1, tr2, maxlag)
             elif corr_type=='fcc':
                 correlation=corr.xcorrelation_fd(tr1, tr2)
             elif corr_type=='pcc':
                 correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)
+        #- Calculating the coherence
+            coherence=hilbert(correlation)
+            tol=np.mean(np.abs(coherence))/1000.0
+            coherence=coherence/(np.abs(coherence)+tol)
+                
+                
+                
+        #- If intermediate results have to be written.....    
+            if no_over==True:
+                id_corr=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.SAC'
+                id_coh_re=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.psr.SAC'
+                id_coh_im=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.psi.SAC'
+                
+                trace_corr=Trace(data=correlation)
+                trace_corr.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'sampling_rate':Fs})
+                
+                trace_coh_re=Trace(data=np.real(coherence))
+                trace_coh_re.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'channel':'coh_real','sampling_rate':Fs})
+                trace_coh_im=Trace(data=np.imag(coherence))
+                trace_coh_im.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'channel':'coh_imag','sampling_rate':Fs})
+                
+                
+                trace_corr.write(id_corr,format='SAC')
+                trace_coh_re.write(id_coh_re,format='SAC')
+                trace_coh_im.write(id_coh_im,format='SAC')
+                
+        
         
             #- update statistics
             n+=1
@@ -506,9 +570,6 @@ def stack_windows(dat1, dat2, startday, endday, win_len, olap, corr_type, maxlag
                 correlation_stack+=correlation
 
             #- phase coherence stack ==============================================================
-            coherence=hilbert(correlation)
-            tol=np.mean(np.abs(coherence))/1000.0
-            coherence=coherence/(np.abs(coherence)+tol)
             if n==1:
                 coherence_stack=coherence
             elif len(coherence_stack)==len(coherence):
@@ -541,11 +602,8 @@ def wl_adjust(win_len, Fs, verbose):
     
     #current window length
     cwl=Fs*win_len;
-    nwl=int((2**ceil(log(cwl)/log(2)))/Fs)
+    nwl=int((2**int(round(log(cwl)/log(2))))/Fs)
     
-    if cwl!=nwl:
-        if verbose:
-            print 'Window length adjusted to '+str(nwl)
     return nwl
 
 
