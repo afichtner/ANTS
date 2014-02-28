@@ -77,9 +77,10 @@ def download_fetchdata(xmlinput):
             
             if stafile=="*":
                 filename=targetloc+'/'+network+'.all..'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
-                print(reqstring)
-                os.system(reqstring)
+                if os.path.exists(filename)==False:
+                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                    print(reqstring)
+                    os.system(reqstring)
             
             else:
                 fh=open(stafile, 'r')
@@ -89,8 +90,9 @@ def download_fetchdata(xmlinput):
                     print network + station + channel
                     #-Formulate a polite request
                     filename=targetloc+'/'+network+'.'+station+'..'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
-                    print(reqstring)
-                    os.system(reqstring)
+                    if os.path.exists(filename)==False:
+                        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
+                        print(reqstring)
+                        os.system(reqstring)
     
         return

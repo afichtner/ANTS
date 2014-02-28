@@ -55,6 +55,7 @@ def stack(xmlinput):
     global olap
     global corr_type
     global autocorr
+    global datadir
     
     #- Read the input from xml file----------------------------------------------------------------
     inp1=rxml.read_xml(xmlinput)
@@ -81,7 +82,7 @@ def stack(xmlinput):
     maxlag=int(inp1['correlations']['max_lag'])
     pcc_nu=int(inp1['correlations']['pcc_nu'])
     bandpass=bool(int(inp1['bandpass']['doit']))
-    
+    datadir=cfg.datadir
    
     #- copy the input xml to the output directory for documentation. If the correlation name is already         taken, exit (otherwise correlations would be stacked in a meaningless way.)
     if os.path.exists(datadir+'/correlations/xmlinput/corr.'+corrname+'.xml')==True:
@@ -494,11 +495,9 @@ def stack_windows(dat1, dat2):
          
             #- Perform a series of checks on the time series
             if len(tr1.data)!=len(tr2.data):
-                if verbose: print "Traces of unequal length (%d, %d) in time window %s to %s!" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
-                if len(tr1.data)<len(tr2.data):
-                    tr2.data=tr2.data[0:len(tr1.data)]
-                else:
-                    tr1.data=tr1.data[0:len(tr2.data)]
+                if verbose: 
+                    print "Traces of unequal length (%d, %d) in time window %s to %s!" % (len(tr1.data),len(tr2.data),str(t1),str(t2))
+                correlate=False
             if len(tr1.data)==0:
                 if verbose: print "No data for station %s in time window %s to %s, skipped" % (tr1.stats.station,str(t1),str(t2))
                 correlate=False

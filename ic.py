@@ -70,7 +70,7 @@ def ic(xmlinput,content=None):
         print('\n\nChoose a new name or delete inputfile of the name: ic.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
         return
         
-    shutil.copy(xmlinput,datadir+'/processed/xmlinput.ic.'+prepname+'.xml')
+    shutil.copy(xmlinput,datadir+'/processed/xmlinput/ic.'+prepname+'.xml')
     
     if check==True or outf==True:
         outfile=open(datadir+'/processed/out/ic.'+prepname+'.txt','w')

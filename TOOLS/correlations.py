@@ -36,7 +36,8 @@ def xcorrelation_td(dat1, dat2, max_lag):
     from obspy.signal import cross_correlation
     
     numsamples=int(float(max_lag)*dat1.stats.sampling_rate)
-    xcorr=cross_correlation.xcorr(dat1.data, dat2.data, numsamples ,True)[2]
+    
+    xcorr=cross_correlation.xcorr(dat1.data*1000, dat2.data*1000, numsamples ,True)[2]
     
     return xcorr
    
