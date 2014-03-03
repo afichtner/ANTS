@@ -79,7 +79,7 @@ def ic(xmlinput,content=None):
            print('\n\nChoose a new name or delete inputfile of the name: ic.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
            return
            
-       shutil.copy(xmlinput,datadir+'/processed/xmlinput.ic.'+prepname+'.xml')
+       shutil.copy(xmlinput,datadir+'/processed/xmlinput/ic.'+prepname+'.xml')
        
        
        for i in range(startyr-1,endyr+1):

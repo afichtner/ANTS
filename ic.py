@@ -16,7 +16,7 @@ import TOOLS.processing as proc
 import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.renamer as rn
-import TOOLS.testinput as ti
+
 from  TOOLS.plot_spectra import plotpsdwpete
 import TOOLS.psd_estimate as psd
 import antconfig as cfg
@@ -46,7 +46,7 @@ def ic(xmlinput,content=None):
     
     datadir=cfg.datadir
     inp1=rxml.read_xml(xmlinput)[1]
-    if testinput(inp1)==False:
+    if testinput(inp1,ofid=None)==False:
         print('Problems in xmlinput, forced to interrupt.', file=None)
         return
     
@@ -278,97 +278,97 @@ def ic(xmlinput,content=None):
         outfile.close()
         
         
-def testinput(inp):
+def testinput(inp,ofid):
     niceinput=True
     
     if not inp['prepname']:
-        print 'A valid name must be provided for this processing run.'
+        print('A valid name must be provided for this processing run.',file=ofid)
         niceinput=False
         
     if not inp['comment']:
-        print 'It is necessary that you provide a comment on this preprocessing run.'
+        print('It is necessary that you provide a comment on this preprocessing run.',file=ofid)
         niceinput=False
         
     
     if inp['verbose']!='1' and inp['verbose']!='0':
-        print 'Verbose must be 1 or 0.'
+        print('Verbose must be 1 or 0.',file=ofid)
         niceinput=False
         
     if inp['check']!='1' and inp['check']!='0':
-        print 'check must be 1 or 0.'
+        print('check must be 1 or 0.',file=ofid)
         niceinput=False
         
     try:
         sm=int(inp['input']['startyr'])
         if sm<1970:
-            print 'Start year must be format YYYY, no earlier than 1970.'
+            print('Start year must be format YYYY, no earlier than 1970.',file=ofid)
             niceinput=False
          
     except ValueError:
-        print 'Start year must be an integer, format YYYY.'
+        print('Start year must be an integer, format YYYY.',file=ofid)
         niceinput=False
        
         
     try:
         em=int(inp['input']['endyr'])
         if em<1970:
-            print 'End year year must be format YYYY, no earlier than 1970.'
+            print('End year year must be format YYYY, no earlier than 1970.',file=ofid)
             niceinput=False
             
     
     except ValueError:
-        print 'End year must be an integer, format YYYY.'
+        print('End year must be an integer, format YYYY.',file=ofid)
         niceinput=False
         
     try:
         ml=int(inp['quality']['min_length_in_sec'])
     except ValueError:
-        print 'min_length_in_sec must be a number.'
+        print('min_length_in_sec must be a number.',file=ofid)
         niceinput=False
        
     if inp['first_step']!='split' and inp['first_step']!='decimate':
-        print 'Invalid choice for first_step: Must be split or decimate.'
+        print('Invalid choice for first_step: Must be split or decimate.',file=ofid)
         niceinput=False
         
     
     if inp['processing']['split']['doit']!='0' and inp['processing']['split']['doit']!='1':
-        print 'Choice for split must be 0 or 1.'
+        print('Choice for split must be 0 or 1.',file=ofid)
         niceinput=False
     
     try:
         int(inp['processing']['split']['length_in_sec'])
     except ValueError:
-        print 'length_in_sec must be a number.'
+        print('length_in_sec must be a number.',file=ofid)
         niceinput=False
         
         
     if inp['processing']['detrend']!='0' and inp['processing']['detrend']!='1':
-        print 'Choice for detrend must be 0 or 1.'
+        print('Choice for detrend must be 0 or 1.',file=ofid)
         niceinput=False    
         
         
     if inp['processing']['demean']!='0' and inp['processing']['demean']!='1':
-        print 'Choice for demean must be 0 or 1.'
+        print('Choice for demean must be 0 or 1.',file=ofid)
         niceinput=False
 
      
     if inp['processing']['trim']!='0' and inp['processing']['trim']!='1':
-        print 'Choice for trim must be 0 or 1.'
+        print('Choice for trim must be 0 or 1.',file=ofid)
         niceinput=False  
     
     if inp['processing']['taper']['doit']!='0' and inp['processing']['taper']['doit']!='1':
-        print 'Choice for taper must be 0 or 1.'
+        print('Choice for taper must be 0 or 1.',file=ofid)
         niceinput=False
     
     try:
         tw=float(inp['processing']['taper']['taper_width'])
     except ValueError:
-        print 'taper width must be a number.'
+        print('taper width must be a number.',file=ofid)
         niceinput=False
 
     
     if inp['processing']['decimation']['doit']!='0' and inp['processing']['decimation']['doit']!='1':
-        print 'Choice for decimation must be 0 or 1.'
+        print('Choice for decimation must be 0 or 1.',file=ofid)
         niceinput=False
         
         
@@ -377,6 +377,6 @@ def testinput(inp):
         for fs in fs_new:
             fs=float(fs)
     except ValueError:
-        print 'Sampling frequency must be number.'
+        print('Sampling frequency must be number.',file=ofid)
     
     return niceinput
