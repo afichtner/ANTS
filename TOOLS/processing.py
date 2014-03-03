@@ -34,6 +34,8 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
             s_copy=s[k].copy()
             s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
             s_new.append(s_copy)
+            del s_copy
+            gc.collect()
             start+=length_in_sec
 
     return s_new
