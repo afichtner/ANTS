@@ -8,6 +8,7 @@ from scipy.interpolate import interp1d
 from obspy.core import Trace, Stream, UTCDateTime
 from scipy.signal import cheby2,  cheb2ord,  filtfilt
 from glob import glob
+from gc import collect
 
 
 #==================================================================================================
@@ -35,7 +36,7 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
             s_copy.trim(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
             s_new.append(s_copy)
             del s_copy
-            gc.collect()
+            collect()
             start+=length_in_sec
 
     return s_new
