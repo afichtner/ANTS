@@ -17,8 +17,6 @@ import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.renamer as rn
 
-from  TOOLS.plot_spectra import plotpsdwpete
-import TOOLS.psd_estimate as psd
 import antconfig as cfg
 
 
