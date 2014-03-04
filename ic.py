@@ -144,7 +144,7 @@ def ic(xmlinput,content=None):
     
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
-            data=proc.split_traces(data,seglen,minlen,verbose,outfile)
+            data=proc.slice_traces(data,seglen,minlen,verbose,outfile)
         
         if check:
             n_traces=min(3,len(data))

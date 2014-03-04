@@ -41,6 +41,33 @@ def split_traces(s, length_in_sec, min_len, verbose, ofid):
 
     return s_new
 
+#==================================================================================================
+# SLICE TRACES (looking for a less memory intensive way....)
+#==================================================================================================
+
+def slice_traces(s,length_in_sec, min_len, verbose, ofid):
+    """
+    Slice an ObsPy stream object with multiple traces; The stream of new (sliced) traces merely contains
+    references to the original trace.
+    """
+    s_new=Stream()
+    
+    #- loop through traces ------------------------------------------------------------------------
+    
+    for k in np.arange(len(s)):
+           
+        #- set initial start time
+        start=s[k].stats.starttime
+        
+        #- march through the trace until the endtime is reached
+        while start<s[k].stats.endtime-min_len:
+            s_part=s[k].slice(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
+            s_new.append(s_part)
+            
+            start+=length_in_sec
+
+    return s_new
+    
 
 #==================================================================================================
 # TAPER
