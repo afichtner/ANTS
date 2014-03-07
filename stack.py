@@ -188,7 +188,7 @@ def stack(xmlinput):
         #==========================================================================================
        
        
-        (correlation_stack, coherence_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2)
+        (correlation_stack, windows, n, n_skip, tslen)=stack_windows(dat1, dat2)
         if verbose: 
             print 'Number of successfully stacked time windows: ', n
             print 'Number of skipped time windows: ', n_skip
@@ -246,42 +246,22 @@ def stack(xmlinput):
 
             if check and cnt%100==0:
                 t=np.linspace(-maxlag*dat1.stats.sampling_rate,maxlag*dat1.stats.sampling_rate, len(correlation_stack))
-                plt.subplot(311)
                 plt.plot(correlation_stack)
                 plt.ylabel('linear stack')
-                plt.subplot(312)
-                plt.plot(np.abs(coherence_stack))
-                plt.ylabel('phase coherence')
-                plt.subplot(313)
-                plt.plot(correlation_stack*np.abs(coherence_stack))
-                plt.xlabel('t [s]')
-                plt.ylabel('phase-weighted stack')
-                plt.show()
+    
             
             #- Write correlation function to a file ===============================================
         
             #- Create a trace object and fill in the basic information
             tr_correlation_stack=Trace()
-            tr_coherence_stack_real=Trace()
-            tr_coherence_stack_imag=Trace()
+
 
             tr_correlation_stack.stats.sampling_rate=dat1.stats.sampling_rate
-
             tr_correlation_stack.data=correlation_stack
-
-            tr_coherence_stack_real.stats.sampling_rate=dat1.stats.sampling_rate
-      
-            tr_coherence_stack_real.data=np.real(coherence_stack)
-
-            tr_coherence_stack_imag.stats.sampling_rate=dat1.stats.sampling_rate
-       
-            tr_coherence_stack_imag.data=np.imag(coherence_stack)
-
 
             #- open file and write correlation function
             fileid_correlation_stack=outdir+'/stacks/'+fn1+'.'+fn2+'.'+corr_type+'.'+corrname+'.'+tformat
-            fileid_coherence_stack_real=outdir+'/ps/'+fn1+'.'+fn2+'.psr.'+corrname+'.'+tformat
-            fileid_coherence_stack_imag=outdir+'/ps/'+fn1+'.'+fn2+'.psi.'+corrname+'.'+tformat
+            
             
             #- linear stack
             if os.path.exists(fileid_correlation_stack)==True:
@@ -322,25 +302,6 @@ def stack(xmlinput):
                 tr_correlation_stack.write(fileid_correlation_stack, format=tformat)
      
 
-            #- real part of coherence stack
-            if os.path.exists(fileid_coherence_stack_real)==True:
-                if verbose: 
-                    print "Real part of coherence stack already exists. Add to previous one."
-                tr_old=read(fileid_coherence_stack_real)
-                tr_coherence_stack_real.data=tr_coherence_stack_real.data+tr_old[0].data
-                tr_coherence_stack_real.write(fileid_coherence_stack_real, format=tformat)   
-            else:
-                tr_coherence_stack_real.write(fileid_coherence_stack_real, format=tformat)
-
-            #- imaginary part of coherence stack
-            if os.path.exists(fileid_coherence_stack_imag)==True:
-                if verbose:
-                    print "Imaginary part of coherence stack already exists. Add to previous one."
-                tr_old=read(fileid_coherence_stack_imag)
-                tr_coherence_stack_imag.data=tr_coherence_stack_imag.data+tr_old[0].data
-                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format=tformat)
-            else:
-                tr_coherence_stack_imag.write(fileid_coherence_stack_imag, format=tformat)
 
             #- Write time windows to a file for documentation =====================================
             #filename=outdir+'/'+fn1+'-'+fn2+'.'+corr_type+'.metadata'
@@ -429,7 +390,6 @@ def stack_windows(dat1, dat2):
     """
     Compute stacked correlation functions.
 
-    correlation_stack,coherence_stack,windows,n,n_skip=stack_windows(dat1, dat2)
     dat1:       obspy trace, first time series
     dat2:       obspy trace, second time series
     
@@ -530,33 +490,16 @@ def stack_windows(dat1, dat2):
                 correlation=corr.xcorrelation_fd(tr1, tr2)
             elif corr_type=='pcc':
                 correlation=corr.phase_xcorrelation(tr1, tr2, maxlag, pcc_nu)
-        #- Calculating the coherence
-            coherence=hilbert(correlation)
-            tol=np.mean(np.abs(coherence))/1000.0
-            coherence=coherence/(np.abs(coherence)+tol)
-                
+       
                 
                 
         #- If intermediate results have to be written.....    
             if no_over==True:
                 id_corr=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.SAC'
-                id_coh_re=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.psr.SAC'
-                id_coh_im=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.psi.SAC'
-                
                 trace_corr=Trace(data=correlation)
                 trace_corr.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'sampling_rate':Fs})
                 
-                trace_coh_re=Trace(data=np.real(coherence))
-                trace_coh_re.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'channel':'coh_real','sampling_rate':Fs})
-                trace_coh_im=Trace(data=np.imag(coherence))
-                trace_coh_im.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'channel':'coh_imag','sampling_rate':Fs})
                 
-                
-                trace_corr.write(id_corr,format='SAC')
-                trace_coh_re.write(id_coh_re,format='SAC')
-                trace_coh_im.write(id_coh_im,format='SAC')
-                
-        
         
             #- update statistics
             n+=1
@@ -567,12 +510,6 @@ def stack_windows(dat1, dat2):
                 correlation_stack=correlation
             elif len(correlation_stack)==len(correlation):
                 correlation_stack+=correlation
-
-            #- phase coherence stack ==============================================================
-            if n==1:
-                coherence_stack=coherence
-            elif len(coherence_stack)==len(coherence):
-                coherence_stack+=coherence
 
             #- make time window pairs for documentation
             window=(t1,t2)
@@ -586,7 +523,7 @@ def stack_windows(dat1, dat2):
     if n==0:
         return([], [], [], n, n_skip, 0)
     else:
-        return(correlation_stack, coherence_stack, windows, n, n_skip, tslen)
+        return(correlation_stack, windows, n, n_skip, tslen)
         
         
 #==================================================================================================
