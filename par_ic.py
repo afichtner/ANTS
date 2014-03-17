@@ -119,11 +119,14 @@ def ic(xmlinput,content=None):
     verbose=bool(int(inp1['verbose']))
     prepname=inp1['prepname']
     saveplot=bool(int(inp1['saveplot']))
-    startyr=int(inp1['input']['startyr'][0:4])
-    endyr=int(inp1['input']['endyr'][0:4])
     datadir=cfg.datadir
     ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
-    
+    respdir=inp1['processing']['instrument_response']['respdir']
+    unit=inp1['processing']['instrument_response']['unit']
+    freqs=inp1['processing']['instrument_response']['freqs']
+    wl=inp1['processing']['instrument_response']['waterlevel']
+    seglen=float(inp1['processing']['split']['length_in_sec'])
+    minlen=float(inp1['quality']['min_length_in_sec'])
     
     #==============================================================================================
     #- Assign each rank its own chunk of input
