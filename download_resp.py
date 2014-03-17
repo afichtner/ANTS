@@ -3,16 +3,16 @@ from obspy import UTCDateTime
 import os
 import sys
 import shutil
-import download_fetchdata as fd
+import download_resp as dr
 import antconfig as cfg
 
 
 if __name__=='__main__':
     xmlin=str(sys.argv[1])
-    fd.download_fetchdata(xmlin)
+    dr.download_resp(xmlin)
     
 
-def download_fetchdata(xmlinput):
+def download_resp(xmlinput):
     
     """
     
