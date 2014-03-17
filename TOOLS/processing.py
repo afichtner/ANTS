@@ -224,7 +224,7 @@ def remove_response(data,respdir,unit,frstr,waterlevel,verbose, ofid):
         freqs=[]
         for fr in frstr.split(' '):
             freqs.append(float(fr))
-        print(freqs,file=None)
+        
         try:
             data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True, simulate_sensitivity=False,pre_filt=tuple(freqs),pitsasim=False,sacsim=True)
         except ValueError:
