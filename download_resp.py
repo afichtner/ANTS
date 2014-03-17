@@ -16,7 +16,7 @@ def download_fetchdata(xmlinput):
     
     """
     
-    Tool for the download continuous seismic data from a collection of stations and/or networks.
+    Tool for the download of response information, to be stored in RESP files.
 
     The download is based on the iris DMC FetchData script and takes as input an xml file that specifies the download parameters.
 
@@ -79,9 +79,8 @@ def download_fetchdata(xmlinput):
             
             
             if stafile=="*":
-                filename=targetloc+'/'+network+'.all..'+channel+'.'+t1str+'.'+t2str+'.mseed'
                 if os.path.exists(filename)==False:
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
                     print(reqstring)
                     os.system(reqstring)
             
@@ -90,12 +89,8 @@ def download_fetchdata(xmlinput):
                 stations=fh.read().split('\n')
                 for station in stations:
                     if station=='': continue
-                    print network + station + channel
-                    #-Formulate a polite request
-                    filename=targetloc+'/'+network+'.'+station+'..'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    if os.path.exists(filename)==False:
-                        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
-                        print(reqstring)
-                        os.system(reqstring)
+                    reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
+                    print(reqstring)
+                    os.system(reqstring)
     
         return
