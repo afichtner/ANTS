@@ -56,10 +56,6 @@ def ic(xmlinput,content=None):
     
        datadir=cfg.datadir
        inp1=rxml.read_xml(xmlinput)[1]
-       #if testinput(inp1)==False:
-    #       print('Problems in xmlinput, forced to interrupt.', file=None)
-     #      return
-       
        
        verbose=bool(int(inp1['verbose']))
        check=bool(int(inp1['check']))
@@ -170,6 +166,9 @@ def ic(xmlinput,content=None):
             continue
         except IOError:
             if verbose: print('** file could not be opened, skip.',file=ofid)
+            continue
+        except KeyError:
+            if verbose: print('** file could not be opened, KeyError, skip.',file=ofid)
             continue
         
         #- initialize stream to 'recollect' the split traces

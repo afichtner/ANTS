@@ -114,10 +114,13 @@ def ic(xmlinput,content=None):
         try:
             data=read(filepath)
         except TypeError:
-            if verbose==True: print('** file could not be opened, skip.',file=outfile)
+            if verbose==True: print('** file could not be opened, TypeError, skip.',file=outfile)
             continue
         except IOError:
-            if verbose: print('** file could not be opened, skip.',file=outfile)
+            if verbose: print('** file could not be opened, IOError, skip.',file=outfile)
+            continue
+        except KeyError:
+            if verbose: print('** file could not be opened, KeyError, skip.',file=outfile)
             continue
         
         #- initialize stream to 'recollect' the split traces
