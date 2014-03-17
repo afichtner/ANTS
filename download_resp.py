@@ -51,9 +51,6 @@ def download_fetchdata(xmlinput):
     t2=dat1['time']['endtime']
     t2str=UTCDateTime(t2).strftime('%Y.%j.%H.%M.%S')
     
-    # minimum length
-    minlen=dat1['time']['minlen']
-
     # geographical region
     lat_min=dat1['region']['lat_min']
     lat_max=dat1['region']['lat_max']
