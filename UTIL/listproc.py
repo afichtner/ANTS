@@ -18,7 +18,7 @@ def listproc(indir,oname,procname):
     ofid=open(oname,'w')
     ofid.write('Nr  ID          t1                   t2                  gap (hours) \n' )
     ofid.write('====================================================================\n')
-    files=glob(indir+'/*'+procname+'*')
+    files=glob(indir+'/*.'+procname+'.*')
     toc=dict()
     
     for file in files:
@@ -27,21 +27,22 @@ def listproc(indir,oname,procname):
         id=file[0]+'.'+file[1]+'.'+file[2]+'.'+file[3]
         t1_new=UTCDateTime(file[4]+','+file[5]+','+file[6]+','+file[7]+','+file[8])
         t2_new=UTCDateTime(file[9]+','+file[10]+','+file[11]+','+file[12]+','+file[13])
-        
+       
         if id in toc:
             t1_old=toc[id][0]
             t2_old=toc[id][1]
             gap=toc[id][2]
             
-            if t1_new>t1_old:
+            if t1_new>t2_old:
                 if t1_new-t2_old>1:
-                    gap+=t1_new-t2_old
+                    gap+=t1_new-t2_old-1
+            
                 toc[id]=(t1_old,t2_new,gap) 
                 
-            elif t1_new<t1_old:
+            elif t2_new<t1_old:
                 if t1_old-t2_new>1:
-                    gap+=t1_old-t2_new
-                toc[id]=(t1_new,t2_new,gap)
+                    gap+=t1_old-t2_new-1
+                toc[id]=(t1_new,t2_old,gap)
                 
         else:
             toc.update({id:(t1_new,t2_new,0)})
