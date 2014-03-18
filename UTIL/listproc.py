@@ -3,7 +3,12 @@ from glob import glob
 from obspy import UTCDateTime
 import collections
 import time
+import sys
 
+if __name__=='__main__':
+    import listproc as lp
+    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3])
+    
 def listproc(indir,oname,procname):
     """
     indir: Directory where processed data is located (string)
@@ -11,7 +16,7 @@ def listproc(indir,oname,procname):
     procname: processing run name to check (string)
     """
     ofid=open(oname,'w')
-    ofid.write('  ID        '+'  t1                 '+'  t2                 '+' gap (hours) \n' )
+    ofid.write('Nr  ID          t1                   t2                  gap (hours) \n' )
     ofid.write('====================================================================\n')
     files=glob(indir+'/*'+procname+'*')
     toc=dict()
@@ -43,10 +48,12 @@ def listproc(indir,oname,procname):
           
           
     toc=collections.OrderedDict(sorted(toc.items()))   
+    k=1
     
     for item in toc:
-        ofid.write(item+'  '+toc[item][0].strftime('%Y.%m.%d.%H.%M.%S')+'  '+toc[item][1].strftime('%Y.%m.%d.%H.%M.%S')+'  '+str(toc[item][2]/3600)+'  ')
+        ofid.write(str(k)+'  '+item+'  '+toc[item][0].strftime('%Y.%m.%d.%H.%M.%S')+'  '+toc[item][1].strftime('%Y.%m.%d.%H.%M.%S')+'  '+str(toc[item][2]/3600)+'  ')
         ofid.write("\n")
+        k+=1
     ofid.close()
             
                 
