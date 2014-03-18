@@ -7,8 +7,16 @@ import sys
 
 if __name__=='__main__':
     import listproc as lp
-    
-    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3])
+
+    if len(sys.argv)==4:
+        lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3])
+    elif len(sys.argv)==5:
+        lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
+    elif len(sys.argv)==6:
+        lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5])
+    elif len(sys.argv)==7:        
+        lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6])
+        
     
 def listproc(indir,oname,procname,network='*',location='*',channel='*'):
     """
@@ -29,9 +37,9 @@ def listproc(indir,oname,procname,network='*',location='*',channel='*'):
         
         if network!='*' and file[0]!=network:
             continue
-        if channel!='*' and file[2]!=channel:
+        if location!='*' and file[2]!=location:
             continue
-        if location!='*' and file[3]!=location:
+        if channel!='*' and file[3]!=channel:
             continue
         
         id=file[0]+'.'+file[1]+'.'+file[2]+'.'+file[3]
