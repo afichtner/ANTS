@@ -7,9 +7,10 @@ import sys
 
 if __name__=='__main__':
     import listproc as lp
-    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5])
     
-def listproc(indir,oname,procname,network='*',channel='*',location='*'):
+    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3])
+    
+def listproc(indir,oname,procname,network='*',location='*',channel='*'):
     """
     indir: Directory where processed data is located (string)
     oname: The information will be provided as ascii file in this location (string)
