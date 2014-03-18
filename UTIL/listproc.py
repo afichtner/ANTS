@@ -7,9 +7,9 @@ import sys
 
 if __name__=='__main__':
     import listproc as lp
-    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3])
+    lp.listproc(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5])
     
-def listproc(indir,oname,procname):
+def listproc(indir,oname,procname,network='*',channel='*',location='*'):
     """
     indir: Directory where processed data is located (string)
     oname: The information will be provided as ascii file in this location (string)
@@ -26,6 +26,14 @@ def listproc(indir,oname,procname):
         print file
         file=file.split("/")[-1]
         file=file.split('.')
+        
+        if network!='*' and file[0]!=network:
+            continue
+        if channel!='*' and file[2]!=channel:
+            continue
+        if location!='*' and file[0]!=location:
+            continue
+        
         id=file[0]+'.'+file[1]+'.'+file[2]+'.'+file[3]
         t1_new=UTCDateTime(file[4]+','+file[5]+','+file[6]+','+file[7]+','+file[8])
         t2_new=UTCDateTime(file[9]+','+file[10]+','+file[11]+','+file[12]+','+file[13])
