@@ -18,7 +18,8 @@ def listproc(indir,oname,procname):
     ofid=open(oname,'w')
     ofid.write('Nr  ID          t1                   t2                  gap (hours) \n' )
     ofid.write('====================================================================\n')
-    files=glob(indir+'/*.'+procname+'.*').sort()
+    files=glob(indir+'/*.'+procname+'.*')
+    files.sort()
     toc=dict()
     
     for file in files:
