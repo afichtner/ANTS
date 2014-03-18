@@ -23,7 +23,6 @@ def listproc(indir,oname,procname,network='*',channel='*',location='*'):
     toc=dict()
     
     for file in files:
-        print file
         file=file.split("/")[-1]
         file=file.split('.')
         
@@ -42,18 +41,15 @@ def listproc(indir,oname,procname,network='*',channel='*',location='*'):
             t1_old=toc[id][0]
             t2_old=toc[id][1]
             gap=toc[id][2]
-            print gap
             
             if t1_new>t2_old:
                 if t1_new-t2_old>1:
                     gap+=t1_new-t2_old-1
-                print gap
                 toc[id]=(t1_old,t2_new,gap) 
                 
             elif t2_new<t1_old:
                 if t1_old-t2_new>1:
                     gap+=t1_old-t2_new-1
-                print gap
                 toc[id]=(t1_new,t2_old,gap)
                 
         else:
