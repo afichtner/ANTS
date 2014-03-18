@@ -30,7 +30,7 @@ def listproc(indir,oname,procname,network='*',channel='*',location='*'):
             continue
         if channel!='*' and file[2]!=channel:
             continue
-        if location!='*' and file[0]!=location:
+        if location!='*' and file[3]!=location:
             continue
         
         id=file[0]+'.'+file[1]+'.'+file[2]+'.'+file[3]
