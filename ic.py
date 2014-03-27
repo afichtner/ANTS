@@ -53,7 +53,6 @@ def ic(xmlinput,content=None):
     check=bool(int(inp1['check']))
     outf=bool(int(inp1['outfile']))
     prepname=inp1['prepname']
-    saveplot=bool(int(inp1['saveplot']))
     startyr=int(inp1['input']['startyr'][0:4])
     endyr=int(inp1['input']['endyr'][0:4])
     respdir=inp1['processing']['instrument_response']['respdir']

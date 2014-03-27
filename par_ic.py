@@ -60,7 +60,6 @@ def ic(xmlinput,content=None):
        verbose=bool(int(inp1['verbose']))
        check=bool(int(inp1['check']))
        prepname=inp1['prepname']
-       saveplot=bool(int(inp1['saveplot']))
        startyr=int(inp1['input']['startyr'][0:4])
        endyr=int(inp1['input']['endyr'][0:4])
        respdir=inp1['processing']['instrument_response']['respdir']
@@ -118,7 +117,6 @@ def ic(xmlinput,content=None):
     
     verbose=bool(int(inp1['verbose']))
     prepname=inp1['prepname']
-    saveplot=bool(int(inp1['saveplot']))
     datadir=cfg.datadir
     ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
     respdir=inp1['processing']['instrument_response']['respdir']
@@ -176,44 +174,18 @@ def ic(xmlinput,content=None):
 
         colloc_data=Stream()
         
-        #- decimate-first routine +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        if inp1['first_step']=='decimate':
-            #- trim ===============================================================================
-            
-            if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data,verbose,ofid)
-                
-            #- downsampling =======================================================================
-            
-            if inp1['processing']['decimation']['doit']=='1':
-                new_fs=inp1['processing']['decimation']['new_sampling_rate'].split(' ')
-                for fs in new_fs:
-                    data=proc.downsample(data,float(fs),verbose,ofid)
-        #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
-        
-    
+      
         #- split traces into shorter segments======================================================
         if inp1['processing']['split']['doit']=='1':
             data=proc.slice_traces(data,seglen,minlen,verbose,ofid)
         n_traces=len(data)
-        
-        #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        if inp1['first_step']=='split':
-            #- trim ===============================================================================
-            
-            if inp1['processing']['trim']=='1':
-                data=proc.trim_next_sec(data,verbose,ofid)
-        #- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            
-            
-            
-        
         if verbose==True:
             print('* contains '+str(n_traces)+' trace(s)',file=ofid)
-    
+            
+        #- trim ===============================================================================
+        
+        if inp1['processing']['trim']=='1':
+            data=proc.trim_next_sec(data,verbose,ofid)
         
         
         #==================================================================================
@@ -260,28 +232,24 @@ def ic(xmlinput,content=None):
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
           
-            #- split-first routine ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            if inp1['first_step']=='split':
+            
             #- downsampling =======================================================================
             
-                if inp1['processing']['decimation']['doit']=='1':
-                    trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose,ofid)
+            if inp1['processing']['decimation']['doit']=='1':
                 
-            #- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose,ofid)
             
-                
+               
             #- remove instrument response =========================================================
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
                 removed,trace=proc.remove_response(trace,respdir,unit,freqs,wl,verbose,ofid)
+                
                 if True in np.isnan(trace):
                     print('** Deconvolution seems unstable! Trace discarded.',file=ofid)
                     continue
-                
-         
-           
+          
             #merge all into final trace
             colloc_data+=trace
         

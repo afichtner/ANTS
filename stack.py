@@ -234,7 +234,7 @@ def stack(xmlinput):
             t2=t2.timetuple().tm_yday
             t2=inp1['timethings']['enddate'][0:4]+str(t2)
             today=time.time()
-            (lat1, lon1, lat2, lon2, dist, az, baz)=get_coord_dist(dat1.stats.network,dat1.stats.station , dat2.stats.network, dat2.stats.station,  xmldir)
+            (lat1, lon1, lat2, lon2, dist, az, baz)=rxml.get_coord_dist(dat1.stats.network,dat1.stats.station , dat2.stats.network, dat2.stats.station)
             
             #- Write iris metadata ================================================================
             md_iris.write(dat1.stats.station.ljust(6)+' '+dat1.stats.network.ljust(8)+' '+dat2.stats.station.ljust(6)+' '+dat2.stats.network.ljust(8)+ \
@@ -521,7 +521,7 @@ def stack_windows(dat1, dat2):
         t2=t1+win_len
         
     if n==0:
-        return([], [], [], n, n_skip, 0)
+        return([], [], n, n_skip, 0)
     else:
         return(correlation_stack, windows, n, n_skip, tslen)
         
@@ -543,46 +543,7 @@ def wl_adjust(win_len, Fs, verbose):
     return nwl
 
 
-#==================================================================================================
-# Get the station coordinates and distance
-#==================================================================================================
-from obspy.fdsn import Client
-from obspy.core.util.geodetics import gps2DistAzimuth
-def get_coord_dist(net1, sta1, net2, sta2,  xmldir):
-    
-    
-    try:
-        stafile1=glob(xmldir+'/'+net1+'.'+sta1+'*.xml')[0]
-    
-    except IndexError:
-        print 'Have to go get stationxml nr. 1'
-        client=Client()
-        stafile1=xmldir+'/'+net1+'.'+sta1+'.xml'
-        client.get_stations(network=net1, station=sta1, filename=stafile1)
-        os.system('./TOOLS/ch_rootelem.sh '+stafile1)
-    
-    try:
-        stafile2=glob(xmldir+'/'+net2+'.'+sta2+'*.xml')[0]    
-        
-    except IndexError:
-        print 'Have to go get stationxml nr. 2'
-        client=Client()
-        stafile2=xmldir+'/'+net2+'.'+sta2+'.xml'
-        client.get_stations(network=net2, station=sta2, filename=stafile2)
-        os.system('./TOOLS/ch_rootelem.sh '+stafile2)
-            
-    try:
-        (staname1,lat1,lon1)=rxml.find_coord(stafile1)
-        (staname2,lat2,lon2)=rxml.find_coord(stafile2)
-    
-        dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
-        az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]
-        baz=gps2DistAzimuth(lat1, lon1, lat2, lon2)[2]
-        
-    except IOError:
-        (lat1, lon1, lat2, lon2, dist)=('?', '?','?','?','?')
-    
-    return (lat1, lon1, lat2, lon2, dist, az, baz)
+
     
    
 

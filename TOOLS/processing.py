@@ -62,6 +62,7 @@ def slice_traces(s,length_in_sec, min_len, verbose, ofid):
         #- march through the trace until the endtime is reached
         while start<s[k].stats.endtime-min_len:
             s_part=s[k].slice(start,start+length_in_sec-1/(s[k].stats.sampling_rate))
+        
             s_new.append(s_part)
             
             start+=length_in_sec
@@ -139,7 +140,7 @@ def antialias(data, freqmax, verbose, ofid=None):
         zerophase_chebychev_lowpass_filter(data, freqmax, verbose,ofid)
     elif isinstance(data,Stream):
         for trace in data:
-            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose,ofid)
+            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose,ofid)      
     if verbose: 
         print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
     
