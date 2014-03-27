@@ -81,7 +81,7 @@ def download_fetchdata(xmlinput):
             if stafile=="*":
                 filename=targetloc+'/'+network+'.all..'+channel+'.'+t1str+'.'+t2str+'.mseed'
                 if os.path.exists(filename)==False:
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2++'-msl '+minlen' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+'-msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
                     print(reqstring)
                     os.system(reqstring)
             
