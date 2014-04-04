@@ -498,7 +498,7 @@ def stack_windows(dat1, dat2):
                 id_corr=datadir+'/correlations/interm/'+id1+'_'+id2+'/'+dat1.stats.station+'.'+dat2.stats.station+t1.strftime('.%Y.%j.%H.%M.%S.')+corr_type+'.'+corrname+'.SAC'
                 trace_corr=Trace(data=correlation)
                 trace_corr.stats=Stats({'network':corr_type,'station':dat1.stats.station,'location':dat2.stats.station,'sampling_rate':Fs})
-                
+                trace_corr.write(id_corr,format='SAC')
                 
         
             #- update statistics
