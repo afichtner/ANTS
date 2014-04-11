@@ -103,7 +103,7 @@ def par_st(xmlinput):
     
     #- Run correlation for blocks ----------------------------------------------------------------
     for block in ids:
-        corrblock(inp,block,rank,ofid,bool(inp['verbose']))
+        corrblock(inp,block,dir,ofid,bool(inp['verbose']))
     
         
 def corrblock(inp,block,dir,ofid=None,verbose=False):
@@ -244,6 +244,7 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         verbose=bool(inp['verbose'])
         check=bool(inp['check'])
         Fs=float(inp['timethings']['Fs'])
+        corrname=inp['corrname']
         
         if ('freqmax' in locals())==False:
             freqmax=0.5*Fs
@@ -255,7 +256,7 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         #- Run cross correlation
         #==============================================================================================
         
-        (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,check,verbose)
+        (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
         
         if npcc==0 and nccc==0:
             if verbose: print('No windows stacked for stations '+id1+' and '+id2,file=ofid)
@@ -318,16 +319,12 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         tr_pcc.write(fileid_pcc,format='SAC')
         
         #- write coherence: As numpy array datafile (can be conveniently loaded again)
-        fileid_ccc_re=dir+id1+'.'+id2+'.cre.'+inp['corrname']+'.npy'
-        np.save(fileid_ccc_re,np.real(cstack_ccc))
-        fileid_ccc_im=dir+id1+'.'+id2+'.cim.'+inp['corrname']+'.npy'
-        np.save(fileid_ccc_re,np.imag(cstack_ccc))
+        fileid_ccc_cwt=dir+id1+'.'+id2+'.ccs.'+inp['corrname']+'.npy'
+        np.save(fileid_ccc_cwt,cstack_ccc)
         
-        fileid_pcc_re=dir+id1+'.'+id2+'.pre.'+inp['corrname']+'.npy'
-        np.save(fileid_pcc_re,np.real(cstack_pcc))
-        fileid_pcc_im=dir+id1+'.'+id2+'.pim.'+inp['corrname']+'.npy'
-        np.save(fileid_pcc_re,np.imag(cstack_pcc))
-            
+        fileid_pcc_cwt=dir+id1+'.'+id2+'.pcs.'+inp['corrname']+'.npy'
+        np.save(fileid_pcc_cwt,cstack_pcc)
+        
     
 
 def parlistpairs(infile,nf,mix_cha,auto=False):
@@ -378,7 +375,7 @@ def parlistpairs(infile,nf,mix_cha,auto=False):
     return idpairs
     
     
-def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,check,verbose):
+def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,check,verbose):
     """
     Step through the traces in the relevant streams and correlate whatever overlaps enough.
     
@@ -459,11 +456,13 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,check,ver
                 id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
                 if os.path.exists(cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/')==False:
                     os.mkdir(cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/')
-                id_corr=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+'pcc.check_par2.SAC'
+                id_corr=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.SAC'
                 trace_pcc=obs.Trace(data=pcc)
                 trace_pcc.stats=Stats({'network':'pcc','station':str1[n1].id.split('.')[1],'location':str2[n2].id.split('.')[1],'sampling_rate':Fs})
                 trace_pcc.write(id_corr, format='SAC')
                 
+                id_cwt=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.npy'
+                np.save(id_cwt,coh_pcc)
                 
             #Add to the stack
             if 'pccstack' in locals():

@@ -13,11 +13,13 @@ def write_stationlst(indir, xmldir, outdir,corrname):
     
     
     for file in files:
-        
-        (net, sta)=(file.split('.')[0], file.split('.')[1])
-        if ((net, sta)) not in lst:
-            lst.append((net, sta))
-            
+        try:
+            (net, sta)=(file.split('.')[0], file.split('.')[1])
+            if ((net, sta)) not in lst:
+                lst.append((net, sta))
+        except IndexError: 
+            continue
+                
     
      
     for entry in lst:
