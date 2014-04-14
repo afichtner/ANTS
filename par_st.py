@@ -165,7 +165,7 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
                 if len(newtr.data)<int(inp['timethings']['winlen']):
                     continue
                 
-                if bool(inp['bandpass']['doit'])==True:
+                if bool(int(inp['bandpass']['doit']))==True:
                     freqmin=float(inp['bandpass']['f_min'])
                     freqmax=float(inp['bandpass']['f_max'])
                     corners=int(inp['bandpass']['corners'])
@@ -211,7 +211,7 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
                     if len(newtr.data)<int(inp['timethings']['winlen']):
                         continue
                 
-                    if bool(inp['bandpass']['doit'])==True:
+                    if bool(int(inp['bandpass']['doit']))==True:
                         freqmin=float(inp['bandpass']['f_min'])
                         freqmax=float(inp['bandpass']['f_max'])
                         corners=int(inp['bandpass']['corners'])
@@ -232,7 +232,10 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
                 del colltr
                 #- Split the trace at its gaps
                 str2=datstr[idlist[id2]].split()
-        
+        if len(datstr)==0:
+		if verbose:
+			print('No matching files found',file=ofid)
+		return() 
         #==============================================================================================
         #- Get some information needed for the cross correlation
         #==============================================================================================
@@ -241,8 +244,8 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         winlen=int(inp['timethings']['winlen'])
         maxlag=int(inp['correlations']['max_lag'])
         pccnu=int(inp['correlations']['pcc_nu'])
-        verbose=bool(inp['verbose'])
-        check=bool(inp['check'])
+        verbose=bool(int(inp['verbose']))
+        check=bool(int(inp['check']))
         Fs=float(inp['timethings']['Fs'])
         corrname=inp['corrname']
         
@@ -346,7 +349,7 @@ def parlistpairs(infile,nf,mix_cha,auto=False):
     
     idpairs=list()
     idcore=list()
-    pcount=1
+    pcount=0
     
     for i in range(0,len(idlist)):
         if idlist[i]=='':
@@ -358,7 +361,7 @@ def parlistpairs(infile,nf,mix_cha,auto=False):
             if idlist[i]==idlist[j] and auto==False:
                 continue
             
-            if pcount<=nf:
+            if pcount<nf:
                 if idlist[i]<=idlist[j]:
                     idcore.append((idlist[i].split()[0],idlist[j].split()[0]))
                 else:
@@ -366,10 +369,12 @@ def parlistpairs(infile,nf,mix_cha,auto=False):
                 pcount+=1
             else:
                 idpairs.append(idcore)
-                pcount=1
                 idcore=list()
-            
-                
+                if idlist[i]<=idlist[j]:
+                    idcore.append((idlist[i].split()[0],idlist[j].split()[0])) 
+                else:
+                    idcore.append((idlist[j].split()[0],idlist[i].split()[0]))
+                pcount=1
     idpairs.append(idcore) 
      
     return idpairs
@@ -401,8 +406,7 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
     
     
     """
-    print(str1,file=None)
-    print(str2,file=None)
+    
     pcccnt=0
     ccccnt=0
     n1=0
@@ -432,8 +436,7 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
         
         # Correlate the traces
         if len(tr1.data)==winlen and len(tr2.data)==winlen:
-            print(tr1,file=None)
-            print(tr2,file=None)
+            
             pcc=corr.phase_xcorrelation(tr1, tr2, maxlag, nu, varwl=True)
             ccc=corr.xcorrelation_td(tr1, tr2, maxlag)
             
