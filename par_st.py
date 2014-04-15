@@ -49,7 +49,7 @@ def par_st(xmlinput):
     #==============================================================================================
     if rank==0:
     
-        print('The size is '+size,file=None)
+        print('The size is '+str(size),file=None)
         
         #- Read the input from xml file------------------------------------------------------------
         inp=rxml.read_xml(xmlinput)
