@@ -39,7 +39,7 @@ def par_st(xmlinput):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size=comm.Get_size()
-    t0=time.time()
+    #t0=time.time()
     
     #==============================================================================================
     #- MASTER process:
@@ -49,6 +49,7 @@ def par_st(xmlinput):
     #==============================================================================================
     if rank==0:
     
+        print('The size is '+size,file=None)
         
         #- Read the input from xml file------------------------------------------------------------
         inp=rxml.read_xml(xmlinput)
@@ -56,12 +57,16 @@ def par_st(xmlinput):
         
         #- copy the input xml to the output directory for documentation ---------------------------
         if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml')==True:
-            print('\n\nChoose a new name or delete inputfile '+inp['corrname']+'.xml in ./DATA/correlations/xmlinput. Aborting.\n\n',file=None)
-            return
-        os.system('cp '+xmlinput+' '+cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml')
+            print('\n\nA new name was chosen to avoid overwriting an older run.\n\n',file=None)
+            corrname=inp['corrname']+'_1'
+        else:
+            corrname=inp['corrname']
+            
+        os.system('cp '+xmlinput+' '+cfg.datadir+'/correlations/xmlinput/'+corrname+'.xml')
         
         #- Get list of correlation pairs-----------------------------------------------------------
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),inp['data']['mix_channels'])
+        print('Obtained list with correlations',file=None)
         
     else:
         inp=dict()
@@ -94,7 +99,7 @@ def par_st(xmlinput):
     
     #- Print info to outfile of this rank --------------------------------------------------------
     if inp['verbose']:
-        ofid=open(cfg.datadir+'/correlations/out/'+inp['corrname']+'.rank'+str(rank)+'.txt','w')
+        ofid=open(cfg.datadir+'/correlations/out/'+corrname+'.rank'+str(rank)+'.txt','w')
         print('\nRank number %d is correlating: \n' %rank,file=ofid)
         for block in ids:
             for tup in block:
@@ -103,7 +108,10 @@ def par_st(xmlinput):
     
     #- Run correlation for blocks ----------------------------------------------------------------
     for block in ids:
-        corrblock(inp,block,dir,ofid,bool(inp['verbose']))
+        if rank==0:
+            print('Starting a block of correlations',file=None)
+            print(time.time())
+        corrblock(inp,block,dir,ofid,bool(int(inp['verbose'])))
     
         
 def corrblock(inp,block,dir,ofid=None,verbose=False):
@@ -247,7 +255,6 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         verbose=bool(int(inp['verbose']))
         check=bool(int(inp['check']))
         Fs=float(inp['timethings']['Fs'])
-        corrname=inp['corrname']
         
         if ('freqmax' in locals())==False:
             freqmax=0.5*Fs
@@ -314,18 +321,18 @@ def corrblock(inp,block,dir,ofid=None,verbose=False):
         
         
         #- open file and write correlation function
-        fileid_ccc=dir+id1+'.'+id2+'.ccc.'+inp['corrname']+'.SAC'
+        fileid_ccc=dir+id1+'.'+id2+'.ccc.'+corrname+'.SAC'
         tr_ccc.write(fileid_ccc,format='SAC')      
         
         #- open file and write correlation function
-        fileid_pcc=dir+id1+'.'+id2+'.pcc.'+inp['corrname']+'.SAC'
+        fileid_pcc=dir+id1+'.'+id2+'.pcc.'+corrname+'.SAC'
         tr_pcc.write(fileid_pcc,format='SAC')
         
         #- write coherence: As numpy array datafile (can be conveniently loaded again)
-        fileid_ccc_cwt=dir+id1+'.'+id2+'.ccs.'+inp['corrname']+'.npy'
+        fileid_ccc_cwt=dir+id1+'.'+id2+'.ccs.'+corrname+'.npy'
         np.save(fileid_ccc_cwt,cstack_ccc)
         
-        fileid_pcc_cwt=dir+id1+'.'+id2+'.pcs.'+inp['corrname']+'.npy'
+        fileid_pcc_cwt=dir+id1+'.'+id2+'.pcs.'+corrname+'.npy'
         np.save(fileid_pcc_cwt,cstack_pcc)
         
     
