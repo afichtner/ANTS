@@ -50,10 +50,14 @@ def par_st(xmlinput):
     if rank==0:
     
         print('The size is '+str(size),file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- Read the input from xml file------------------------------------------------------------
         inp=rxml.read_xml(xmlinput)
         inp=inp[1]
+        
+        print('Read Input\n')
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- copy the input xml to the output directory for documentation ---------------------------
         if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml')==True:
@@ -63,10 +67,13 @@ def par_st(xmlinput):
             corrname=inp['corrname']
             
         os.system('cp '+xmlinput+' '+cfg.datadir+'/correlations/xmlinput/'+corrname+'.xml')
+        print('Copied input file',file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- Get list of correlation pairs-----------------------------------------------------------
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),inp['data']['mix_channels'])
         print('Obtained list with correlations',file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
         
     else:
         inp=dict()
@@ -81,12 +88,19 @@ def par_st(xmlinput):
     #- Broadcast the input and the list of pairs---------------------------------------------------
     idpairs=comm.bcast(idpairs, root=0)
     inp=comm.bcast(inp, root=0)
+    if rank==0:
+        print('Broadcasted input and correlation pair list',file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
     
     #- Create your own directory
     dir=cfg.datadir+'correlations/'+inp['timethings']['startdate'][0:4]+'/rank'+str(rank)+'/'
     if os.path.exists(dir)==False:
         os.mkdir(dir)
    
+   if rank==0:
+       print('Created own directory for output',file=None)
+       print(time.strftime('%H.%M.%S')+'\n',file=None)
+       
     #- Each rank determines the part of data it has to work on ------------------------------------
     n1=int(len(idpairs)/size)
     n2=len(idpairs)%size
@@ -105,7 +119,10 @@ def par_st(xmlinput):
             for tup in block:
                 print(str(tup)+'\n',file=ofid)
     
-    
+    if rank==0:
+        print('Got task assigned, ready to start correlating',file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
+        
     #- Run correlation for blocks ----------------------------------------------------------------
     for block in ids:
         if rank==0:
