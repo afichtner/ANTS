@@ -63,6 +63,7 @@ def par_st(xmlinput):
         if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml')==True:
             print('\n\nA new name was chosen to avoid overwriting an older run.\n\n',file=None)
             corrname=inp['corrname']+'_1'
+            print('New name: '+corrname,file=None)
         else:
             corrname=inp['corrname']
             
@@ -78,7 +79,7 @@ def par_st(xmlinput):
     else:
         inp=dict()
         idpairs=list()
-     
+        corrname=''
     #==============================================================================================
     #- ALL processes:
     #- receive input and list of possible station pairs
@@ -88,6 +89,8 @@ def par_st(xmlinput):
     #- Broadcast the input and the list of pairs---------------------------------------------------
     idpairs=comm.bcast(idpairs, root=0)
     inp=comm.bcast(inp, root=0)
+    corrname=comm.bcast(corrname,root=0)
+    
     if rank==0:
         print('Broadcasted input and correlation pair list',file=None)
         print(time.strftime('%H.%M.%S')+'\n',file=None)
@@ -97,9 +100,9 @@ def par_st(xmlinput):
     if os.path.exists(dir)==False:
         os.mkdir(dir)
    
-   if rank==0:
-       print('Created own directory for output',file=None)
-       print(time.strftime('%H.%M.%S')+'\n',file=None)
+    if rank==0:
+        print('Created own directory for output',file=None)
+        print(time.strftime('%H.%M.%S')+'\n',file=None)
        
     #- Each rank determines the part of data it has to work on ------------------------------------
     n1=int(len(idpairs)/size)
@@ -127,11 +130,11 @@ def par_st(xmlinput):
     for block in ids:
         if rank==0:
             print('Starting a block of correlations',file=None)
-            print(time.time())
-        corrblock(inp,block,dir,ofid,bool(int(inp['verbose'])))
+            print(time.strftime('%H.%M.%S')+'\n',file=None)
+        corrblock(inp,block,dir,corrname,ofid,bool(int(inp['verbose'])))
     
         
-def corrblock(inp,block,dir,ofid=None,verbose=False):
+def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     """
     Receives a block with station pairs
     Loops through those station pairs
