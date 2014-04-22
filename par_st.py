@@ -132,6 +132,9 @@ def par_st(xmlinput):
             print('Starting a block of correlations',file=None)
             print(time.strftime('%H.%M.%S')+'\n',file=None)
         corrblock(inp,block,dir,corrname,ofid,bool(int(inp['verbose'])))
+        if rank==0:
+            print('Finished a block of correlations',file=None)
+            print(time.strftime('%H.%M.%S')+'\n',file=None)
     
         
 def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
@@ -166,7 +169,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     for pair in block:
         id1=pair[0]
         id2=pair[1]
-        
+        endday=obs.UTCDateTime(inp['timethings']['enddate'])
         #==============================================================================================
         #- check if data for first station is in memory
         #- if it isn't, it needs to be read in
@@ -186,6 +189,12 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             #- This is convenient because we then get only one trace that can be handled with an index 
             #- inside the datstr objects more easily (rather than having a stream with variable number of traces)
             for filename in traces:
+                
+                print(filename,file=None)
+                (ey,em)=filename.split('/')[-1].split('.')[9:11]
+                ef=obs.UTCDateTime(ey+','+em)
+                if ef>endday:
+                    continue
 
                 newtr=obs.read(filename)[0]
                 
@@ -268,7 +277,6 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         #- Get some information needed for the cross correlation
         #==============================================================================================
         startday=obs.UTCDateTime(inp['timethings']['startdate'])
-        endday=obs.UTCDateTime(inp['timethings']['enddate'])
         winlen=int(inp['timethings']['winlen'])
         maxlag=int(inp['correlations']['max_lag'])
         pccnu=int(inp['correlations']['pcc_nu'])
