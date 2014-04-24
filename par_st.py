@@ -121,6 +121,8 @@ def par_st(xmlinput):
         for block in ids:
             for tup in block:
                 print(str(tup)+'\n',file=ofid)
+    else:
+        ofid=None
     
     if rank==0:
         print('Got task assigned, ready to start correlating',file=None)
