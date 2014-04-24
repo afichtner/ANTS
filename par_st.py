@@ -224,6 +224,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 del colltr
                 #- Split the trace at its gaps
                 str1=datstr[idlist[id1]].split()
+            else: 
+                continue
         
         #==============================================================================================
         #- Same thing for the second station, unless it's identical to the first
@@ -276,10 +278,12 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     del colltr
                     #- Split the trace at its gaps
                     str2=datstr[idlist[id2]].split()
+                else:
+                    continue    
         if len(datstr)==0:
-		if verbose:
-			print('No matching files found',file=ofid)
-		return() 
+		    if verbose:
+			    print('No matching files found',file=ofid)
+		    return()
         #==============================================================================================
         #- Get some information needed for the cross correlation
         #==============================================================================================
