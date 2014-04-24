@@ -220,10 +220,10 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 ntr+=1
                 if verbose:
                     print('Read in Traces for station '+id1,file=ofid)
-            del newtr
-            del colltr
-            #- Split the trace at its gaps
-            str1=datstr[idlist[id1]].split()
+                del newtr
+                del colltr
+                #- Split the trace at its gaps
+                str1=datstr[idlist[id1]].split()
         
         #==============================================================================================
         #- Same thing for the second station, unless it's identical to the first
@@ -272,10 +272,10 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     ntr+=1
                     if verbose:
                         print('Read in Traces for station '+id2,file=ofid)
-                del newtr
-                del colltr
-                #- Split the trace at its gaps
-                str2=datstr[idlist[id2]].split()
+                    del newtr
+                    del colltr
+                    #- Split the trace at its gaps
+                    str2=datstr[idlist[id2]].split()
         if len(datstr)==0:
 		if verbose:
 			print('No matching files found',file=ofid)
