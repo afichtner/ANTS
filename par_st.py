@@ -189,9 +189,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             #- This is convenient because we then get only one trace that can be handled with an index 
             #- inside the datstr objects more easily (rather than having a stream with variable number of traces)
             for filename in traces:
-                
-                print(filename,file=None)
-                (ey,em)=filename.split('/')[-1].split('.')[9:11]
+     
+                (ey,em)=filename.split('/')[-1].split('.')[4:6]
                 ef=obs.UTCDateTime(ey+','+em)
                 if ef>endday:
                     continue
@@ -213,7 +212,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 else:
                     colltr=newtr.copy()    
             #- add this entire trace (which contains all data of this station that are available in this directory) to datstr and update the idlist
-            if len(colltr)>0:
+            if 'colltr' in locals():
                 datstr+=colltr
                 idlist.update({id1:ntr})
                 ntr+=1
@@ -242,6 +241,12 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 if len(traces)==0: continue
                 
                 for filename in traces:
+                    
+                    (ey,em)=filename.split('/')[-1].split('.')[4:6]
+                    ef=obs.UTCDateTime(ey+','+em)
+                    if ef>endday:
+                        continue
+                        
                     newtr=obs.read(filename)[0]
                 
                     #- Check if at least one window contained
@@ -259,7 +264,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     else:
                         colltr=newtr.copy()    
                 #- add this entire trace (which contains all data of this station that are available in this directory) to datstr and update the idlist
-                if len(colltr)>0:
+                if 'colltr' in locals():
                     datstr+=colltr
                     idlist.update({id2:ntr})
                     ntr+=1
