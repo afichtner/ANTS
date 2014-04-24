@@ -115,7 +115,7 @@ def par_st(xmlinput):
         ids.append(idpairs[n1*size+rank])
     
     #- Print info to outfile of this rank --------------------------------------------------------
-    if inp['verbose']:
+    if bool(int(inp['verbose']))==True:
         ofid=open(cfg.datadir+'/correlations/out/'+corrname+'.rank'+str(rank)+'.txt','w')
         print('\nRank number %d is correlating: \n' %rank,file=ofid)
         for block in ids:
