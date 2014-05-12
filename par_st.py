@@ -7,6 +7,7 @@ import obspy as obs
 import TOOLS.read_xml as rxml
 import antconfig as cfg
 import numpy as np
+import TOOLS.processing as proc
 import TOOLS.correlations as corr
 
 from mpi4py import MPI
@@ -56,12 +57,12 @@ def par_st(xmlinput):
         inp=rxml.read_xml(xmlinput)
         inp=inp[1]
         
-        print('Read Input\n')
+        print('Read Input')
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- copy the input xml to the output directory for documentation ---------------------------
         if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml')==True:
-            print('\n\nA new name was chosen to avoid overwriting an older run.\n\n',file=None)
+            print('\nA new name was chosen to avoid overwriting an older run.\n',file=None)
             corrname=inp['corrname']+'_1'
             print('New name: '+corrname,file=None)
         else:
@@ -203,6 +204,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 if len(newtr.data)<int(inp['timethings']['winlen']):
                     continue
                 
+                #- Bandpass filter
                 if bool(int(inp['bandpass']['doit']))==True:
                     freqmin=float(inp['bandpass']['f_min'])
                     freqmax=float(inp['bandpass']['f_max'])
@@ -211,8 +213,10 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     
                 if 'colltr' in locals():
                     colltr+=newtr
+                    
                 else:
-                    colltr=newtr.copy()    
+                    colltr=newtr.copy()
+                
             #- add this entire trace (which contains all data of this station that are available in this directory) to datstr and update the idlist
             if 'colltr' in locals():
                 datstr+=colltr
@@ -256,7 +260,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     #- Check if at least one window contained
                     if len(newtr.data)<int(inp['timethings']['winlen']):
                         continue
-                
+                        
+                    #- Filter
                     if bool(int(inp['bandpass']['doit']))==True:
                         freqmin=float(inp['bandpass']['f_min'])
                         freqmax=float(inp['bandpass']['f_max'])
@@ -266,7 +271,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     if 'colltr' in locals():
                         colltr+=newtr
                     else:
-                        colltr=newtr.copy()    
+                        colltr=newtr.copy()
                 #- add this entire trace (which contains all data of this station that are available in this directory) to datstr and update the idlist
                 if 'colltr' in locals():
                     datstr+=colltr
@@ -288,12 +293,12 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         #- Get some information needed for the cross correlation
         #==============================================================================================
         startday=obs.UTCDateTime(inp['timethings']['startdate'])
+        Fs=float(inp['timethings']['Fs'])
         winlen=int(inp['timethings']['winlen'])
         maxlag=int(inp['correlations']['max_lag'])
         pccnu=int(inp['correlations']['pcc_nu'])
         verbose=bool(int(inp['verbose']))
         check=bool(int(inp['check']))
-        Fs=float(inp['timethings']['Fs'])
         
         if ('freqmax' in locals())==False:
             freqmax=0.5*Fs
@@ -453,15 +458,19 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
     
     """
     
+    
     pcccnt=0
     ccccnt=0
     n1=0
     n2=0
     t1=startday
+    tlen=int(maxlag*Fs)*2+1
+    cccstack=np.zeros(tlen)
+    pccstack=np.zeros(tlen)
+   
     
     while n1<len(str1) and n2<len(str2):
-        
-        
+    
         # Check if the end of one of the traces has been reached
         if str1[n1].stats.endtime-t1<winlen-1:
             n1+=1
@@ -477,11 +486,21 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
         # Check if the end of the desired stacking window is reached
         if t2>endday: break
         
+        
         tr1=str1[n1].slice(starttime=t1,endtime=t2-1/Fs)
         tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs)
         
-        # Correlate the traces
-        if len(tr1.data)==winlen and len(tr2.data)==winlen:
+        #- Downsample
+        if Fs<tr1.stats.sampling_rate:
+            tr1=proc.trim_next_sec(tr1,verbose,None)
+            tr1=proc.downsample(tr1,Fs,verbose,None)
+        if Fs<tr2.stats.sampling_rate:        
+            tr2=proc.trim_next_sec(tr2,verbose,None)
+            tr2=proc.downsample(tr2,Fs,verbose,None)   
+    
+        
+        # Correlate the traces, if they are long enough
+        if len(tr1.data)/Fs==winlen and len(tr2.data)/Fs==winlen:
             
             pcc=corr.phase_xcorrelation(tr1, tr2, maxlag, nu, varwl=True)
             ccc=corr.xcorrelation_td(tr1, tr2, maxlag)
@@ -512,7 +531,9 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
                 
                 id_cwt=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.npy'
                 np.save(id_cwt,coh_pcc)
-                
+            pccstack+=pcc
+            cccstack+=ccc
+              
             #Add to the stack
             if 'pccstack' in locals():
                 pccstack+=pcc
@@ -532,15 +553,12 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
                 cstack_pcc+=coh_pcc
             else:
                 cstack_pcc=coh_pcc
-            
+        if 'cstack_ccc' not in locals():
+            cstack_ccc=0
+        if 'cstack_pcc' not in locals():
+            cstack_pcc=0
+                
         #Update starttime
         t1=t2
     
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
-            
-            
-                
-        
-       
-    
-    
