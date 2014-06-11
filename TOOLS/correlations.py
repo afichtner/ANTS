@@ -86,11 +86,12 @@ def phase_xcorrelation(dat1, dat2, max_lag=10, nu=1, varwl=True):
     s1=hilbert(dat1.data)
     s2=hilbert(dat2.data)
     
+    
     #Normalization
     s1=s1/(np.abs(s1))
     s2=s2/(np.abs(s2))
     
-    
+   
     #Max lag in sec --> convert to sample numbers
     Fs=dat1.stats.sampling_rate
     max_lag=int(max_lag*Fs)

@@ -26,76 +26,69 @@ def download_fetchdata(xmlinput):
     
      #- read input file ============================================================================
 
-    datainput=rxml.read_xml(xmlinput)
-    dat1=datainput[1]
-    
+    dat=rxml.read_xml(xmlinput)[1]
+   
     
     # Verbose?
-    if dat1['verbose']=='1':
+    if dat['verbose']=='1':
         v=True
         vfetchdata='-v '
     else:
         vfetchdata=''
         
     # Directory where executable is located
-    exdir=dat1['exdir']
+    exdir=dat['exdir']
     
     # network, channel, location and station list
-    networks=dat1['data']['networks'].strip().split(' ')
-    channels=dat1['data']['channels'].strip().split(' ')
-    stafile=dat1['data']['stations']
+    stafile=dat['ids']
 
     # time interval of request
-    t1=dat1['time']['starttime']
+    t1=dat['time']['starttime']
     t1str=UTCDateTime(t1).strftime('%Y.%j.%H.%M.%S')
-    t2=dat1['time']['endtime']
+    t2=dat['time']['endtime']
     t2str=UTCDateTime(t2).strftime('%Y.%j.%H.%M.%S')
     
     # minimum length
-    minlen=dat1['time']['minlen']
+    minlen=dat['time']['minlen']
 
     # geographical region
-    lat_min=dat1['region']['lat_min']
-    lat_max=dat1['region']['lat_max']
-    lon_min=dat1['region']['lon_min']
-    lon_max=dat1['region']['lon_max']
+    lat_min=dat['region']['lat_min']
+    lat_max=dat['region']['lat_max']
+    lon_min=dat['region']['lon_min']
+    lon_max=dat['region']['lon_max']
      
     
-    for network in networks:
-        # storage of the data
-        targetloc=datadir+'raw/'+network
-        respfileloc=datadir+'resp/'
+    # storage of the data
+    targetloc=datadir+'raw/latest/'
+    respfileloc=datadir+'resp/'
+    
+    if os.path.isdir(targetloc)==False:
+        cmd='mkdir '+targetloc
+        os.system(cmd)   
+    
+    if os.path.isdir(respfileloc)==False:
+        cmd='mkdir '+respfileloc
+        os.system(cmd)
         
-        if os.path.isdir(targetloc)==False:
-            cmd='mkdir '+targetloc
-            os.system(cmd)   
-    
-        if os.path.isdir(respfileloc)==False:
-            cmd='mkdir '+respfileloc
-            os.system(cmd)
+    fh=open(stafile, 'r')
+    ids=fh.read().split('\n')
+    for id in ids:
+        if id=='': continue
+        
+        #-Formulate a polite request
+        filename=targetloc+id+'.'+t1str+'.'+t2str+'.mseed'
+        if os.path.exists(filename)==False:
+            network=id.split('.')[0]
+            station=id.split('.')[1]
+            location=id.split('.')[2]
+            channel=id.split('.')[3]
+            #print network, station, location, channel
+            
+            reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -L '+location+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+            os.system(reqstring)
             
             
-        for channel in channels:
-            
-            
-            if stafile=="*":
-                filename=targetloc+'/'+network+'.all..'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                if os.path.exists(filename)==False:
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
-                    print(reqstring)
-                    os.system(reqstring)
-            
-            else:
-                fh=open(stafile, 'r')
-                stations=fh.read().split('\n')
-                for station in stations:
-                    if station=='': continue
-                    print network + station + channel
-                    #-Formulate a polite request
-                    filename=targetloc+'/'+network+'.'+station+'..'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                    if os.path.exists(filename)==False:
-                        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
-                        print(reqstring)
-                        os.system(reqstring)
-    
-        return
+    # Clean up (some files come back with 0 data)
+    cmd=('./UTIL/cleandir.sh '+targetloc)       
+    os.system(cmd)
+    return

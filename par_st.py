@@ -73,7 +73,7 @@ def par_st(xmlinput):
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- Get list of correlation pairs-----------------------------------------------------------
-        idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),inp['data']['mix_channels'])
+        idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),inp['data']['mix_channels'],bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
@@ -303,7 +303,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         if ('freqmax' in locals())==False:
             freqmax=0.5*Fs
         if ('freqmin' in locals())==False:
-            freqmax=0.001
+            freqmin=0.001
         
         
         #==============================================================================================
@@ -491,17 +491,19 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
         tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs)
         
         #- Downsample
-        if Fs<tr1.stats.sampling_rate:
-            tr1=proc.trim_next_sec(tr1,verbose,None)
-            tr1=proc.downsample(tr1,Fs,verbose,None)
-        if Fs<tr2.stats.sampling_rate:        
-            tr2=proc.trim_next_sec(tr2,verbose,None)
-            tr2=proc.downsample(tr2,Fs,verbose,None)   
+        if len(tr1.data)>40 and len(tr2.data)>40:
+            if Fs<tr1.stats.sampling_rate:
+                tr1=proc.trim_next_sec(tr1,False,None)
+                tr1=proc.downsample(tr1,Fs,False,None)
+            if Fs<tr2.stats.sampling_rate:
+                tr2=proc.trim_next_sec(tr2,False,None)
+                tr2=proc.downsample(tr2,Fs,False,None)
+        else: 
+            break   
     
         
-        # Correlate the traces, if they are long enough
-        if len(tr1.data)/Fs==winlen and len(tr2.data)/Fs==winlen:
-            
+        # downsample and correlate the traces, if they are long enough
+        if len(tr1.data)==len(tr2.data):
             pcc=corr.phase_xcorrelation(tr1, tr2, maxlag, nu, varwl=True)
             ccc=corr.xcorrelation_td(tr1, tr2, maxlag)
             
@@ -531,6 +533,8 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
                 
                 id_cwt=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.npy'
                 np.save(id_cwt,coh_pcc)
+                
+                
             pccstack+=pcc
             cccstack+=ccc
               
@@ -553,12 +557,14 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
                 cstack_pcc+=coh_pcc
             else:
                 cstack_pcc=coh_pcc
-        if 'cstack_ccc' not in locals():
-            cstack_ccc=0
-        if 'cstack_pcc' not in locals():
-            cstack_pcc=0
-                
+
         #Update starttime
         t1=t2
+        
+        
+    if 'cstack_ccc' not in locals():
+        cstack_ccc=0
+    if 'cstack_pcc' not in locals():
+        cstack_pcc=0
     
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
