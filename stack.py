@@ -272,8 +272,8 @@ def stack(xmlinput):
                 
                 if tformat=='SAC':
                     tr_correlation_stack.stats=tr_old.stats
-                    tr_correlation_stack.stats.sac['user0']=n
-                    tr_correlation_stack.stats.sac['user1']=tslen
+                    tr_correlation_stack.stats.sac['user0']+=n
+                    tr_correlation_stack.stats.sac['user1']+=tslen
                 tr_correlation_stack.write(fileid_correlation_stack, format=tformat)
             else:
                 if tformat=='SAC':
@@ -294,6 +294,8 @@ def stack(xmlinput):
                     tr_correlation_stack.stats.sac['dist']=dist
                     tr_correlation_stack.stats.sac['az']=az
                     tr_correlation_stack.stats.sac['baz']=baz
+                    tr_correlation_stack.stats.sac['user0']=n
+                    tr_correlation_stack.stats.sac['user1']=tslen
                     tr_correlation_stack.stats.sac['kuser1']=dat2.stats.network
                     tr_correlation_stack.stats.sac['kuser2']=dat2.stats.channel
                     tr_correlation_stack.stats.sac['kt0']=t1
@@ -344,12 +346,14 @@ def find_pairs(record_list,mix_channels,win_len,verbose):
             #- channels
             cha1=record_list[i].split('.')[3]
             cha2=record_list[j].split('.')[3]
-
+            
+            r=record_list[i].split('/')[-1]
+            print r
             #- times
-            t11=UTCDateTime(str(record_list[i].split('.')[4])+','+str(record_list[i].split('.')[5])+','+str(record_list[i].split('.')[6])+':'+str(record_list[i].split('.')[7])+':'+str(record_list[i].split('.')[8]))
-            t12=UTCDateTime(str(record_list[i].split('.')[9])+','+str(record_list[i].split('.')[10])+','+str(record_list[i].split('.')[11])+':'+str(record_list[i].split('.')[12])+':'+str(record_list[i].split('.')[13]))
-            t21=UTCDateTime(str(record_list[j].split('.')[4])+','+str(record_list[j].split('.')[5])+','+str(record_list[j].split('.')[6])+':'+str(record_list[j].split('.')[7])+':'+str(record_list[j].split('.')[8]))
-            t22=UTCDateTime(str(record_list[j].split('.')[9])+','+str(record_list[j].split('.')[10])+','+str(record_list[j].split('.')[11])+':'+str(record_list[j].split('.')[12])+':'+str(record_list[j].split('.')[13]))
+            t11=UTCDateTime(str(r.split('.')[4])+','+str(r.split('.')[5])+','+str(r.split('.')[6])+':'+str(r.split('.')[7])+':'+str(r.split('.')[8]))
+            t12=UTCDateTime(str(r.split('.')[9])+','+str(r.split('.')[10])+','+str(r.split('.')[11])+':'+str(r.split('.')[12])+':'+str(r.split('.')[13]))
+            t21=UTCDateTime(str(r.split('.')[4])+','+str(r.split('.')[5])+','+str(r.split('.')[6])+':'+str(r.split('.')[7])+':'+str(r.split('.')[8]))
+            t22=UTCDateTime(str(r.split('.')[9])+','+str(r.split('.')[10])+','+str(r.split('.')[11])+':'+str(r.split('.')[12])+':'+str(r.split('.')[13]))
             
             
             
