@@ -80,15 +80,15 @@ def download_fetchdata(xmlinput):
         if os.path.exists(filename)==False:
             network=id.split('.')[0]
             station=id.split('.')[1]
-            location=id.split('.')[2]
             channel=id.split('.')[3]
             #print network, station, location, channel
             
-            reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -L '+location+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+            reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
             os.system(reqstring)
             
             
     # Clean up (some files come back with 0 data)
-    cmd=('./UTIL/cleandir.sh '+targetloc)       
+    cleanupinfo=datadir+'raw/latest/'+stafile.split('/')[-1]+'.'+t1str+'.'+t2str
+    cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
     os.system(cmd)
     return
