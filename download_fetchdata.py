@@ -82,7 +82,7 @@ def download_fetchdata(xmlinput):
             station=id.split('.')[1]
             channel=id.split('.')[3]
             #print network, station, location, channel
-            
+            print '\n Attempting to download data from: '+id+'\n'
             reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
             os.system(reqstring)
             

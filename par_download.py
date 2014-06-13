@@ -1,125 +1,135 @@
-import TOOLS.read_xml as rxml
-from obspy import UTCDateTime
+# A script to download ambient vibration records
 import os
 import sys
-from shutil import copy
+import shutil
+from obspy import UTCDateTime
+from math import ceil
 
 from mpi4py import MPI
-from math import ceil
+
+import TOOLS.read_xml as rxml 
+import antconfig as cfg
+
 
 if __name__=='__main__':
     import par_download as pd
     xmlin=str(sys.argv[1])
-    pd.download_fetchdata(xmlin)
-    
+    print 'XML input file: '+ xmlin
+    pd.par_download(xmlin)
 
-def download_fetchdata(xmlinput):
+
+def par_download(xmlinput):
     
     """
     
-    Tool for the download continuous seismic data from a collection of stations and/or networks.
-
-    The download is based on the iris DMC FetchData script and takes as input an xml file that specifies the download parameters.
-
+    Parallel download from IRIS DMC
+    
     """
+
     #==============================================================================================
     # preliminaries
     #==============================================================================================
+    
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size=comm.Get_size()
-
+    
     #==============================================================================================
     #- MASTER process:
     #- reads in xmlinput
     #- creates output directory
     #- creates a list of input files
     #==============================================================================================
+    
     if rank==0:
-        dat1=rxml.read_xml(xmlinput)[1]
-        network=dat1['data']['networks'].strip().split(' ')[0]
-        # storage of the data
-        targetloc='./DATA/raw/'+network
-        respfileloc='./DATA/resp/'
-        
-        if os.path.isdir(targetloc)==False:
-            cmd='mkdir '+targetloc
-            os.system(cmd)   
-        
-        if os.path.isdir(respfileloc)==False:
-            cmd='mkdir '+respfileloc
-            os.system(cmd)
-   
-        
-    #- Read the input station list==================================================================
-        stafile=dat1['data']['stations'].strip().split(' ')[0]
-        if stafile=="*":
-            print 'Wildcarding stations is not allowed for parallel download. Provide a station list file.'
-            return
-        else:
-            fh=open(stafile, 'r')
-            stations=fh.read().split('\n')
-            
-        
-    elif rank!=0:
-        dat1=list()
-        stations=list()  
+    
+       datadir=cfg.datadir
+       dat=rxml.read_xml(xmlinput)[1]
 
-
+       # storage of the data
+       targetloc=datadir+'raw/latest/'
+      
+       if os.path.isdir(targetloc)==False:
+           cmd='mkdir '+targetloc
+           os.system(cmd)
+              
+       # network, channel, location and station list
+       stafile=dat['ids']
+       fh=open(stafile, 'r')
+       ids=fh.read().split('\n')
+       
     #==============================================================================================
-    #- broadcast the input; and the station list
-    stations=comm.bcast(stations, root=0)
-    dat1=comm.bcast(dat1, root=0)
+    #- All processes:
+    #- receive the input; and the list of files
+    #- read variables from broadcasted input
     #==============================================================================================
     
+    else:
+        ids=list()
+        dat=list()    
+       
+    ids=comm.bcast(ids, root=0)
+    dat=comm.bcast(dat, root=0)
+    
+    datadir=cfg.datadir
+    targetloc=datadir+'raw/latest/'
+    
+    # Directory where executable is located
+    exdir=dat['exdir']
     
     # Verbose?
-    if dat1['verbose']=='1':
+    if dat['verbose']=='1':
         v=True
         vfetchdata='-v '
     else:
         vfetchdata=''
-    # Directory where executable is located
-    exdir=dat1['exdir']
-    
-    
-    # network, channel, location and station list
-    network=dat1['data']['networks'].strip().split(' ')[0]
-    channels=dat1['data']['channels'].strip().split(' ')
-    locations=dat1['data']['locations'].strip().split(' ')
-    
-    # Folders
-    targetloc='./DATA/raw/'+network
-    respfileloc='./DATA/resp/'
-    
+        
     # time interval of request
-    t1=dat1['time']['starttime']
+    t1=dat['time']['starttime']
     t1str=UTCDateTime(t1).strftime('%Y.%j.%H.%M.%S')
-    t2=dat1['time']['endtime']
+    t2=dat['time']['endtime']
     t2str=UTCDateTime(t2).strftime('%Y.%j.%H.%M.%S')
+ 
+    # minimum length
+    minlen=dat['time']['minlen']
 
     # geographical region
-    lat_min=dat1['region']['lat_min']
-    lat_max=dat1['region']['lat_max']
-    lon_min=dat1['region']['lon_min']
-    lon_max=dat1['region']['lon_max']
-     
-    #==============================================================================================
-    #- Assign each rank its own chunk of stations
-    #==============================================================================================
-    clen=int(ceil(float(len(stations))/float(size)))
-    chunk=(rank*clen, (rank+1)*clen)
-    mystations=stations[chunk[0]:chunk[1]]
-    if v: 
-        print 'Hi I am process nr ', rank, 'and I request data from these stations:'
-        print mystations
+    lat_min=dat['region']['lat_min']
+    lat_max=dat['region']['lat_max']
+    lon_min=dat['region']['lon_min']
+    lon_max=dat['region']['lon_max']
     
-    for channel in channels:
-        for location in locations:
-            for station in mystations:
-                if station=='': continue
-                #-Formulate a polite request
-                filename=targetloc+'/'+network+'.'+station+'.'+location+'.'+channel+'.'+t1str+'.'+t2str+'.mseed'
-                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+' -S '+station+' -L '+location + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename+' -rd '+respfileloc
-                if v: print reqstring
-                os.system(reqstring)
+    #==============================================================================================
+    #- Assign each rank its own chunk of input
+    #==============================================================================================
+
+    clen=int(ceil(float(len(ids))/float(size)))
+    chunk=(rank*clen, (rank+1)*clen)
+    myids=ids[chunk[0]:chunk[1]]
+    
+    #==================================================================================
+    # Input files loop
+    #==================================================================================
+      
+    for id in myids:
+        
+        if id=='': continue
+        
+        #-Formulate a polite request
+        filename=targetloc+id+'.'+t1str+'.'+t2str+'.mseed'
+        if os.path.exists(filename)==False:
+            network=id.split('.')[0]
+            station=id.split('.')[1]
+            channel=id.split('.')[3]
+            #print network, station, location, channel
+            print '\n Attempting to download data from: '+id+'\n'
+            reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+            os.system(reqstring)
+      
+      # A cleanup needs to be run, but only after all ranks have finished download   
+      #if rank==0:   
+        # Clean up (some files come back with 0 data)
+        #cleanupinfo=datadir+'raw/latest/'+stafile.split('/')[-1]+'.'+t1str+'.'+t2str
+        #cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
+        #os.system(cmd)
+      #return
