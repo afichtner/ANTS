@@ -45,14 +45,7 @@ def par_download(xmlinput):
     
        datadir=cfg.datadir
        dat=rxml.read_xml(xmlinput)[1]
-
-       # storage of the data
-       targetloc=datadir+'raw/latest/'
       
-       if os.path.isdir(targetloc)==False:
-           cmd='mkdir '+targetloc
-           os.system(cmd)
-              
        # network, channel, location and station list
        stafile=dat['ids']
        fh=open(stafile, 'r')
@@ -72,7 +65,12 @@ def par_download(xmlinput):
     dat=comm.bcast(dat, root=0)
     
     datadir=cfg.datadir
-    targetloc=datadir+'raw/latest/'
+    targetloc=datadir+'raw/latest/rank'+str(rank)+'/'
+    
+    if os.path.isdir(targetloc)==False:
+        cmd='mkdir '+targetloc
+        os.system(cmd)
+    
     
     # Directory where executable is located
     exdir=dat['exdir']
@@ -103,9 +101,11 @@ def par_download(xmlinput):
     #- Assign each rank its own chunk of input
     #==============================================================================================
 
-    clen=int(ceil(float(len(ids))/float(size)))
+    clen=int(float(len(ids))/float(size))
     chunk=(rank*clen, (rank+1)*clen)
     myids=ids[chunk[0]:chunk[1]]
+    if rank==size-1:
+        myids=ids[chunk[0]:]
     
     #==================================================================================
     # Input files loop
@@ -122,14 +122,15 @@ def par_download(xmlinput):
             station=id.split('.')[1]
             channel=id.split('.')[3]
             #print network, station, location, channel
+            print '\n Rank '+str(rank)+'\n'
             print '\n Attempting to download data from: '+id+'\n'
             reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
             os.system(reqstring)
       
-      # A cleanup needs to be run, but only after all ranks have finished download   
-      #if rank==0:   
-        # Clean up (some files come back with 0 data)
-        #cleanupinfo=datadir+'raw/latest/'+stafile.split('/')[-1]+'.'+t1str+'.'+t2str
-        #cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
-        #os.system(cmd)
+     
+    # Clean up (some files come back with 0 data)
+    stafile=dat['ids']
+    cleanupinfo=targetloc+stafile.split('/')[-1]+'.'+t1str+'.'+t2str
+    cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
+    os.system(cmd)
       #return
