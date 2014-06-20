@@ -17,8 +17,8 @@ import TOOLS.processing as proc
 import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.renamer as rn
+import TOOLS.mergetraces as mt
 import antconfig as cfg
-
 
 if __name__=='__main__':
     import par_ic as pic
