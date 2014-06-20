@@ -41,15 +41,7 @@ def download_resp(xmlinput):
     exdir=dat1['exdir']
     
     # network, channel, location and station list
-    networks=dat1['data']['networks'].strip().split(' ')
-    channels=dat1['data']['channels'].strip().split(' ')
-    stafile=dat1['data']['stations']
-
-    # time interval of request
-    t1=dat1['time']['starttime']
-    t1str=UTCDateTime(t1).strftime('%Y.%j.%H.%M.%S')
-    t2=dat1['time']['endtime']
-    t2str=UTCDateTime(t2).strftime('%Y.%j.%H.%M.%S')
+    stafile=dat1['ids']
     
     # geographical region
     lat_min=dat1['region']['lat_min']
@@ -58,36 +50,26 @@ def download_resp(xmlinput):
     lon_max=dat1['region']['lon_max']
      
     
-    for network in networks:
-        # storage of the data
-        targetloc=datadir+'raw/'+network
-        respfileloc=datadir+'resp/'
+
+    respfileloc=datadir+'resp/'
         
-        if os.path.isdir(targetloc)==False:
-            cmd='mkdir '+targetloc
-            os.system(cmd)   
+    if os.path.isdir(respfileloc)==False:
+        cmd='mkdir '+respfileloc
+        os.system(cmd)
+            
+    fh=open(stafile, 'r')
+    ids=fh.read().split('\n')
     
-        if os.path.isdir(respfileloc)==False:
-            cmd='mkdir '+respfileloc
-            os.system(cmd)
-            
-            
-        for channel in channels:
-            
-            
-            if stafile=="*":
-                if os.path.exists(filename)==False:
-                    reqstring='./FetchData '+vfetchdata+' -N '+network+ '-C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
-                    print(reqstring)
-                    os.system(reqstring)
-            
-            else:
-                fh=open(stafile, 'r')
-                stations=fh.read().split('\n')
-                for station in stations:
-                    if station=='': continue
-                    reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station + ' -C '+channel+' -s '+t1+' -e '+t2+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
-                    print(reqstring)
-                    os.system(reqstring)
     
-        return
+    for id in ids:
+        if id=='': continue
+        
+        network=id.split('.')[0]
+        station=id.split('.')[1]
+        channel=id.split('.')[3]
+        
+        print '\n Downloading response information from: '+id+'\n'
+        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
+        os.system(reqstring)
+    
+    return

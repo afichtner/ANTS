@@ -60,16 +60,12 @@ def download_fetchdata(xmlinput):
     
     # storage of the data
     targetloc=datadir+'raw/latest/'
-    respfileloc=datadir+'resp/'
-    
+   
     if os.path.isdir(targetloc)==False:
         cmd='mkdir '+targetloc
         os.system(cmd)   
     
-    if os.path.isdir(respfileloc)==False:
-        cmd='mkdir '+respfileloc
-        os.system(cmd)
-        
+ 
     fh=open(stafile, 'r')
     ids=fh.read().split('\n')
     for id in ids:
@@ -85,7 +81,6 @@ def download_fetchdata(xmlinput):
             print '\n Attempting to download data from: '+id+'\n'
             reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
             os.system(reqstring)
-            
             
     # Clean up (some files come back with 0 data)
     cleanupinfo=datadir+'raw/latest/'+stafile.split('/')[-1]+'.'+t1str+'.'+t2str

@@ -130,7 +130,10 @@ def par_download(xmlinput):
      
     # Clean up (some files come back with 0 data)
     stafile=dat['ids']
-    cleanupinfo=targetloc+stafile.split('/')[-1]+'.'+t1str+'.'+t2str
+    t1s=t1str.split('.')[0]+'.'+t1str.split('.')[1]
+    t2s=t2str.split('.')[0]+'.'+t2str.split('.')[1]
+    cleanupinfo=targetloc+stafile.split('/')[-1].split('.')[0]+'.'+t1s+'.'+t2s
+    
     cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
     os.system(cmd)
       #return

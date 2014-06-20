@@ -94,6 +94,8 @@ def ic(xmlinput,content=None):
            filename=content
            content=list()
            content.append(filename)
+       
+       content.sort()
            
        #- If only a check run is performed, then only a couple of files are preprocessed
        if check and len(content)>4:
@@ -125,6 +127,7 @@ def ic(xmlinput,content=None):
     wl=inp1['processing']['instrument_response']['waterlevel']
     seglen=float(inp1['processing']['split']['length_in_sec'])
     minlen=float(inp1['quality']['min_length_in_sec'])
+    mergegap=float(inp1['quality']['maxgaplen'])
     
     #==============================================================================================
     #- Assign each rank its own chunk of input
@@ -169,9 +172,10 @@ def ic(xmlinput,content=None):
             if verbose: print('** unexpected read error, skip.',file=ofid)
             continue
     
+        #- clean the data merging segments with less than a specified number of seconds:
+        data=mt.mergetraces(data,mergegap)
         
         #- initialize stream to 'recollect' the split traces
-
         colloc_data=Stream()
         
       

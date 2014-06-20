@@ -12,6 +12,7 @@ do
 	if [ $filesize == 0 ] ; then
 		
 		printf $file >> $2
+		printf '\n' >> $2
 	
 		
 		rm $file;
