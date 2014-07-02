@@ -166,8 +166,8 @@ def ic(xmlinput,content=None):
         
         
         if verbose==True:
-            print('===========================================================',file=ofid)
-            print('* opening file: '+filepath+'\n',file=ofid)
+            print('===========================================================',file=None)
+            print('* opening file: '+filepath+'\n',file=None)
             
         
         #- read data
