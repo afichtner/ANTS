@@ -50,16 +50,22 @@ def get_coord_dist(net1, sta1, net2, sta2):
         stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
     
     except IndexError:
-        print 'Have to go get stationxml nr. 1'
-        get_staxml(net1,sta1)
+        print 'Trying to download stationxml nr. 1...'
+        try:
+            get_staxml(net1,sta1)
+        except:
+            return(0,0,0,0,0,0,0)
         
     
     try:
         stafile2=glob(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'*.xml')[0]    
         
     except IndexError:
-        print 'Have to go get stationxml nr. 2'
-        get_staxml(net2,sta2)
+        print 'Trying to download stationxml nr. 2...'
+        try:
+            get_staxml(net2,sta2)
+        except:
+            return(0,0,0,0,0,0,0)
             
     (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
     (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')

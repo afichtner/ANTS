@@ -10,6 +10,7 @@ from math import ceil
 from obspy import read, Stream,  Trace
 from obspy.signal import filter
 from mpi4py import MPI
+from glob import glob
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -62,19 +63,17 @@ def ic(xmlinput,content=None):
        prepname=inp1['prepname']
        startyr=int(inp1['input']['startyr'][0:4])
        endyr=int(inp1['input']['endyr'][0:4])
-       respdir=inp1['processing']['instrument_response']['respdir']
-       unit=inp1['processing']['instrument_response']['unit']
-       freqs=inp1['processing']['instrument_response']['freqs']
-       wl=inp1['processing']['instrument_response']['waterlevel']
-       seglen=float(inp1['processing']['split']['length_in_sec'])
-       minlen=float(inp1['quality']['min_length_in_sec'])
+      
        
        #- copy the input xml to the output directory for documentation ===============================
-       if os.path.exists(datadir+'/processed/xmlinput/ic.'+prepname+'.xml')==True:
-           print('\n\nChoose a new name or delete inputfile of the name: ic.'+prepname+'.xml in ./xmlinput. Be aware this may cause chaos. Aborting.\n\n',file=None)
-           return
-           
-       shutil.copy(xmlinput,datadir+'/processed/xmlinput/ic.'+prepname+'.xml')
+       xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
+       k=1
+       while os.path.exists(xmlinname)==True:
+           print('\n\nNew name chosen to avoid overwriting older processing run.\n\n',file=None)
+           xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'_'+str(k)+'.xml'
+           k+=1
+       
+       shutil.copy(xmlinput,xmlinname)
        
        
        for i in range(startyr-1,endyr+1):
@@ -86,10 +85,8 @@ def ic(xmlinput,content=None):
            indirs=inp1['input']['indirs'].strip().split(' ')
            content=list()
            for indir in indirs:
-               content.extend(os.listdir(indir))
-               for k in range(len(content)):
-                   content[k]=indir+'/'+content[k]
-     
+               content.extend(glob(indir+'/*'))
+           
        elif type(content)==str: 
            filename=content
            content=list()
@@ -128,12 +125,23 @@ def ic(xmlinput,content=None):
     seglen=float(inp1['processing']['split']['length_in_sec'])
     minlen=float(inp1['quality']['min_length_in_sec'])
     mergegap=float(inp1['quality']['maxgaplen'])
+    Fs_original=inp1['processing']['decimation']['Fs_old'].split(' ')
+    Fs_old=list()
+    for fs in Fs_original:
+        Fs_old.append(float(fs))
+    Fs_down=inp1['processing']['decimation']['Fs_new'].split(' ')
+    Fs_new=list()
+    for fs in Fs_down:
+        Fs_new.append(float(fs))
+    Fs_new.sort() # Now in ascending order
+    Fs_new=Fs_new[::-1] # Now in descending order
     
     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
 
     clen=int(ceil(float(len(content))/float(size)))
+    
     chunk=(rank*clen, (rank+1)*clen)
     mycontent=content[chunk[0]:chunk[1]]
     t3=time.time()-t0-t2
@@ -173,7 +181,7 @@ def ic(xmlinput,content=None):
             continue
     
         #- clean the data merging segments with less than a specified number of seconds:
-        data=mt.mergetraces(data,mergegap)
+        data=mt.mergetraces(data,Fs_old,mergegap)
         
         #- initialize stream to 'recollect' the split traces
         colloc_data=Stream()
@@ -238,31 +246,36 @@ def ic(xmlinput,content=None):
           
             
             #- downsampling =======================================================================
-            
-            if inp1['processing']['decimation']['doit']=='1':
-                
-                trace=proc.downsample(trace,inp1['processing']['decimation']['new_sampling_rate'],verbose,ofid)
-            
+            k=0
+            while k<len(Fs_new):
+                if trace.stats.sampling_rate>Fs_new[k]:
+                    trace=proc.downsample(trace,Fs_new[k],verbose,ofid)
+                k+=1
+               
                
             #- remove instrument response =========================================================
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
                 removed,trace=proc.remove_response(trace,respdir,unit,freqs,wl,verbose,ofid)
-                
+                if removed==False:
+                    print('** Instrument response could not be removed! Trace discarded.',file=ofid)
+                    continue
+                    
                 if True in np.isnan(trace):
                     print('** Deconvolution seems unstable! Trace discarded.',file=ofid)
                     continue
           
             #merge all into final trace
             colloc_data+=trace
-        
+        colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap)
         colloc_data._cleanup()
-                  
-        if (inp1['saveprep']=='1'):
-            for k in range(len(colloc_data)):
-                if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or (inp1['processing']['instrument_response']['doit']!='1',ofid):
-                    rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
+    
+        print(colloc_data,file=None)
+        for k in range(len(colloc_data)):
+            if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or inp1['processing']['instrument_response']['doit']!='1':
+                rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
+    
     if ofid:
         ofid.close()
         
