@@ -270,7 +270,7 @@ def ic(xmlinput,content=None):
           
             #merge all into final trace
             colloc_data+=trace
-        colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap)
+        colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
     
         print(colloc_data,file=None)

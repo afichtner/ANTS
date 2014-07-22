@@ -310,7 +310,7 @@ def downsample(data, Fsnew, verbose, ofid):
     except AttributeError:
         Fs=float(data[0].stats.sampling_rate)
     
-    Fsnew=float(Fsnew)
+    Fsnew=np.double(Fsnew)
     
 
     #- Check if data already have the desired sampling rate =======================================
@@ -325,7 +325,7 @@ def downsample(data, Fsnew, verbose, ofid):
         
         dec=int(Fs/Fsnew)
         data=antialias(data,Fsnew*0.5,verbose,ofid)
-        data.decimate(dec, no_filter=True)
+        data.decimate(dec, no_filter=True, strict_length = False)
         
         try:
             tl=len(data.data)

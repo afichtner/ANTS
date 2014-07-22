@@ -2,3 +2,4 @@
 
 datadir='./DATA/'
 testdir='./TEST/'
+inputdir='./INPUT/'

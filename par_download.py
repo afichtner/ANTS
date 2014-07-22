@@ -88,6 +88,9 @@ def par_download(xmlinput):
     t2=dat['time']['endtime']
     t2str=UTCDateTime(t2).strftime('%Y.%j.%H.%M.%S')
  
+    # data segment length
+    winlen = int(dat['time']['len'])
+    
     # minimum length
     minlen=dat['time']['minlen']
 
@@ -115,24 +118,35 @@ def par_download(xmlinput):
         
         if id=='': continue
         
-        #-Formulate a polite request
-        filename=targetloc+id+'.'+t1str+'.'+t2str+'.mseed'
-        if os.path.exists(filename)==False:
-            network=id.split('.')[0]
-            station=id.split('.')[1]
-            channel=id.split('.')[3]
-            #print network, station, location, channel
-            print '\n Rank '+str(rank)+'\n'
-            print '\n Attempting to download data from: '+id+'\n'
-            reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+t1+' -e '+t2+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
-            os.system(reqstring)
-      
+        t = UTCDateTime(t1)
+        
+        while t < UTCDateTime(t2):
+            
+            tstart = UTCDateTime(t).strftime('%Y-%m-%d,%H:%M:%S')
+            tstartstr = UTCDateTime(t).strftime('%Y.%j.%H.%M.%S')
+            
+            tstep = (UTCDateTime(t)+winlen).strftime('%Y-%m-%d,%H:%M:%S')
+            tstepstr = (UTCDateTime(t)+winlen).strftime('%Y.%j.%H.%M.%S')
+            
+            #-Formulate a polite request
+            filename=targetloc+id+'.'+tstartstr+'.'+tstepstr+'.mseed'
+            if os.path.exists(filename)==False:
+                network=id.split('.')[0]
+                station=id.split('.')[1]
+                channel=id.split('.')[3]
+                #print network, station, location, channel
+                print '\n Rank '+str(rank)+'\n'
+                print '\n Attempting to download data from: '+id+'\n'
+                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                os.system(reqstring)
+            t += winlen
+          
      
     # Clean up (some files come back with 0 data)
     stafile=dat['ids']
     t1s=t1str.split('.')[0]+'.'+t1str.split('.')[1]
     t2s=t2str.split('.')[0]+'.'+t2str.split('.')[1]
-    cleanupinfo=targetloc+stafile.split('/')[-1].split('.')[0]+'.'+t1s+'.'+t2s
+    cleanupinfo=targetloc+stafile.split('/')[-1].split('.')[0]+'.'+t1s+'.'+t2s+'.rank'+str(rank)
     
     cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
     os.system(cmd)

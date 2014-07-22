@@ -80,32 +80,22 @@ def get_coord_dist(net1, sta1, net2, sta2):
 
 #==============================================================================================
     
-def get_sta_info(indir,network,verbose):
+def get_sta_info(stationlist,verbose=False):
     
-    if network=='*':
-        os.system('ls '+indir+' > temp.txt')
-    else:
-        os.system('ls '+indir+' | grep ^'+network+'\. > temp.txt')
+    fid = open(stationlist,'r')
+    idlist = fid.read().split('\n')
     
-    fileid=open('temp.txt')
-    filelist=fileid.read().split('\n')
-    fileid.close()
-    
-    for file in filelist:
-        if verbose: print file
-        if file=='': continue
+    for id in idlist:
+        if verbose: print id
+        if id == '': continue
         
-        if network=='*':
-            network=file.split('.')[0]
-        sta=file.split('.')[1]
-        if sta=='*':
-            str=obs.read(indir+'/'+file)
-            for tr in str:
-                get_staxml(tr.stats.network,tr.stats.station)
-        else:
+        network = id.split('.')[0]
+        sta = id.split('.')[1]
+        try:
             get_staxml(network,sta)
-    
-    os.system('rm temp.txt')
-
-
+        except:
+            if verbose: print '\n ================== \
+                               No xml downloaded for station \
+                               ====================\n'+id
+            continue
 

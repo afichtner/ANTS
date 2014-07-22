@@ -1,6 +1,7 @@
+from __future__ import print_function
 from obspy import Stream
 
-def mergetraces(data,Fs,maxgap=10.0):
+def mergetraces(data,Fs,maxgap=10.0,ofid=None):
     
     """
     Small script to merge traces over short gaps. Gaps are filled with zeroes.
@@ -17,6 +18,7 @@ def mergetraces(data,Fs,maxgap=10.0):
     #Clean up
     data._cleanup()
     if len(data)==1:
+        data[0].stats.sampling_rate = round(data[0].stats.sampling_rate,6)
         return data
 
     
@@ -26,8 +28,10 @@ def mergetraces(data,Fs,maxgap=10.0):
         i=0
         newstream=Stream()
         while i<(len(data)-1):
+            data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,6)
             # Check the sampling rate
             if data[i].stats.sampling_rate not in Fs:
+                print('Bad sampling rate: '+str(Fs),file=ofid)
                 i+=1
                 continue
            
