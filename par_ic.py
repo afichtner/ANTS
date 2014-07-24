@@ -278,7 +278,8 @@ def ic(xmlinput,content=None):
         for k in range(len(colloc_data)):
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or inp1['processing']['instrument_response']['doit']!='1':
                 rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
-    
+        del colloc_data
+        
     if ofid:
         print("Rank %g has completed processing." %rank,file=None)
         ofid.close()
