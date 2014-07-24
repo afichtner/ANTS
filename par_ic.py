@@ -67,11 +67,15 @@ def ic(xmlinput,content=None):
        
        #- copy the input xml to the output directory for documentation ===============================
        xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
-       k=1
-       while os.path.exists(xmlinname)==True:
-           print('\n\nNew name chosen to avoid overwriting older processing run.\n\n',file=None)
-           xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'_'+str(k)+'.xml'
-           k+=1
+       
+       if os.path.exists(xmlinname)==True:
+           msg='Name tag already in use.'
+           raise ValueError(msg)
+       #k=1
+       #while os.path.exists(xmlinname)==True:
+       #       print('\n\nNew name chosen to avoid overwriting older processing run.\n\n',file=None)
+       #     xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'_'+str(k)+'.xml'
+       #     k+=1
        
        shutil.copy(xmlinput,xmlinname)
        
@@ -166,8 +170,6 @@ def ic(xmlinput,content=None):
         
         
         if verbose==True:
-            print('===========================================================',file=None)
-            print('* opening file: '+filepath+'\n',file=None)
             print('===========================================================',file=ofid)
             print('* opening file: '+filepath+'\n',file=ofid)
             
@@ -273,12 +275,12 @@ def ic(xmlinput,content=None):
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
     
-        print(colloc_data,file=None)
         for k in range(len(colloc_data)):
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or inp1['processing']['instrument_response']['doit']!='1':
                 rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
     
     if ofid:
+        print("Rank %g has completed processing." %rank,file=None)
         ofid.close()
         
         
