@@ -144,6 +144,7 @@ def par_st(xmlinput):
     
     if rank==0:
         os.system('say Correlations are done.')
+    print('Rank %g finished correlations.' %rank,file=None)
         
 def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     """
@@ -181,6 +182,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     Fs=float(inp['timethings']['Fs'])
     winlen=int(inp['timethings']['winlen'])
     maxlag=int(inp['correlations']['max_lag'])
+    overlap=int(inp['timethings']['olap'])
     pccnu=int(inp['correlations']['pcc_nu'])
     verbose=bool(int(inp['verbose']))
     check=bool(int(inp['check']))
@@ -348,50 +350,50 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             if mix_cha==False:
                 
                 # Component TT
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component RR
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
             else:
                 # Component TT
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component RR
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component T1R2
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_R,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_R,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component R1T2
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_T,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_T,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                      
 
 def parlistpairs(infile,nf,auto=False):
@@ -450,7 +452,7 @@ def parlistpairs(infile,nf,auto=False):
     return idpairs
     
     
-def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,check,verbose):
+def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,check,verbose):
     """
     Step through the traces in the relevant streams and correlate whatever overlaps enough.
     
@@ -458,6 +460,7 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
     
     str1,str2, obspy stream objects: Streams holding traces for station 1 and station 2
     winlen, int: window length in seconds
+    overlap, int: overlap in seconds
     maxlag, int: maximum lag for correlation in seconds
     nu, int: pcc nu, exponent for phase cross correlation
     startday, UTCDateTime object: Time where stack should start (if data available)
@@ -586,10 +589,10 @@ def corr_pairs(str1,str2,winlen,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,
                 cstack_pcc=coh_pcc
 
         #Update starttime
-            t1 = t2
+            t1 = t2 - overlap
         else:
             print('Traces have unequal length!',file=None)
-            t1 = t2
+            t1 = t2 - overlap
             
               
     if 'cstack_ccc' not in locals():
@@ -662,7 +665,7 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
         return(Trace(),readit)
     
    
-def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,outdir,check,verbose):
+def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,outdir,check,verbose):
     
     
     #==============================================================================================
@@ -685,7 +688,8 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,ma
         
         tr.stats.sac={}
         
-        tr.stats.sac['user1']=winlen 
+        tr.stats.sac['user1']=winlen
+        tr.stats.sac['user2']=overlap
         tr.stats.sac['b']=-maxlag
         tr.stats.sac['e']=maxlag
         tr.stats.sac['kt0']=startday.strftime('%Y%j')

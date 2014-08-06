@@ -7,7 +7,7 @@ import shutil
 import time
 
 from math import ceil
-from obspy import read, Stream,  Trace
+from obspy import read, Stream,  Trace, UTCDateTime
 from obspy.signal import filter
 from mpi4py import MPI
 from glob import glob
@@ -69,14 +69,11 @@ def ic(xmlinput,content=None):
        xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
        
        if os.path.exists(xmlinname)==True:
-           msg='Name tag already in use.'
-           raise ValueError(msg)
-       #k=1
-       #while os.path.exists(xmlinname)==True:
-       #       print('\n\nNew name chosen to avoid overwriting older processing run.\n\n',file=None)
-       #     xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'_'+str(k)+'.xml'
-       #     k+=1
-       
+           print('Name tag already in use! New generic name tag chosen. Please review tag later to avoid overwriting.',file=None)
+           prepname = UTCDateTime().strftime('proc%Y-%j')
+           xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
+           print('New tag is '+prepname,file=None)
+           
        shutil.copy(xmlinput,xmlinname)
        
        
@@ -111,15 +108,16 @@ def ic(xmlinput,content=None):
     
     else:
         content=list()
-        inp1=list()    
+        inp1=list()
+        prepname=''
        
     t1=time.time()-t0
     content=comm.bcast(content, root=0)
     inp1=comm.bcast(inp1, root=0)
+    prepname=comm.bcast(prepname, root=0)
     t2=time.time()-t0-t1
     
     verbose=bool(int(inp1['verbose']))
-    prepname=inp1['prepname']
     datadir=cfg.datadir
     ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
     respdir=inp1['processing']['instrument_response']['respdir']
@@ -173,10 +171,10 @@ def ic(xmlinput,content=None):
             print('===========================================================',file=ofid)
             print('* opening file: '+filepath+'\n',file=ofid)
             
-        
         #- read data
         try:
             data=read(filepath)
+            
         except (TypeError, IOError):
             if verbose==True: print('** file wrong type or not found, skip.',file=ofid)
             continue
@@ -270,13 +268,18 @@ def ic(xmlinput,content=None):
                     print('** Deconvolution seems unstable! Trace discarded.',file=ofid)
                     continue
           
-            #merge all into final trace
+            #- merge all into final trace =========================================================
             colloc_data+=trace
+             
+            #- flush buffer of output file ========================================================
+            ofid.flush()
+            
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
-    
+        
         for k in range(len(colloc_data)):
-            if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or inp1['processing']['instrument_response']['doit']!='1':
+            if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
+                inp1['processing']['instrument_response']['doit']!='1':
                 rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
         del colloc_data
         

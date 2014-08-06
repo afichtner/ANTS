@@ -31,7 +31,7 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
             data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,6)
             # Check the sampling rate
             if data[i].stats.sampling_rate not in Fs:
-                print('Bad sampling rate: '+str(Fs),file=ofid)
+                print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
                 i+=1
                 continue
            
