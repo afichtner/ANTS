@@ -1,4 +1,4 @@
-
+import sys
 import collections
 import os
 from obspy import UTCDateTime
