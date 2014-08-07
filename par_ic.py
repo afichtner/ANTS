@@ -11,6 +11,7 @@ from obspy import read, Stream,  Trace, UTCDateTime
 from obspy.signal import filter
 from mpi4py import MPI
 from glob import glob
+from guppy import hpy
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -146,40 +147,44 @@ def ic(xmlinput,content=None):
     
     chunk=(rank*clen, (rank+1)*clen)
     mycontent=content[chunk[0]:chunk[1]]
+    del content
     t3=time.time()-t0-t2
-    
-    #==================================================================================
-    # Input files loop
-    #==================================================================================
     
     
     #- Print some nice comments to output file ----------------------------------------       
     if verbose:
-        print('Time at start was '+str(t0)+'\n',file=ofid)
-        print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=ofid)
-        print('Broadcasting took '+str(t2)+' seconds \n',file=ofid)
-        print('I got my task assigned in '+str(t3)+' seconds \n',file=ofid)
+        print('Time at start was '+str(t0)+'\n',file=None)
+        print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
+        print('Broadcasting took '+str(t2)+' seconds \n',file=None)
+        print('I got my task assigned in '+str(t3)+' seconds \n',file=None)
         
-        print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=ofid)
+        print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=None)
         for fname in mycontent:
             ofid.write(fname+'\n')
     
+    #==============================================================================================
+    #- Input file loop
+    #==============================================================================================
+    
+    
+    
     for filepath in mycontent:
         
-        
         if verbose==True:
-            print('===========================================================',file=ofid)
-            print('* opening file: '+filepath+'\n',file=ofid)
+            print('===========================================================',file=None)
+            print('* opening file: '+filepath+'\n',file=None)
             
         #- read data
         try:
             data=read(filepath)
-            
+            print("Size of data")
+            print(sys.getsizeof(data))
+           
         except (TypeError, IOError):
-            if verbose==True: print('** file wrong type or not found, skip.',file=ofid)
+            if verbose==True: print('** file wrong type or not found, skip.',file=None)
             continue
         except:
-            if verbose: print('** unexpected read error, skip.',file=ofid)
+            if verbose: print('** unexpected read error, skip.',file=None)
             continue
     
         #- clean the data merging segments with less than a specified number of seconds:
@@ -234,7 +239,7 @@ def ic(xmlinput,content=None):
             if inp1['processing']['detrend']=='1':
     
                 trace=proc.detrend(trace,verbose,ofid)
-            
+                
             if inp1['processing']['demean']=='1':
     
                 trace=proc.demean(trace,verbose,ofid)
@@ -245,6 +250,7 @@ def ic(xmlinput,content=None):
             if inp1['processing']['taper']['doit']=='1':
     
                 trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
+                
           
             
             #- downsampling =======================================================================
@@ -253,26 +259,30 @@ def ic(xmlinput,content=None):
                 if trace.stats.sampling_rate>Fs_new[k]:
                     trace=proc.downsample(trace,Fs_new[k],verbose,ofid)
                 k+=1
+            newtrace = trace.copy()
+            del trace
                
                
             #- remove instrument response =========================================================
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
-                removed,trace=proc.remove_response(trace,respdir,unit,freqs,wl,verbose,ofid)
+                removed,newtrace=proc.remove_response(newtrace,respdir,unit,freqs,wl,verbose,ofid)
                 if removed==False:
                     print('** Instrument response could not be removed! Trace discarded.',file=ofid)
                     continue
                     
-                if True in np.isnan(trace):
+                if True in np.isnan(newtrace):
                     print('** Deconvolution seems unstable! Trace discarded.',file=ofid)
                     continue
           
             #- merge all into final trace =========================================================
-            colloc_data+=trace
+            colloc_data+=newtrace
              
             #- flush buffer of output file ========================================================
             ofid.flush()
+            
+            del newtrace
             
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
@@ -282,6 +292,7 @@ def ic(xmlinput,content=None):
                 inp1['processing']['instrument_response']['doit']!='1':
                 rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
         del colloc_data
+        del data
         
     if ofid:
         print("Rank %g has completed processing." %rank,file=None)
