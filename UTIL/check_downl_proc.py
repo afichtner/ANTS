@@ -3,7 +3,11 @@ import collections
 import os
 from obspy import UTCDateTime
 
-
+if __name__=='__main__':
+    import check_downl_proc as cdp
+    
+    cdp.check_downl_proc(indir=str(sys.argv[1]),outfile=str(sys.argv[2]))
+    
 def check_downl_proc(indir=None,infile=None,outfile=None):
     
     if indir != None:
