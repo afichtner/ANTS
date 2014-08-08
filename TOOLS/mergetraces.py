@@ -18,7 +18,7 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
     #Clean up
     data._cleanup()
     if len(data)==1:
-        data[0].stats.sampling_rate = round(data[0].stats.sampling_rate,6)
+        data[0].stats.sampling_rate = round(data[0].stats.sampling_rate,4)
         return data
 
     
@@ -28,7 +28,7 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
         i=0
         newstream=Stream()
         while i<(len(data)-1):
-            data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,6)
+            data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,4)
             # Check the sampling rate
             if data[i].stats.sampling_rate not in Fs:
                 print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
