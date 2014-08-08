@@ -121,7 +121,11 @@ def ic(xmlinput,content=None):
     verbose=bool(int(inp1['verbose']))
     update=bool(int(inp1['update']))
     datadir=cfg.datadir
-    ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
+    if update ==True:
+        ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+str(rank)+'.txt','w')
+    else:
+        ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
+        
     respdir=inp1['processing']['instrument_response']['respdir']
     unit=inp1['processing']['instrument_response']['unit']
     freqs=inp1['processing']['instrument_response']['freqs']
@@ -152,16 +156,16 @@ def ic(xmlinput,content=None):
     t3=time.time()-t0-t2
     
     
-    #- Print some nice comments to output file ----------------------------------------       
-    if verbose:
-        print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d.%H.%M')+' GMT\n',file=None)
-        print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
-        print('Broadcasting took '+str(t2)+' seconds \n',file=None)
-        print('I got my task assigned in '+str(t3)+' seconds \n',file=ofid)
-        
-        print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=ofid)
-        for fname in mycontent:
-            ofid.write(fname+'\n')
+    #- Print some nice comments to output file ---------------------------------------- 
+    if rank == 0:      
+        if verbose:
+            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d.%H.%M')+' GMT\n',file=None)
+            print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
+            print('Broadcasting took '+str(t2)+' seconds \n',file=None)
+            
+    print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=ofid)
+    for fname in mycontent:
+        ofid.write(fname+'\n')
     
     #==============================================================================================
     #- Input file loop
@@ -308,7 +312,7 @@ def ic(xmlinput,content=None):
         del data
         
     if ofid:
-        print("Rank %g has completed processing." %rank,file=ofid)
+        print("Rank %g has completed processing." %rank,file=None)
         ofid.close()
         
         
