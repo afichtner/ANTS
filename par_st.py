@@ -9,7 +9,6 @@ import antconfig as cfg
 import numpy as np
 import TOOLS.processing as proc
 import TOOLS.rotationtool as rt
-#import TOOLS.correlations as corr
 
 
 from mpi4py import MPI

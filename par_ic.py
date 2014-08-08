@@ -11,14 +11,12 @@ from obspy import read, Stream,  Trace, UTCDateTime
 from obspy.signal import filter
 from mpi4py import MPI
 from glob import glob
-from guppy import hpy
 
 import matplotlib.pyplot as plt
 import numpy as np
 import TOOLS.processing as proc
 import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
-import TOOLS.renamer as rn
 import TOOLS.mergetraces as mt
 import antconfig as cfg
 
@@ -60,6 +58,7 @@ def ic(xmlinput,content=None):
        inp1=rxml.read_xml(xmlinput)[1]
        
        verbose=bool(int(inp1['verbose']))
+       update=bool(int(inp1['update']))
        check=bool(int(inp1['check']))
        prepname=inp1['prepname']
        startyr=int(inp1['input']['startyr'][0:4])
@@ -69,13 +68,14 @@ def ic(xmlinput,content=None):
        #- copy the input xml to the output directory for documentation ===============================
        xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
        
-       if os.path.exists(xmlinname)==True:
+       if os.path.exists(xmlinname)==True and update == False:
            print('Name tag already in use! New generic name tag chosen. Please review tag later to avoid overwriting.',file=None)
            prepname = UTCDateTime().strftime('proc%Y-%j')
            xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
            print('New tag is '+prepname,file=None)
-           
-       shutil.copy(xmlinput,xmlinname)
+       
+       if update == False:
+           shutil.copy(xmlinput,xmlinname)
        
        
        for i in range(startyr-1,endyr+1):
@@ -119,6 +119,7 @@ def ic(xmlinput,content=None):
     t2=time.time()-t0-t1
     
     verbose=bool(int(inp1['verbose']))
+    update=bool(int(inp1['update']))
     datadir=cfg.datadir
     ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
     respdir=inp1['processing']['instrument_response']['respdir']
@@ -153,12 +154,12 @@ def ic(xmlinput,content=None):
     
     #- Print some nice comments to output file ----------------------------------------       
     if verbose:
-        print('Time at start was '+str(t0)+'\n',file=None)
+        print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d.%H.%M')+' GMT\n',file=None)
         print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
         print('Broadcasting took '+str(t2)+' seconds \n',file=None)
-        print('I got my task assigned in '+str(t3)+' seconds \n',file=None)
+        print('I got my task assigned in '+str(t3)+' seconds \n',file=ofid)
         
-        print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=None)
+        print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=ofid)
         for fname in mycontent:
             ofid.write(fname+'\n')
     
@@ -171,20 +172,18 @@ def ic(xmlinput,content=None):
     for filepath in mycontent:
         
         if verbose==True:
-            print('===========================================================',file=None)
-            print('* opening file: '+filepath+'\n',file=None)
+            print('===========================================================',file=ofid)
+            print('* opening file: '+filepath+'\n',file=ofid)
             
         #- read data
         try:
             data=read(filepath)
-            print("Size of data")
-            print(sys.getsizeof(data))
-           
+            
         except (TypeError, IOError):
-            if verbose==True: print('** file wrong type or not found, skip.',file=None)
+            if verbose==True: print('** file wrong type or not found, skip.',file=ofid)
             continue
         except:
-            if verbose: print('** unexpected read error, skip.',file=None)
+            if verbose: print('** unexpected read error, skip.',file=ofid)
             continue
     
         #- clean the data merging segments with less than a specified number of seconds:
@@ -212,6 +211,13 @@ def ic(xmlinput,content=None):
         #==================================================================================
         for k in np.arange(n_traces):
             trace=data[k]
+            
+            if update == True:
+                if len(glob(getfilepath(trace.stats,prepname,True))) > 0:
+                    print('File already processed, proceeding...',file=ofid)
+                    break
+                else:
+                    print('Updating...',file=ofid)
             
             if verbose==True: print('-----------------------------------------------------------',file=ofid)
     
@@ -290,12 +296,38 @@ def ic(xmlinput,content=None):
         for k in range(len(colloc_data)):
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
                 inp1['processing']['instrument_response']['doit']!='1':
-                rn.rename_seismic_data(colloc_data[k],prepname,verbose,ofid)
+                
+                filepathnew = getfilepath(colloc_data[k].stats,prepname)
+                
+                #- write to file
+                colloc_data[k].write(filepathnew,format=colloc_data[k].stats._format)
+                       
+                if verbose==True:
+                    print('* renamed file: '+filepathnew,file=ofid)
         del colloc_data
         del data
         
     if ofid:
-        print("Rank %g has completed processing." %rank,file=None)
+        print("Rank %g has completed processing." %rank,file=ofid)
         ofid.close()
         
         
+def getfilepath(stats,prepname,startonly=False):
+    
+    network=stats.network
+    station=stats.station
+    location=stats.location
+    channel=stats.channel
+    format=stats._format
+        
+    t1=stats.starttime.strftime('%Y.%j.%H.%M.%S')
+    t2=stats.endtime.strftime('%Y.%j.%H.%M.%S')
+    yr=str(t1[0:4])
+    
+    if startonly == False:
+        filepathnew=cfg.datadir+'/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
+    else:
+        filepathnew=cfg.datadir+'/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.*.'+prepname+'.'+format
+    return filepathnew
+        
+    
