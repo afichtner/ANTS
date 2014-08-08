@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<processing_parameters>
+
+    <!--preprocessing run: Name, description. Must be included.-->
+	<prepname>maxmem</prepname>
+	<comment>Memory profiling with memory_profiler.</comment>
+    <!--print output-->
+    <verbose>1</verbose>
+	<!--save output to file if set to 1. If set to 0, print to screen.-->
+	<outfile>1</outfile>
+    <!--plot and save time series and psd at various processing stages-->
+    <check>0</check>
+	<!--update mode, will search for already existing files in the out directories and only process the others.-->
+	<update>1</update>
+    
+    <!--*************************************************************************************************-->
+    <!--input and output directories-->
+    <!--*************************************************************************************************-->
+
+    <input>
+        <!--input directory for processed data-->
+        <indirs>DATA/raw/medi_new/</indirs>
+		<!--time window covered roughly. (YYYY)-->
+		<startyr>2004</startyr>
+		<endyr>2005</endyr>
+    </input>
+
+    <!--*************************************************************************************************-->
+    <!--quality checks-->
+    <!--*************************************************************************************************-->
+   
+    <quality>
+        <min_length_in_sec>7200</min_length_in_sec>
+		<maxgaplen>60</maxgaplen>
+    </quality>
+
+    <!--*************************************************************************************************-->
+    <!--preprocessing-->
+    <!--*************************************************************************************************-->
+    
+   
+    <!--preprocessing on individual seismograms-->
+    <!--The order corresponds to the actual order of execution-->
+    <processing>
+        <!--split traces into shorter segments-->
+        <split>
+            <doit>1</doit>
+            <length_in_sec>131072</length_in_sec>
+        </split>
+        <!--trim to nearest second-->
+        <trim>1</trim>
+        <!--remove linear trend-->
+        <detrend>1</detrend>
+        <!--remove mean-->
+        <demean>1</demean>
+        <!--taper edges of seismogram for better filtering-->
+        <taper>
+            <doit>1</doit>
+            <taper_width>0.05</taper_width>
+        </taper>
+        
+        <!--downsampling-->
+		<!-- The original sampling rates are needed, because traces with a wrong sampling rate (like 1.0000004, I have seen that) need to be sorted out. Separate different sampling rates by whitespaces.-->
+		<!-- If the new sampling rate is different from the old one, data will be downsampled.-->
+        <!--A lowpass filter is hardcoded into downsampling. It has a corner frequency of one quarter of the new sampling frequency.-->
+        <!--When a large amont of downsampling is performed, do it in two steps! e. g. instead of by factor 20 decimate by 5 then 4.-->
+        <!--put in intermediate steps separated by spaces, e. g. 4.0 1.0-->
+		<!--IMPORTANT: Since correlation windows are cut by start and end time in seconds, don't decimate below 1 Hz in the preprocessing stage, or you will run into difficulties with the window selection for correlation.-->
+        <decimation>
+			<Fs_old>100.0 1.0</Fs_old>
+            <Fs_new>20.0 5.0 1.0</Fs_new>
+        </decimation>
+        
+        <!--remove instrument response-->
+        <instrument_response>
+            <doit>1</doit>
+            <unit>VEL</unit>
+            <respdir>DATA/resp/</respdir>
+			<freqs>0.001 0.006 0.1 0.2</freqs>
+            <waterlevel>0.0</waterlevel>
+        </instrument_response>
+	</processing> 
+  
+</processing_parameters>
