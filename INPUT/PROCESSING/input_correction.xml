@@ -3,8 +3,8 @@
 <processing_parameters>
 
     <!--preprocessing run: Name, description. Must be included.-->
-	<prepname>maxmem</prepname>
-	<comment>Memory profiling with memory_profiler.</comment>
+	<prepname>medi</prepname>
+	<comment>Process remaining TT.THTN data.</comment>
     <!--print output-->
     <verbose>1</verbose>
 	<!--save output to file if set to 1. If set to 0, print to screen.-->
@@ -22,8 +22,8 @@
         <!--input directory for processed data-->
         <indirs>DATA/raw/medi_new/</indirs>
 		<!--time window covered roughly. (YYYY)-->
-		<startyr>2004</startyr>
-		<endyr>2005</endyr>
+		<startyr>2012</startyr>
+		<endyr>2013</endyr>
     </input>
 
     <!--*************************************************************************************************-->

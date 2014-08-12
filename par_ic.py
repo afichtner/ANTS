@@ -159,7 +159,7 @@ def ic(xmlinput,content=None):
     #- Print some nice comments to output file ---------------------------------------- 
     if rank == 0:      
         if verbose:
-            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d.%H.%M')+' GMT\n',file=None)
+            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d, %H:%M')+' GMT\n',file=None)
             print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
             print('Broadcasting took '+str(t2)+' seconds \n',file=None)
             
@@ -192,6 +192,7 @@ def ic(xmlinput,content=None):
     
         #- clean the data merging segments with less than a specified number of seconds:
         data=mt.mergetraces(data,Fs_old,mergegap)
+        data.split()
         
         #- initialize stream to 'recollect' the split traces
         colloc_data=Stream()
