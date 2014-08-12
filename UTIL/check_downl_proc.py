@@ -29,6 +29,8 @@ def check_downl_proc(indir=None,infile=None,outfile=None):
         for file in filelist:
             
             if file == '': continue
+            if file.split('.')[-1] not in ['MSEED','mseed','SAC','sac']:
+                continue
             
             inf = file.split('.')
             
