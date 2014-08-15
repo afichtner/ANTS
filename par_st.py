@@ -10,19 +10,19 @@ import numpy as np
 import TOOLS.processing as proc
 import TOOLS.rotationtool as rt
 
-
 from mpi4py import MPI
 from glob import glob
 from obspy.core import Stats, Trace
 from obspy.noise.correlation import Correlation
 from obspy.noise.correlation_functions import phase_xcorr, classic_xcorr
 from obspy.signal.tf_misfit import cwt
+from scipy.signal import hilbert
 
 if __name__=='__main__':
     import par_st as pst
     xmlin=str(sys.argv[1])
     pst.par_st(xmlin)
-
+    
 import matplotlib.pyplot as plt
 
 def par_st(xmlinput):
@@ -60,10 +60,11 @@ def par_st(xmlinput):
         
         
         #- copy the input xml to the output directory for documentation ---------------------------
-        if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml') == False:
+        if os.path.exists(cfg.datadir+'/correlations/xmlinput/'+inp['corrname']+'.xml') == False or \
+             bool(int(inp['update'])) == True:
             corrname=inp['corrname']
         else:
-            msg = 'Avoiding to overwrite data: choose a new name or delete dataset with same name: %s' %inp['corrname']
+            msg = 'Avoiding to overwrite data: choose a new name tag or change update mode to True. Name tag %s already taken.' %inp['corrname']
             raise ValueError(msg)
         
         if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
@@ -75,7 +76,8 @@ def par_st(xmlinput):
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         #- Get list of correlation pairs-----------------------------------------------------------
-        idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),bool(int(inp['correlations']['autocorr'])))
+        idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),corrname,\
+                bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
@@ -141,8 +143,8 @@ def par_st(xmlinput):
             print('Finished a block of correlations',file=None)
             print(time.strftime('%H.%M.%S')+'\n',file=None)
     
-    if rank==0:
-        os.system('say Correlations are done.')
+    
+    os.system('mv '+dir+'/* '+cfg.datadir+'correlations/'+corrname+'/')
     print('Rank %g finished correlations.' %rank,file=None)
         
 def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
@@ -178,7 +180,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     
     startday=obs.UTCDateTime(inp['timethings']['startdate'])
     endday=obs.UTCDateTime(inp['timethings']['enddate'])
-    Fs=float(inp['timethings']['Fs'])
+    Fs=inp['timethings']['Fs'].split(' ')
+    Fs = [float(fs) for fs in Fs] 
     winlen=int(inp['timethings']['winlen'])
     maxlag=int(inp['correlations']['max_lag'])
     overlap=int(inp['timethings']['olap'])
@@ -190,6 +193,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     mix_cha=bool(int(inp['data']['mix_cha']))
     indir=inp['selection']['indir']
     prepname=inp['selection']['prepname']
+    tfpws = bool(int(inp['correlations']['tfpws']))
     
     if inp['bandpass']['doit']=='1':
         freqmin=float(inp['bandpass']['f_min'])
@@ -197,7 +201,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         prefilt=(freqmin,freqmax,float(inp['bandpass']['corners']))
     else:
         prefilt=None
-        freqmax=0.5*Fs
+        freqmax=0.5*min(Fs)
         freqmin=0.001
 
     for pair in block:
@@ -332,12 +336,13 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             id_2=str2[0].id
             print(id_1,file=None)
             print(id_2,file=None)
-            (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+            (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,winlen,overlap,maxlag,pccnu,tfpws, startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
             
             if npcc==0 and nccc==0:
                 if verbose: print('No windows stacked for stations '+id1[0]+' and '+id2[0],file=ofid)
             else:
-                savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id_1,id_2,geoinf,winlen,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id_1,id_2,geoinf,winlen,overlap,\
+                    maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
             
         elif comp=='EN':
@@ -349,53 +354,53 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             if mix_cha==False:
                 
                 # Component TT
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component RR
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
             else:
                 # Component TT
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_T,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component RR
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component T1R2
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_R,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_R,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
                 
                 # Component R1T2
-                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_T,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
+                (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,check,verbose)
                 if npcc == 0 and nccc == 0:
                     if verbose: print('Correlated traces from stations '+id1[0]+' and '+id2[0],file=ofid)
                 else:
-                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_T,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
+                    savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,id2_T,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,dir,check,verbose)
                      
 
-def parlistpairs(infile,nf,auto=False):
+def parlistpairs(infile,nf,corrname,auto=False):
     """
     Find the 'blocks' to be processed by a single node.
     
@@ -428,6 +433,15 @@ def parlistpairs(infile,nf,auto=False):
        
         for j in range(0,i+1):
             
+            #- In update mode: Check if the correlation has been calculated already.
+            if idlist[i]<=idlist[j]:
+                fileid = cfg.datadir + 'correlations/' + corrname + '/' + idlist[i] + '???.' + idlist[j] + '???.?cc.' + corrname + '.SAC'
+            else:
+                fileid = cfg.datadir + 'correlations/' + corrname + '/' + idlist[j] + '???.' + idlist[i] + '???.?cc.' + corrname + '.SAC'
+                
+            if glob(fileid) != []:
+                continue
+            
             #- Autocorrelation?
             if idlist[i]==idlist[j] and auto==False:
                 continue
@@ -451,7 +465,7 @@ def parlistpairs(infile,nf,auto=False):
     return idpairs
     
     
-def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,corrname,check,verbose):
+def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,fmin,fmax,corrname,check,verbose):
     """
     Step through the traces in the relevant streams and correlate whatever overlaps enough.
     
@@ -462,6 +476,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,c
     overlap, int: overlap in seconds
     maxlag, int: maximum lag for correlation in seconds
     nu, int: pcc nu, exponent for phase cross correlation
+    tfpws, boolean: type of phase weighted stack (if true time-frequency pws is calculated, otherwise time domain)
     startday, UTCDateTime object: Time where stack should start (if data available)
     endday, UTCDateTime object: Maximum time until where stacking should be carried out
     Fs, float: Sampling rate of data in Hz
@@ -485,7 +500,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,c
     n1=0
     n2=0
     t1=startday
-    tlen=int(maxlag*Fs)*2+1
+    tlen=int(maxlag*Fs_new[-1])*2+1
     cccstack=np.zeros(tlen)
     pccstack=np.zeros(tlen)
     
@@ -513,41 +528,47 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,c
             break
         
         
-        tr1=str1[n1].slice(starttime=t1,endtime=t2-1/Fs)
-        tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs)
+        tr1=str1[n1].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
+        tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
         
         #- Downsample
         if len(tr1.data)>40 and len(tr2.data)>40:
-            if Fs<tr1.stats.sampling_rate:
-                tr1=proc.trim_next_sec(tr1,False,None)
-                tr1=proc.downsample(tr1,Fs,False,None)
-            if Fs<tr2.stats.sampling_rate:
-                tr2=proc.trim_next_sec(tr2,False,None)
-                tr2=proc.downsample(tr2,Fs,False,None)
+            k=0
+            while k<len(Fs_new):
+                if Fs_new[k]<tr1.stats.sampling_rate:
+                    tr1=proc.trim_next_sec(tr1,False,None)
+                    tr1=proc.downsample(tr1,Fs_new[k],False,None)
+                if Fs_new[k]<tr2.stats.sampling_rate:
+                    tr2=proc.trim_next_sec(tr2,False,None)
+                    tr2=proc.downsample(tr2,Fs_new[k],False,None)
+                k+=1
         else:
             t1 = t2 
             continue   
     
         
-        # downsample and correlate the traces, if they are long enough
         if len(tr1.data) == len(tr2.data):
             mlag = maxlag / tr1.stats.delta
             mlag=int(mlag)
             
-            
             pcc=phase_xcorr(tr1, tr2, mlag, nu)
+            
             ccc=classic_xcorr(tr1, tr2, mlag)
-            npts = (2*mlag+1)
-            dt = 1.0/Fs
-            coh_pcc=cwt(pcc, dt, 8.0, fmin, fmax)
-            tol=np.mean(np.abs(coh_pcc))/1000.0
-            coh_pcc=coh_pcc/(np.abs(coh_pcc)+tol)
-            coh_ccc=cwt(ccc, dt, 8.0, fmin, fmax)
-            tol=np.mean(np.abs(coh_ccc))/1000.0
-            coh_ccc=coh_ccc/(np.abs(coh_ccc)+tol)
             
+            # Get coherence data
+            coh_pcc = hilbert(pcc)
+            coh_ccc = hilbert(ccc)
             
-    
+            # Get the local phase
+            tol = np.max(coh_ccc)/10000
+            coh_ccc = coh_ccc/(np.absolute(coh_ccc)+tol)
+            tol = np.max(coh_pcc)/10000
+            coh_pcc = coh_pcc/(np.absolute(coh_pcc)+tol)
+            
+            if tfpws == True:
+                coh_pcc=cwt(pcc, tr1.stats.delta, 12.0, fmin/10.0, fmax*10.0, nf=500)
+                coh_ccc=cwt(ccc, tr1.stats.delta, 12.0, fmin/10.0, fmax*10.0, nf=500)
+               
         # Write intermediate results if check flag is set
         # Include option to write phase coherence?
             if check==True:
@@ -562,21 +583,11 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,startday,endday,Fs,fmin,fmax,c
                 
                 id_cwt=cfg.datadir+'/correlations/interm/'+id1+'_'+id2+'/'+str1[n1].id.split('.')[1]+'.'+str2[n2].id.split('.')[1]+t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.npy'
                 np.save(id_cwt,coh_pcc)
-                
-                
-            pccstack+=pcc
-            cccstack+=ccc
               
             #Add to the stack
-            if 'pccstack' in locals():
-                pccstack+=pcc
-            else:
-                pccstack=pcc
+            pccstack+=pcc
+            cccstack+=ccc
             pcccnt+=1
-            if 'cccstack' in locals():
-                cccstack+=ccc
-            else:
-                cccstack=ccc
             ccccnt+=1
             if 'cstack_ccc' in locals():
                 cstack_ccc+=coh_ccc
@@ -664,7 +675,8 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
         return(Trace(),readit)
     
    
-def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,overlap,maxlag,pccnu,startday,endday,Fs,freqmin,freqmax,corrname,outdir,check,verbose):
+def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
+    overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,freqmax,corrname,outdir,check,verbose):
     
     
     #==============================================================================================
@@ -674,7 +686,7 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,ov
     tr_ccc=obs.Trace(data=ccc)
     tr_pcc=obs.Trace(data=pcc)
     (lat1, lon1, lat2, lon2, dist, az, baz)=geoinf
-    
+    if type(Fs) == list: Fs=Fs[-1]
     for tr in (tr_ccc,tr_pcc):
         
         

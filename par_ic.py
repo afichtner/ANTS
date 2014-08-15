@@ -147,11 +147,13 @@ def ic(xmlinput,content=None):
     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
-
-    clen=int(ceil(float(len(content))/float(size)))
     
-    chunk=(rank*clen, (rank+1)*clen)
-    mycontent=content[chunk[0]:chunk[1]]
+    nfiles = int(len(content) / size)
+    restfiles = len(content) % size
+    
+    mycontent=content[rank * nfiles : (rank + 1) * nfiles]
+    if rank < restfiles:
+        mycontent.append(content[size * nfiles + rank])
     del content
     t3=time.time()-t0-t2
     

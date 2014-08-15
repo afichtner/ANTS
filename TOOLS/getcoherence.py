@@ -1,6 +1,44 @@
 import numpy as np
+from obspy.signal.tf_misfit import cwt
+from scipy.signal import hilbert
 
-def cwtui(cwt, f_min, f_max, w0, wl='morlet', verbose=False):
+
+
+def cwt(data, dt, fmin, fmax, wl='morlet', w0=12.0):
+    
+    """
+    Returns time-frequency coherence of the input signal
+    
+    """
+    
+    data = hilbert(data)
+    
+    # Get the local phase
+    tol = np.max(data)/10000
+    data = data/(np.absolute(data)+tol)
+    
+    # Go to time-scale-domain
+    cwt = cwt(data, dt, w0, fmin/10.0, fmax*10,nf=1000)
+    
+    return cwt
+    
+    
+    
+def t_pws(pcc):
+    """
+    Returns time-domain phase weight.
+    """
+    
+    data = hilbert(data)
+    
+    # Get the local phase
+    tol = np.max(data)/10000
+    data = data/(np.absolute(data)+tol)
+    
+    return data
+    
+
+def cwtui(cwt, f_min, f_max,  wl='morlet', w0=12.0, verbose=False):
     
     """
     
