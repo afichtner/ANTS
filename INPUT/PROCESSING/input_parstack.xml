@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<stacking_parameters>
+
+    <!--print screen output-->
+    <verbose>1</verbose>
+	<!--select a test run. This saves an intermediate result at every time window (attention, needs ***LOTS*** (and lots and lots) of storage space)-->
+    <check>0</check>
+	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
+	<corrname>medi_pwstest_tf</corrname>
+	<!--Describe briefly-->
+	<comment>Test different phase weighted stacks.</comment>
+	<!--Updating on a previous run? -->
+	<update>1</update>
+	
+<!--**************************************************************************************************-->
+	<!--Specifics for data distribution to cores-->
+<!--**************************************************************************************************-->
+	<data>
+		<!--station ID list; containing entries in format net.sta.loc.cha -->
+		<idfile>INPUT/ID_LISTS/ids_medi_corr.txt</idfile>
+		<!--How many station pairs for each core? Typically the number of files opened by that core is about n+1-->
+		<npairs>2</npairs>
+		<!-- Specify channel: LH, BH, VH... -->
+		<channel>*H</channel>
+        <!-- choose between Z and EN. 'All channels' is not implemented yet. 'EN' will provide you with RR, TT, and RT correlation -->
+        <components>Z</components>
+		<!-- Mix channels?-->
+		<mix_cha>0</mix_cha>
+	</data>
+
+ <!--*************************************************************************************************-->
+    <!--selection-->
+ <!--*************************************************************************************************-->  
+	
+	<selection>
+        <!--Input directory containing data. Can only handle one input directory at the moment.-->
+        <indir>DATA/processed/medi/</indir>
+		<!--Enter preprocessing run name(s). Put * for any preprocessing-->
+		<prepname>medi</prepname>   
+	</selection>
+    <!--*************************************************************************************************-->
+    <!--Time-->
+    <!--*************************************************************************************************-->
+    <timethings>
+        <!--Sampling rate.If different from sampling rate, data will be downsampled before correlation. -->
+        <Fs>0.1</Fs>
+        <!--Start date. Will only process files from this-->
+        <startdate>20120101</startdate>
+        <!--End date. Will only process files until this. Format yyyymmdd-->
+        <enddate>20130101</enddate>
+        <!--Length of the time windows to be correlated, in seconds-->
+        <winlen>32768</winlen>
+        <!--Overlap in SECONDS-->
+        <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
+        <olap>6000</olap>
+    </timethings>
+    
+   
+    <!--*************************************************************************************************-->
+    <!--Correlations-->
+    <!--*************************************************************************************************-->
+    
+    <!--apply bandpass before correlating-->
+    <bandpass>
+        <doit>1</doit>
+        <f_min>0.002</f_min>
+        <f_max>0.05</f_max>
+        <corners>3</corners>
+    </bandpass>
+	
+    <!--Type of correlations-->
+    <correlations>
+		<!--Autocorrelation yes or no-->
+		<autocorr>0</autocorr>
+        <!--Maximum lag in seconds-->
+        <max_lag>12000</max_lag>
+        <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
+        <pcc_nu>1</pcc_nu>
+		<!--For phase weighted stack: Specify type of stack: 0 is time domain, 1 time-scale-domain (using continuous wavelet transform)-->
+		<tfpws>1</tfpws>
+    </correlations>  
+        
+
+
+</stacking_parameters>
