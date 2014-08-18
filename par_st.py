@@ -14,7 +14,8 @@ from mpi4py import MPI
 from glob import glob
 from obspy.core import Stats, Trace
 from obspy.noise.correlation import Correlation
-from obspy.noise.correlation_functions import phase_xcorr, classic_xcorr
+from obspy.noise.correlation_functions import phase_xcorr
+from obspy.signal import cross_correlation
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 
@@ -739,3 +740,10 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
     
     fileid_pcc_cwt=outdir+id1+'.'+id2+'.pcs.'+corrname+'.npy'
     np.save(fileid_pcc_cwt,cstack_pcc)
+    
+    
+def classic_xcorr(data1, data2, max_lag):
+   
+    xcorr = cross_correlation.xcorr(data1.data * 1000, data2.data * 1000, max_lag, True)[2]
+    
+    return xcorr

@@ -4,6 +4,18 @@ from scipy.signal import hilbert
 
 
 
+def strafo(data, dt, fmin, fmax, k=2.0, nf = 100):
+    npts = len(st) * 2
+    tmax = (npts - 1) * dt
+    t = np.linspace(0., tmax, npts)
+    f = np.logspace(np.log10(fmin), np.log10(fmax), nf)
+    
+    strafo = np.zeros((npts // 2, nf), dtype=np.complex)
+    
+    wavel = lambda t: 1/(k*np.sqrt(2,0*np.pi)) * np.exp(-t**2/(2.*k))
+    
+
+
 def cwt(data, dt, fmin, fmax, wl='morlet', w0=12.0):
     
     """
