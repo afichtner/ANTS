@@ -544,13 +544,25 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,f
                     tr2=proc.downsample(tr2,Fs_new[k],False,None)
                 k+=1
         else:
-            t1 = t2 
+            t1 = t2 - overlap
             continue   
     
         
         if len(tr1.data) == len(tr2.data):
             mlag = maxlag / tr1.stats.delta
             mlag=int(mlag)
+            
+            # Check if the traces are both long enough
+            if len(tr1.data)<=mlag or len(tr2.data)<=mlag:
+                t1 = t2 - overlap
+                continue
+            if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
+                t1 = t2 - overlap
+                continue
+            if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
+                t1 = t2 - overlap
+                continue
+                
             
             pcc=phase_xcorr(tr1, tr2, mlag, nu)
             

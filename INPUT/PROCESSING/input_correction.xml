@@ -4,7 +4,7 @@
 
     <!--preprocessing run: Name, description. Must be included.-->
 	<prepname>medi</prepname>
-	<comment>Process remaining TT.THTN data.</comment>
+	<comment>Process some more mediterranean data in order to verify updated correlation.</comment>
     <!--print output-->
     <verbose>1</verbose>
 	<!--save output to file if set to 1. If set to 0, print to screen.-->
@@ -20,7 +20,7 @@
 
     <input>
         <!--input directory for processed data-->
-        <indirs>DATA/raw/medi_new/</indirs>
+        <indirs>DATA/raw/latest/</indirs>
 		<!--time window covered roughly. (YYYY)-->
 		<startyr>2012</startyr>
 		<endyr>2013</endyr>

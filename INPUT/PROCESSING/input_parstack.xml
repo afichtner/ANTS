@@ -7,7 +7,7 @@
 	<!--select a test run. This saves an intermediate result at every time window (attention, needs ***LOTS*** (and lots and lots) of storage space)-->
     <check>0</check>
 	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
-	<corrname>medi_pwstest_tf</corrname>
+	<corrname>medi_z</corrname>
 	<!--Describe briefly-->
 	<comment>Test different phase weighted stacks.</comment>
 	<!--Updating on a previous run? -->

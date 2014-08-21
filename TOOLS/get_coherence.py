@@ -1,18 +1,33 @@
 import numpy as np
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
-
-
+from obspy.signal.util import nextpow2
+import matplotlib.pyplot as plt
 
 def strafo(data, dt, fmin, fmax, k=2.0, nf = 100):
-    npts = len(st) * 2
+    
+    
+    npts = len(data)
     tmax = (npts - 1) * dt
     t = np.linspace(0., tmax, npts)
-    f = np.logspace(np.log10(fmin), np.log10(fmax), nf)
+    f = np.linspace(fmin, fmax, nf)
     
     strafo = np.zeros((npts // 2, nf), dtype=np.complex)
     
-    wavel = lambda t: 1/(k*np.sqrt(2,0*np.pi)) * np.exp(-t**2/(2.*k))
+    # FT of input signal
+    dataf = np.fft.fft(data, n=nf)
+    fax = np.fft.fftfreq(len(dataf),int(1.0/dt))
+
+    # Sort of Gaussian window function
+    
+    win = lambda f: np.exp(-(2*np.pi**2)/(k**2*f**2)*np.power(fax,2))
+    
+    # Loop over frequencies
+    for n, _f in enumerate(f):
+        # Shift the signal
+        
+    
+    
     
 
 
