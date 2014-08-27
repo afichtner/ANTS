@@ -99,3 +99,17 @@ def get_sta_info(stationlist,verbose=False):
                                ====================\n'+id
             continue
 
+def get_antip_pt(lon,lat):
+    """
+    Return the coordinates (lon, lat) of the antipode.
+    """
+    
+    if lon <= 0.:
+        lon_new = lon + 180.
+    else:
+        lon_new = lon - 180.
+        
+    lat_new = -1.*lat
+    
+    return lon_new,lat_new
+    

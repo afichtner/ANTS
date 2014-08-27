@@ -7,18 +7,18 @@
 	<!--select a test run. This saves an intermediate result at every time window (attention, needs ***LOTS*** (and lots and lots) of storage space)-->
     <check>0</check>
 	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
-	<corrname>medi_z</corrname>
+	<corrname>medi_z_ccc_long</corrname>
 	<!--Describe briefly-->
-	<comment>Test different phase weighted stacks.</comment>
+	<comment>Try if it works to get ccc only.</comment>
 	<!--Updating on a previous run? -->
-	<update>1</update>
+	<update>0</update>
 	
 <!--**************************************************************************************************-->
 	<!--Specifics for data distribution to cores-->
 <!--**************************************************************************************************-->
 	<data>
 		<!--station ID list; containing entries in format net.sta.loc.cha -->
-		<idfile>INPUT/ID_LISTS/ids_medi_corr.txt</idfile>
+		<idfile>INPUT/ID_LISTS/ids_medi_corr_1.txt</idfile>
 		<!--How many station pairs for each core? Typically the number of files opened by that core is about n+1-->
 		<npairs>2</npairs>
 		<!-- Specify channel: LH, BH, VH... -->
@@ -50,7 +50,7 @@
         <!--End date. Will only process files until this. Format yyyymmdd-->
         <enddate>20130101</enddate>
         <!--Length of the time windows to be correlated, in seconds-->
-        <winlen>32768</winlen>
+        <winlen>65536</winlen>
         <!--Overlap in SECONDS-->
         <!--Groos et al. recommend an overlap that is equal to the maximum lag-->
         <olap>6000</olap>
@@ -71,6 +71,8 @@
 	
     <!--Type of correlations-->
     <correlations>
+		<!--Type of correlations: ccc, pcc, both-->
+		<corrtype>ccc</corrtype>
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
         <!--Maximum lag in seconds-->
