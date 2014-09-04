@@ -832,7 +832,7 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
 
     
     
-    if corrtype == pcc or corrtype =='both':
+    if corrtype == 'pcc' or corrtype =='both':
         #- open file and write correlation function
         fileid_pcc=outdir+id1+'.'+id2+'.pcc.'+corrname+'.SAC'
         tr_pcc.write(fileid_pcc,format='SAC')
