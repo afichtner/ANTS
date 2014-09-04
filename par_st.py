@@ -78,6 +78,7 @@ def par_st(xmlinput):
            
         os.system('cp '+xmlinput+' '+cfg.datadir+'/correlations/xmlinput/'+\
             corrname+'.xml')
+	print(corrname+'\n',file=None)
         print('Copied input file',file=None)
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
@@ -85,6 +86,7 @@ def par_st(xmlinput):
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),\
             corrname,bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
+	print('Number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
     else:
@@ -152,7 +154,8 @@ def par_st(xmlinput):
             print(time.strftime('%H.%M.%S')+'\n',file=None)
         
         # Flush the outfile buffer every now and then...
-        ofid.flush()
+        if bool(int(inp['verbose']))==True:
+	    ofid.flush()
     
     
     os.system('mv '+dir+'/* '+cfg.datadir+'correlations/'+corrname+'/')
@@ -260,12 +263,12 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                     str1 += colltr.split()
                     idlist += id
                     
-                    if verbose:
-                        print('Read in traces for channel '+id,file=ofid)
-                    del colltr
+                   # if verbose:
+                   #     print('Read in traces for channel '+id,file=ofid)
+                   # del colltr
                 else:
-                    if verbose:
-                        print('No traces found for channel '+id,file=ofid)
+                   # if verbose:
+                   #     print('No traces found for channel '+id,file=ofid)
                     continue
             
         
@@ -551,27 +554,27 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
     cstack_ccc=np.zeros(tlen,dtype=np.complex)
     cstack_pcc=np.zeros(tlen,dtype=np.complex)
     
-    print('start correlating',file=None)
+    print('Correlating...',file=None)
     while n1<len(str1) and n2<len(str2):
     
         # Check if the end of one of the traces has been reached
         if str1[n1].stats.endtime-t1<winlen-1:
             n1+=1
-            print('No more windows in trace 1..',file=None)
+            #print('No more windows in trace 1..',file=None)
             continue
         elif str2[n2].stats.endtime-t1<winlen-1:
             n2+=1
-            print('No more windows in trace 2..',file=None)
+            #print('No more windows in trace 2..',file=None)
             continue
         
         # Check the starttime of the potentially new trace
         t1=max(t1,str1[n1].stats.starttime,str2[n2].stats.starttime)
-        print(t1,file=None)
+        #print(t1,file=None)
         t2=t1+winlen
         
         # Check if the end of the desired stacking window is reached
         if t2>endday: 
-            print('At end of correlation time',file=None)
+            #print('At end of correlation time',file=None)
             break
         
         
@@ -693,7 +696,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
         #Update starttime
             t1 = t2 - overlap
         else:
-            print('Traces have unequal length!',file=None)
+            #print('Traces have unequal length!',file=None)
             t1 = t2 - overlap
 
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
