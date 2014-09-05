@@ -3,13 +3,13 @@
 <stacking_parameters>
 
     <!--print screen output-->
-    <verbose>1</verbose>
+    <verbose>0</verbose>
 	<!--select a test run. This saves an intermediate result at every time window (attention, needs ***LOTS*** (and lots and lots) of storage space)-->
     <check>0</check>
 	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
-	<corrname>medi_z_ccc_long</corrname>
+	<corrname>medi_z_pcconly</corrname>
 	<!--Describe briefly-->
-	<comment>Try if it works to get ccc only.</comment>
+	<comment>Try if it works to get pcc only.</comment>
 	<!--Updating on a previous run? -->
 	<update>0</update>
 	
@@ -72,7 +72,7 @@
     <!--Type of correlations-->
     <correlations>
 		<!--Type of correlations: ccc, pcc, both-->
-		<corrtype>ccc</corrtype>
+		<corrtype>pcc</corrtype>
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
         <!--Maximum lag in seconds-->
@@ -80,7 +80,7 @@
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2011)-->
         <pcc_nu>1</pcc_nu>
 		<!--For phase weighted stack: Specify type of stack: 0 is time domain, 1 time-scale-domain (using continuous wavelet transform)-->
-		<tfpws>1</tfpws>
+		<tfpws>0</tfpws>
     </correlations>  
         
 
