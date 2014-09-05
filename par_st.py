@@ -78,7 +78,7 @@ def par_st(xmlinput):
            
         os.system('cp '+xmlinput+' '+cfg.datadir+'/correlations/xmlinput/'+\
             corrname+'.xml')
-	print(corrname+'\n',file=None)
+        print(corrname+'\n',file=None)
         print('Copied input file',file=None)
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
@@ -86,7 +86,7 @@ def par_st(xmlinput):
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),\
             corrname,bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
-	print('Number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
+        print('Number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
     else:
@@ -145,13 +145,11 @@ def par_st(xmlinput):
         
     #- Run correlation for blocks ----------------------------------------------
     for block in ids:
-        if rank==0:
-            print('Starting a block of correlations',file=None)
-            print(time.strftime('%H.%M.%S')+'\n',file=None)
+        
         corrblock(inp,block,dir,corrname,ofid,bool(int(inp['verbose'])))
         if rank==0:
             print('Finished a block of correlations',file=None)
-            print(time.strftime('%H.%M.%S')+'\n',file=None)
+            print(time.strftime('%H.%M.%S'),file=None)
         
         # Flush the outfile buffer every now and then...
         if bool(int(inp['verbose']))==True:
@@ -159,6 +157,7 @@ def par_st(xmlinput):
     
     
     os.system('mv '+dir+'/* '+cfg.datadir+'correlations/'+corrname+'/')
+    os.system('rmdir '+dir)
     print('Rank %g finished correlations.' %rank,file=None)
         
 def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
@@ -353,7 +352,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             if len(str1_T) == 0 or len(str1_R) == 0 \
                 or len(str2_T) == 0 or len(str2_R) == 0:
                         
-                if verbose: 
+                if verbose==True: 
                     print('No rotated traces: Probably original traces \
                     are components 1, 2. Rotation not implemented yet.',file=ofid)
                 continue
@@ -369,8 +368,9 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         if comp=='Z':
             id_1=str1[0].id
             id_2=str2[0].id
-            print(id_1,file=None)
-            print(id_2,file=None)
+            if verbose == True:
+                print(id_1,file=ofid)
+                print(id_2,file=ofid)
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,\
                 winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,\
@@ -554,7 +554,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
     cstack_ccc=np.zeros(tlen,dtype=np.complex)
     cstack_pcc=np.zeros(tlen,dtype=np.complex)
     
-    print('Correlating...',file=None)
+    
     while n1<len(str1) and n2<len(str2):
     
         # Check if the end of one of the traces has been reached
