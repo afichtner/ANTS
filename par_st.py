@@ -84,7 +84,7 @@ def par_st(xmlinput):
         
         #- Get list of correlation pairs----------------------------------------
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),\
-            corrname,bool(int(inp['correlations']['autocorr'])))
+            corrname,inp['correlations']['corrtype'],bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
         print('Number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
         print(time.strftime('%H.%M.%S')+'\n',file=None)
@@ -437,7 +437,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
                 del ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc
 
 
-def parlistpairs(infile,nf,corrname,auto=False):
+def parlistpairs(infile,nf,corrname,corrtype,auto=False):
     """
     Find the 'blocks' to be processed by a single node.
     
@@ -474,10 +474,10 @@ def parlistpairs(infile,nf,corrname,auto=False):
             #- In update mode: Check if the correlation is there already
             if idlist[i]<=idlist[j]:
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' +\
-                idlist[i] + '???.' + idlist[j] + '???.?cc.' + corrname + '.SAC'
+                idlist[i] + '???.' + idlist[j] + '???.'+ corrtype + '.' + corrname + '.SAC'
             else:
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' + \
-                idlist[j] + '???.' + idlist[i] + '???.?cc.' + corrname + '.SAC'
+                idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
                 
             if glob(fileid) != []:
                 continue
