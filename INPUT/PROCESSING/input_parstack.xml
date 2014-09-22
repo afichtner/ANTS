@@ -9,9 +9,9 @@
 	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
 	<corrname>medi_z_pcconly</corrname>
 	<!--Describe briefly-->
-	<comment>Try if it works to get pcc only.</comment>
+	<comment>Try if it works to add ccc to already existing pcc set.</comment>
 	<!--Updating on a previous run? -->
-	<update>0</update>
+	<update>1</update>
 	
 <!--**************************************************************************************************-->
 	<!--Specifics for data distribution to cores-->
@@ -72,7 +72,7 @@
     <!--Type of correlations-->
     <correlations>
 		<!--Type of correlations: ccc, pcc, both-->
-		<corrtype>pcc</corrtype>
+		<corrtype>ccc</corrtype>
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
         <!--Maximum lag in seconds-->
