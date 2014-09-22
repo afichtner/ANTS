@@ -1,6 +1,7 @@
 import os
 import pylab as P
 import numpy as np
+import sys
 
 from glob import glob
 from obspy import read
@@ -9,8 +10,14 @@ from obspy.core.util.geodetics import gps2DistAzimuth
 import antconfig as cfg
 import TOOLS.read_xml as rxml
 
-def meas_asym(indir, xmldir,g_speed,w1,w2,filename,ps_nu=0,prefilter=None,\
-                verbose=False,outdir='RES/asymmetry_measurements/',doplot=False):
+
+if __name__=='__main__':
+    import measure_asymmetry as ma
+    ma.meas_asym(sys.argv[1])
+
+def meas_asym(indir, xmldir='DATA/stationxml/',g_speed=3.5,w1=100.,w2=100.,\
+               filename=indir.split('/')[-1],ps_nu=0,prefilter=None,\
+                verbose=False,outdir='RES/asymmetry_measurements/',doplot=True):
     
     """
     A script to plot cross-correlation traces sorted by interstation distance.
