@@ -117,4 +117,4 @@ def plot_hist(numwins,outdir):
         l = P.plot(bins, y, 'k--', linewidth=1.5)
         
         #P.show()
-        P.savefig(outdir+'hist.png')
+        P.savefig(outdir+ 'hist.png')

@@ -16,4 +16,14 @@ if os.path.exists(datadir)==False:
     os.mkdir(datadir+'processed/xmlinput/')
     os.mkdir(datadir+'correlations/interm/')
     os.mkdir(datadir+'correlations/xmlinput/')
+
+testdir=cfg.testdir
+if os.path.exists(testdir)==False:
+    os.mkdir(testdir)
     
+resdir=cfg.resdir
+if os.path.exists(resdir)==False:
+    os.mkdir(resdir)
+    os.mkdir(resdir+'maps/')
+    os.mkdir(resdir+'correlations/')
+ 
