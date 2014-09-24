@@ -91,7 +91,7 @@ def par_download(xmlinput):
     # data segment length
     if dat['time']['len']=='':
         winlen=UTCDateTime(t2)-UTCDateTime(t1)
-    else
+    else:
         winlen = int(dat['time']['len'])
     
     # minimum length
