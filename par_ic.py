@@ -305,7 +305,7 @@ def ic(xmlinput,content=None):
         colloc_data._cleanup()
         
         for k in range(len(colloc_data)):
-            print(removed)
+            print(colloc_data[k])
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
                 inp1['processing']['instrument_response']['doit']!='1':
                 
