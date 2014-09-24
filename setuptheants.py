@@ -8,6 +8,7 @@ if os.path.exists(datadir)==False:
     os.mkdir(datadir)
     os.mkdir(datadir+'resp/')
     os.mkdir(datadir+'raw/')
+    os.mkdir(datadir+'raw/latest/')
     os.mkdir(datadir+'processed/')
     os.mkdir(datadir+'correlations/')
     os.mkdir(datadir+'stationxml/')
