@@ -61,8 +61,8 @@ def ic(xmlinput,content=None):
        update=bool(int(inp1['update']))
        check=bool(int(inp1['check']))
        prepname=inp1['prepname']
-       startyr=int(inp1['input']['startyr'][0:4])
-       endyr=int(inp1['input']['endyr'][0:4])
+       #startyr=int(inp1['input']['startyr'][0:4])
+       #endyr=int(inp1['input']['endyr'][0:4])
       
        
        #- copy the input xml to the output directory for documentation ===============================
@@ -78,9 +78,11 @@ def ic(xmlinput,content=None):
            shutil.copy(xmlinput,xmlinname)
        
        
-       for i in range(startyr-1,endyr+1):
-           if os.path.exists(datadir+'/processed/'+str(i)+'/')==False:
-               os.mkdir(datadir+'/processed/'+str(i))
+       #for i in range(startyr-1,endyr+1):
+    #       if os.path.exists(datadir+'/processed/'+str(i)+'/')==False:
+    #       os.mkdir(datadir+'/processed/'+str(i))
+       if os.path.exists(datadir+'processed/'+prepname)==False:
+           os.mkdir(datadir+'processed/'+prepname)
        
        #- check what input is, list input from different directories =================================
        if content==None:
@@ -172,8 +174,10 @@ def ic(xmlinput,content=None):
     #==============================================================================================
     #- Input file loop
     #==============================================================================================
-    
-    
+    mydir=datadir+'processed/'+prepname+'/'+rank
+    if os.path.exists(mydir)==False:
+        os.mkdir(mydir)
+        
     
     for filepath in mycontent:
         
@@ -304,7 +308,7 @@ def ic(xmlinput,content=None):
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
                 inp1['processing']['instrument_response']['doit']!='1':
                 
-                filepathnew = getfilepath(colloc_data[k].stats,prepname)
+                filepathnew = getfilepath(mydir,colloc_data[k].stats,prepname)
                 
                 #- write to file
                 colloc_data[k].write(filepathnew,format=colloc_data[k].stats._format)
@@ -317,9 +321,10 @@ def ic(xmlinput,content=None):
     if ofid:
         print("Rank %g has completed processing." %rank,file=None)
         ofid.close()
+    os.system('mv '+mydir+'/* '+cfg.datadir+prepname+'/')
+    os.system('rmdir '+mydir)    
         
-        
-def getfilepath(stats,prepname,startonly=False):
+def getfilepath(mydir,stats,prepname,startonly=False):
     
     network=stats.network
     station=stats.station
@@ -332,9 +337,9 @@ def getfilepath(stats,prepname,startonly=False):
     yr=str(t1[0:4])
     
     if startonly == False:
-        filepathnew=cfg.datadir+'/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
+        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
     else:
-        filepathnew=cfg.datadir+'/processed/'+yr+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.*.'+prepname+'.'+format
+        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.*.'+prepname+'.'+format
     return filepathnew
         
     
