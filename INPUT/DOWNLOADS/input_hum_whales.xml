@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<data_download>
+
+    <!--verbose-->
+    <verbose>1</verbose>
+	
+    <!--path to perl script that actually does the download (FetchData)-->
+    <exdir>.</exdir>
+    
+    <!--user identity-->
+    <user>hugo_bruno@web.de</user>
+
+    
+    <!--File containing all the ids you'd like to download.-->
+    <ids>INPUT/STATION_IDS/stas_hum_whales.txt</ids>
+   
+
+    <!--time window where data are requested-->
+    <!--Format: YYYY-MM-DD,HH:MM:SS-->
+    <time>
+        <starttime>2012-01-01,00:00:00</starttime>
+        <endtime>2012-02-01,00:00:00</endtime>
+		<!--Divide up in segments for long or highly sampled data...-->
+		<len></len>
+		<!--minimum length of downloaded segments in seconds-->
+		<minlen>7200</minlen>
+    </time>
+
+    <!--geographic area where stations are considered-->
+    <region>
+        <lat_min>-90.0</lat_min>
+        <lat_max>90.0</lat_max>
+        <lon_min>-180.0</lon_min>
+        <lon_max>180.0</lon_max>
+    </region>
+
+
+</data_download>
