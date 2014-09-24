@@ -174,7 +174,7 @@ def ic(xmlinput,content=None):
     #==============================================================================================
     #- Input file loop
     #==============================================================================================
-    mydir=datadir+'processed/'+prepname+'/'+rank
+    mydir=datadir+'processed/'+prepname+'/'+str(rank)
     if os.path.exists(mydir)==False:
         os.mkdir(mydir)
         
