@@ -151,6 +151,8 @@ def par_download(xmlinput):
     t2s=t2str.split('.')[0]+'.'+t2str.split('.')[1]
     cleanupinfo=targetloc+stafile.split('/')[-1].split('.')[0]+'.'+t1s+'.'+t2s+'.rank'+str(rank)
     
-    cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)      
+    cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)     
     os.system(cmd)
+    os.system('mv '+targetloc+'* '+targetloc+'/..')
+    os.system('rmdir '+targetloc)
       #return
