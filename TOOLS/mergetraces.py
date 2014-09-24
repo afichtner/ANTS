@@ -29,19 +29,19 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
         newstream=Stream()
         while i<(len(data)-1):
             data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,4)
-            # Check the sampling rate
+            # Throw data with the wrong sampling rate out.
             if data[i].stats.sampling_rate not in Fs:
                 print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
                 i+=1
                 continue
            
-            # Check if IDs match
+            # If Ids are different, no merging. Just append.
             if data[i+1].id!=data[i].id:
                 # Append trace i, go to the next trace
                 newstream+=data[i]
                 i+=1
             else:
-                # Check how long the gap is
+                # If gap is short enough, merge.
                 if data[i+1].stats.starttime-data[i].stats.endtime<=maxgap:
                 # Merge traces
                     s=Stream()
@@ -53,10 +53,11 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
                     i+=1
                 
                 else:
-                     # Append trace i and go to the next trace
+                     # If it's too long, simply append
                     newstream+=data[i]
                     i+=1
-                    
+        # append the very last trace (if it has been merged already it will be sorted out at the next step.)
+        newstream+=data[i]          
         # remove the overlapping segments
         newstream._cleanup()
     
