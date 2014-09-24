@@ -174,7 +174,7 @@ def ic(xmlinput,content=None):
     #==============================================================================================
     #- Input file loop
     #==============================================================================================
-    mydir=datadir+'processed/'+prepname+'/'+str(rank)
+    mydir=datadir+'processed/'+prepname+'/rank'+str(rank)
     if os.path.exists(mydir)==False:
         os.mkdir(mydir)
         
@@ -321,7 +321,7 @@ def ic(xmlinput,content=None):
     if ofid:
         print("Rank %g has completed processing." %rank,file=None)
         ofid.close()
-    os.system('mv '+mydir+'/* '+cfg.datadir+prepname+'/')
+    os.system('mv '+mydir+'/* '+mydir+'/../')
     os.system('rmdir '+mydir)    
         
 def getfilepath(mydir,stats,prepname,startonly=False):
