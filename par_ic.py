@@ -300,12 +300,11 @@ def ic(xmlinput,content=None):
             ofid.flush()
             
             del newtrace
-        print(colloc_data)   
+
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
 
         for k in range(len(colloc_data)):
-            print(colloc_data[k])
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
                 inp1['processing']['instrument_response']['doit']!='1':
                 
