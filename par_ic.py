@@ -303,7 +303,7 @@ def ic(xmlinput,content=None):
             
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
-        
+        print colloc_data
         for k in range(len(colloc_data)):
             print(colloc_data[k])
             if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
