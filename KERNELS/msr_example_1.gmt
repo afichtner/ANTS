@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# GMT experiment with great circles
+
+
+ps=msr_segments.ps
+
+gmt makecpt -Cjet -T-2/2/0.25 -Z > t.cpt
+
+gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest -U > $ps
+
+# plot the endpoints of the great circles
+while read lat1 lon1; do
+
+    (echo $lon1 $lat1) | gmt psxy -R -J -K -Vl -O -St0.1i -Gred -Wthin >> $ps
+	
+done < measurement_stas_1.txt
+
+# plot the segments
+
+while read lat1 lon1 col; do
+
+    (echo $lon1 $lat1 $col) | gmt psxy -R -J -K -Vl -O -Sc0.05i -Ct.cpt -Wthin >> $ps
+	
+done < measurement_example_1.txt
+
+rm t.cpt
