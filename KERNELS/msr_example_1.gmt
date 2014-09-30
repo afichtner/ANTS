@@ -5,7 +5,7 @@
 
 ps=msr_segments.ps
 
-gmt makecpt -Cjet -T-2/2/0.25 -Z > t.cpt
+gmt makecpt -Cpolar -T-2/2/0.25 -Z > t.cpt
 
 gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest -U > $ps
 
@@ -23,5 +23,7 @@ while read lat1 lon1 col; do
     (echo $lon1 $lat1 $col) | gmt psxy -R -J -K -Vl -O -Sc0.05i -Ct.cpt -Wthin >> $ps
 	
 done < measurement_example_1.txt
+
+gmt psscale -P -D9.3i/2.25i/7.5c/0.3c -B0.5 -O -Ct.cpt  >> $ps
 
 rm t.cpt
