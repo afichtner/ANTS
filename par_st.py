@@ -637,8 +637,8 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
                         t1.strftime('.%Y.%j.%H.%M.%S.')+\
                         corrname+'.ccc.SAC'
                         
-                    trace_ccc=obs.Trace(data=pcc)
-                    trace_ccc.stats=Stats({'network':'pcc',\
+                    trace_ccc=obs.Trace(data=ccc)
+                    trace_ccc.stats=Stats({'network':'ccc',\
                         'station':str1[n1].id.split('.')[1],\
                         'location':str2[n2].id.split('.')[1],\
                         'sampling_rate':Fs})
@@ -650,7 +650,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
                         str2[n2].id.split('.')[1]+\
                         t1.strftime('.%Y.%j.%H.%M.%S.')+corrname+'.ccc.npy'
                         
-                    np.save(id_coh,coh_pcc)
+                    np.save(id_coh,coh_ccc)
                     
             #- Phase correlation part =========================================
             if corrtype == 'pcc' or corrtype == 'both':

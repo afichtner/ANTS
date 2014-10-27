@@ -8,40 +8,43 @@ import warnings
 
 def getkernel():
     
-    xmin = -5000.0
-    xmax = 5000.
-    dx = 20.
+    xmin = -20000.0
+    xmax = 20000.
+    dx = 40.
     
-    ymin = -2500.
-    ymax = 2500.
-    dy = 20.0
+    ymin = -6000.
+    ymax = 6000.
+    dy = 40.
     
-    fmin = 0.005
-    fmax = 0.0051
-    df = 0.005
+    #fmin = 0.005
+    #fmax = 0.0051
+    #df = 0.005
+    f = 0.01
     
-    x1 = -1010.
-    y1 = 10.
+    x1 = -2000.
+    y1 = 0.
     
-    x2 = 1010.
-    y2 = 10.
+    x2 = 2000.
+    y2 = 0.
     
     c = 3.0
     rho = 3.0
+    Q = 100.
     
     sigma = 100.0
     
-    if fmin < (3.*c)/min((xmax-xmin),(ymax-ymin)):
-        msg = 'Longest wavelengths fit into model domain less than three times. Consider using higher fmin.'
-        warnings.warn(msg)
-        
-    if fmax > c/(2.*min(dx,dy)):
-        msg = 'Spatial sampling is not sufficient for shortest wavelength. Consider using lower frequencies or decrease dx, dy.'
-    
-    
-    
-    K = kernel_g2d_example(x=[xmin,xmax,dx],y=[ymin,ymax,dy],f=[fmin,fmax,df], recx1=x1,recy1=y1,recx2=x2,recy2=y2,c=c,rho=rho,sigma=sigma)
+    #if fmin < (3.*c)/min((xmax-xmin),(ymax-ymin)):
+    #    msg = 'Longest wavelengths fit into model domain less than three times. Consider using higher fmin.'
+    #    warnings.warn(msg)
+    #    
+    #if fmax > c/(2.*min(dx,dy)):
+    #    msg = 'Spatial sampling is not sufficient for shortest wavelength. Consider using lower frequencies or decrease dx, dy.'
+    #
 
+    
+    #K = kernel_g2d_example(x=[xmin,xmax,dx],y=[ymin,ymax,dy],f=[fmin,fmax,df], recx1=x1,recy1=y1,recx2=x2,recy2=y2,c=c,rho=rho,sigma=sigma)
+    K = kernel_g2d_example(x=[xmin,xmax,dx],y=[ymin,ymax,dy],f=f, recx1=x1,recy1=y1,recx2=x2,recy2=y2,c=c,rho=rho,sigma=sigma)
+    
     #- Write to file so you can compare with matlab
     ofid_re = open('examplekernel_re.txt','w')
     ofid_im = open('examplekernel_im.txt','w')
@@ -89,6 +92,7 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.
     y_range=np.arange(y[0],y[1]+0.5*y[2],y[2])
     
     omega=2.0*np.pi*f
+      
     xv,yv=np.meshgrid(x_range,y_range)
     
     #========================================================================
@@ -108,7 +112,7 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.
     plt.axis('image')
     plt.clim(-np.max(np.max(K))*0.5,np.max(np.max(K))*0.5)
     plt.colorbar()
-    plt.title(r'Noise source kernel $[m^2 N^{-2} s^{-1}]$')
+    plt.title('Noise source kernel $[m^2 N^{-2} s^{-1}]$')
 
     #========================================================================
     #= Save figure
@@ -144,6 +148,14 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.
     plt.show()
     
     return K
+
+#==============================================================================
+#==============================================================================
+#==============================================================================
+
+def get_humkernel(stationdist,numseg):
+    print 'Nuts and kernels.'
+    
     
 #==============================================================================
 #==============================================================================

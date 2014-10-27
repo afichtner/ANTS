@@ -69,7 +69,7 @@ def seg_example_majarc():
     ofid2.close()
     os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')
     
-def seg_example_measr(infile):
+def seg_example_measr(infile,snr_min=10,nwin_min=1):
     
     infile = open(infile,'r')
     data = infile.read().split('\n')
@@ -82,20 +82,22 @@ def seg_example_measr(infile):
         entry=entry.split()
         
         if len(entry) == 0: continue
-        if entry[4] == 0.: continue
+        if float(entry[4]) == 0.: continue
+        if int(entry[5]) < nwin_min: continue
+        if float(entry[6]) < snr_min and float(entry[7]) < snr_min: continue
         
         lat1 = float(entry[0])
         lon1 = float(entry[1])
         lat2 = float(entry[2])
         lon2 = float(entry[3])
-        mesr = float(entry[5])
+        mesr = float(entry[8])
         
         
         
         
         # write station coordinates to file
-        ofid2.write("%8.3f %8.3f \n" %(lat1,lon1))
-        ofid2.write("%8.3f %8.3f \n" %(lat2,lon2))
+        ofid2.write("%8.3f %8.3f \n" %(lon1,lat1))
+        ofid2.write("%8.3f %8.3f \n" %(lon2,lat2))
         # find midpoint
         mp = gc.get_midpoint(lat1,lon1,lat2,lon2)
         
@@ -117,15 +119,15 @@ def seg_example_measr(infile):
         
         # get segments station 1 to antipode
         segs1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg)
-        for seg in segs1[1:5]:
+        for seg in segs1[0:5]:
             #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[0],seg[1],mesr))
+            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
         
         # get segments station 2 to antipode
         segs2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg)
-        for seg in segs2[1:5]:
+        for seg in segs2[0:5]:
             #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[0],seg[1],-mesr))
+            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
         
     ofid1.close()
     ofid2.close()

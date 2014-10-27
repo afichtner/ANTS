@@ -3,7 +3,7 @@ import antconfig as cfg
 
 def prepare_corr_ids(indir,prepname):
     
-    outfile=cfg.inputdir+'ID_LISTS/ids_'+prepname+'_corr.txt'
+    outfile='INPUT/ID_LISTS/ids_'+prepname+'_corr.txt'
     fid = open(outfile,'w')
     
     idlist = glob(indir+'/*.'+prepname+'.mseed')
