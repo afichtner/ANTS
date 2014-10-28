@@ -86,7 +86,7 @@ def par_st(xmlinput):
         idpairs=parlistpairs(inp['data']['idfile'],int(inp['data']['npairs']),\
             corrname,inp['correlations']['corrtype'],bool(int(inp['correlations']['autocorr'])))
         print('Obtained list with correlations',file=None)
-        print('Number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
+        print('Approx. number of possible correlations: '+str(len(idpairs*int(inp['data']['npairs']))))
         print(time.strftime('%H.%M.%S')+'\n',file=None)
         
     else:
