@@ -72,10 +72,10 @@ def write_corr_sac(corrstack,corrtype,stackname,outdir,verbose):
     #- open file and write correlation function
     filename=outdir+id+'.'+corrtype+'.'+stackname+'.SAC'
     
-    if os.path.exists(filename):
-        msg = 'Choose a new directory or name to save, otherwise old data ' +\
-                'would be overwritten.'
-        raise ValueError(msg)
+    #if os.path.exists(filename):
+    #    msg = 'Choose a new directory or name to save, otherwise old data ' +\
+    #            'would be overwritten.'
+    #    raise ValueError(msg)
         
     tr = Trace(data=corrstack.correlation)
     tr.stats = corrstack.stats_a

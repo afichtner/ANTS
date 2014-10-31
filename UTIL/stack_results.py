@@ -44,13 +44,6 @@ def create_idlist(corr_ids,corrtype,prefix,cha1='LHZ',cha2='LHZ',\
     for sta in stations:
         #- Sort out empty lines
         if sta=='': continue
-        #- Sort out 10,20,30,40,50 locations
-        loc = str(sta.split('.')[2])
-       
-        if  loc!='00' and loc!='':
-            print '\nleft out:'
-            print sta
-            continue
         #- Sort out doubles
         if sta not in stalist:
             stalist.append(sta)
