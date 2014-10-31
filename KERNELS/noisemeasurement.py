@@ -120,8 +120,7 @@ class Nmeasure(object):
         elif win_type=='hann':
             win = self.getwin_fun('hann')
             data=self.corr.data*win
-            win_ind = self.getwin_ind()
-            (i0,i1,i2,i3) = win_ind
+            (i0,i1,i2,i3) = self.getwin_ind()
             sig_a=data[i0:i1]
             sig_c=data[i2:i3]
         

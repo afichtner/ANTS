@@ -23,7 +23,7 @@ def stack_results(inp_ids, stackname, corrtype, \
     for entry in pats:
         if entry == ' ': continue
         cstream = readsac.read_corr_sac(entry, corrtype, verbose)
-        stk = cstream.stack()
+        stk = cstream.stack(location1='00',location2='00')
             
         if stk.n_stack > 0:
             readsac.write_corr_sac(stk,corrtype,stackname,outdir,verbose)
@@ -48,7 +48,7 @@ def create_idlist(corr_ids,corrtype,prefix,cha1='LHZ',cha2='LHZ',\
         loc = str(sta.split('.')[2])
        
         if  loc!='00' and loc!='':
-            print 'left out:'
+            print '\nleft out:'
             print sta
             continue
         #- Sort out doubles

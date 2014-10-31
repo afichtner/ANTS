@@ -87,6 +87,6 @@ def plot_hist(numwins,filename):
         P.xlabel('Nr. of windows used for stack')
         P.ylabel('Nr. correlation stacks')
         P.title(filename.split('/')[:-1])
-        
-        P.show()
         P.savefig(filename + 'hist.png')
+        P.show()
+        

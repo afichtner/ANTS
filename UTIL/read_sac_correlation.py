@@ -82,6 +82,70 @@ def write_corr_sac(corrstack,corrtype,stackname,outdir,verbose):
     tr.write(filename,format='SAC')
     
 
+
+
+def plot_sect(cstream,prefilter=None,annotate=True,\
+              station1=None,station2=None,exagg=1.,save_as=None):
+#==============================================================================
+    #- Plot the traces contained in the correlation stream
+    #- offset = interstation distance
+#==============================================================================
+              
+    fig = plt.figure(figsize=(10, 10))
+    fig.hold()
+    plt.subplot(111)
+    
+    ids = []
+    
+    
+    for i in range(len(cstream.select(station1,station2))):
+        
+        corr = cstream[i]
+        
+        net1 = corr.stats_a.network
+        sta1 = corr.stats_a.station
+        net2 = corr.stats_b.network
+        sta2 = corr.stats_b.station
+        
+        id = net1+'.'+sta1+'-'+\
+             net2+'.'+sta2
+        if id not in ids:
+            ids.append(id)
+            
+            data = corr.correlation.copy()
+            
+            dist=float(corr.stats_a.sac['dist'])/10000
+            lag = corr.stats_a.sac['e']
+            
+            data /= corr.stats_a.sac['user0']
+            
+            if prefilter is not None:
+                tr = Trace(data=data)
+                tr.stats.sampling_rate = corr.stats_a.sampling_rate
+                tr.filter('bandpass',freqmin = prefilter[0],\
+                            freqmax = prefilter[1], corners = prefilter[2],\
+                                zerophase = True)
+                data = tr.data
+            
+            
+            wcount=' ('+str(int(corr.stats_a.sac['user0']))+' windows)'
+            
+            plt.plot(np.linspace(-lag,lag,len(corr.correlation)),\
+                exagg*data+dist,'k')
+            
+            plt.annotate(id, xy=(lag, dist+1),xytext=(-lag-3000,dist+1),\
+                         fontsize=12,color='k')
+            plt.annotate(wcount, xy=(lag, dist+0.5),xytext=(lag,dist),\
+                         fontsize=12,color='k')
+    plt.xlabel('Lag (s)')
+    plt.ylabel('Station-station dist (1000 km)')
+    plt.ylim([0,2000])
+    
+    if save_as is not None:
+        plt.savefig(save_as,format='eps')
+    plt.show()
+    
+
 #rrelationStream(object):
 #
 #__init__(self,correlations=None,cor_typ='ccc',max_lag=None,win_len=None,\

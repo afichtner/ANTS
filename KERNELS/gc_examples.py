@@ -121,13 +121,13 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1):
         segs1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg)
         for seg in segs1[0:5]:
             #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
+            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
         
         # get segments station 2 to antipode
         segs2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg)
         for seg in segs2[0:5]:
             #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
+            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
         
     ofid1.close()
     ofid2.close()
