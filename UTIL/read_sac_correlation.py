@@ -70,7 +70,7 @@ def write_corr_sac(corrstack,corrtype,stackname,outdir,verbose):
     print(corrstack.id)
     id = corrstack.id.split('--')[0]+'.'+corrstack.id.split('--')[1]
     #- open file and write correlation function
-    filename=outdir+id+'.'+corrtype+'.'+stackname+'.SAC'
+    filename=outdir+'/'+ id+'.'+corrtype+'.'+stackname+'.SAC'
     
     #if os.path.exists(filename):
     #    msg = 'Choose a new directory or name to save, otherwise old data ' +\
@@ -78,7 +78,18 @@ def write_corr_sac(corrstack,corrtype,stackname,outdir,verbose):
     #    raise ValueError(msg)
         
     tr = Trace(data=corrstack.correlation)
+    
     tr.stats = corrstack.stats_a
+    try:
+        tr.stats.sac['user0'] = corrstack.n_stack
+    except AttributeError:
+        tr.stats.sac = {}
+        tr.stats.sac['kuser0'] = corrstack.stats_b.network
+        tr.stats.sac['kevnm'] = corrstack.stats_b.station
+        tr.stats.sac['kuser1'] = corrstack.stats_b.location
+        tr.stats.sac['kuser2'] = corrstack.stats_b.channel
+        tr.stats.sac['user0'] = corrstack.n_stack
+    
     tr.write(filename,format='SAC')
     
 
