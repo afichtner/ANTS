@@ -112,19 +112,21 @@ class Nmeasure(object):
         l = len(self.corr.data)
         m = (len(self.corr.data)-1)/2
         if win_type=='boxcar':
-            win_ind = self.getwin_ind()
-            (i0,i1,i2,i3) = win_ind
+            win = self.getwin_fun('boxcar')
+            data=self.corr.data*win
+            #win_ind = self.getwin_ind()
+            #(i0,i1,i2,i3) = win_ind
                 
-            sig_a = self.corr.data[i0:i1]
-            sig_c = self.corr.data[i2:i3]
+            #sig_a = self.corr.data[i0:i1]
+            #sig_c = self.corr.data[i2:i3]
         elif win_type=='hann':
             win = self.getwin_fun('hann')
             data=self.corr.data*win
-            (i0,i1,i2,i3) = self.getwin_ind()
-            sig_a=data[i0:i1]
-            sig_c=data[i2:i3]
+            #(i0,i1,i2,i3) = self.getwin_ind()
+            #sig_a=data[i0:i1]
+            #sig_c=data[i2:i3]
         
-        msr = log(np.sum(np.power(sig_c,2))/np.sum(np.power(sig_a,2)))
+        msr = log(np.sum(np.power(data[0:(len(data)-1)/2)],2)/np.sum(np.power(data[len(data)-1)/2:len(data)],2))
         
         return msr
         # test: put in an exactly symmetric function or other known functions

@@ -21,7 +21,7 @@ gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest 
 #done < measurement_example_1.txt
 
 
-gmt psxy measurement_example_1.txt -R -J -K -Vl -O -Sc0.07i -Ct.cpt >> $ps
+gmt psxy measurement_example_1.txt -R -J -K -Vl -O -Sc0.03i -Ct.cpt >> $ps
 
 while read lon1 lat1; do
 

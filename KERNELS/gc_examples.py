@@ -69,7 +69,7 @@ def seg_example_majarc():
     ofid2.close()
     os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')
     
-def seg_example_measr(infile,snr_min=10,nwin_min=1):
+def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
     
     infile = open(infile,'r')
     data = infile.read().split('\n')
@@ -90,9 +90,10 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1):
         lon1 = float(entry[1])
         lat2 = float(entry[2])
         lon2 = float(entry[3])
-        mesr = float(entry[8])
+        mesr = order*float(entry[8])
         
-        
+        if mesr == 'nan':
+            continue
         
         
         # write station coordinates to file
@@ -118,19 +119,28 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1):
             numseg = 1
         
         # get segments station 1 to antipode
-        segs1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg)
-        for seg in segs1[0:5]:
-            #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
-        
+        seg1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg)
         # get segments station 2 to antipode
-        segs2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg)
-        for seg in segs2[0:5]:
-            #write
-            ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
+        seg2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg)
+        if plotstyle == 'points':
+            for seg in seg1:
+                #write
+                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
+            for seg in seg2:
+                #write
+                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
+        if plotstyle == 'gc':
+            ofid1.write('> -Z %7.2f\n' %(mesr))
+            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg1[0][1],seg1[0][0],seg1[-1][1],seg1[-1][0]))
+            ofid1.write('> -Z %7.2f\n' %(-mesr))
+            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg2[0][1],seg2[0][0],seg2[-1][1],seg2[-1][0]))
         
     ofid1.close()
     ofid2.close()
-    os.system('bash KERNELS/msr_example_1.gmt; rm measurement_*.txt') 
+    if plotstyle == 'points':
+        os.system('bash KERNELS/msr_example_1.gmt')
+    elif plotstyle == 'gc':
+        os.system('bash KERNELS/msr_example_2.gmt')
+    #os.system('rm measurement_*.txt')
         
         

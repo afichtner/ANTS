@@ -6,32 +6,32 @@ import matplotlib.pyplot as plt
 
 import warnings
 
-def getkernel():
+def getkernel(stationdist, cutoff):
     
     xmin = -20000.0
     xmax = 20000.
-    dx = 40.
+    dx = 100.
     
-    ymin = -6000.
-    ymax = 6000.
-    dy = 40.
+    ymin = -10000.
+    ymax = 10000.
+    dy = 100.
     
     #fmin = 0.005
     #fmax = 0.0051
     #df = 0.005
-    f = 0.01
+    f = 0.005
     
-    x1 = -2000.
+    x1 = -stationdist/2.
     y1 = 0.
     
-    x2 = 2000.
+    x2 = stationdist/2.
     y2 = 0.
     
-    c = 3.0
+    c = 3.6
     rho = 3.0
     Q = 100.
     
-    sigma = 100.0
+    sigma = 250.0
     
     #if fmin < (3.*c)/min((xmax-xmin),(ymax-ymin)):
     #    msg = 'Longest wavelengths fit into model domain less than three times. Consider using higher fmin.'
@@ -43,7 +43,13 @@ def getkernel():
 
     
     #K = kernel_g2d_example(x=[xmin,xmax,dx],y=[ymin,ymax,dy],f=[fmin,fmax,df], recx1=x1,recy1=y1,recx2=x2,recy2=y2,c=c,rho=rho,sigma=sigma)
-    K = kernel_g2d_example(x=[xmin,xmax,dx],y=[ymin,ymax,dy],f=f, recx1=x1,recy1=y1,recx2=x2,recy2=y2,c=c,rho=rho,sigma=sigma)
+    K, K_line, cut_dist = kernel_g2d_example(cutoff, x=[xmin,xmax,dx],\
+                            y=[ymin,ymax,dy],f=f, recx1=x1,recy1=y1,recx2=x2,\
+                                recy2=y2,c=c,rho=rho,sigma=sigma)
+    
+    
+    
+    
     
     #- Write to file so you can compare with matlab
     ofid_re = open('examplekernel_re.txt','w')
@@ -65,9 +71,10 @@ def getkernel():
 #==============================================================================
 
 
-def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.0e3],\
-    f=0.01,recx1=-2000.0e3,recy1=0.0,recx2=2000.0e3,recy2=0.0,\
-    c=3000.0,rho=3000.0,Q=100.0,sigma=100.0,saveeps=False,savepng=True,filter=True):
+def kernel_g2d_example(cutoff, x=[-20000.0e3,20000.0e3,40.0e3],\
+    y=[-6000.0e3,6000.0e3,40.0e3],f=0.01,recx1=-2000.0e3,recy1=0.0,\
+    recx2=2000.0e3,recy2=0.0,c=3000.0,rho=3000.0,Q=100.0,sigma=100.0,\
+    saveeps=False,savepng=True,filter=False):
     
     """
     Compute 2-D analytic noise source kernels. 
@@ -129,10 +136,20 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.
     #========================================================================
     #= Compute integral in y direction
     #========================================================================
-
+    #========================================================================
+    #= For first simple application: Assume the kernel is antisymmetric to 
+    #= find the cutoff distance. 
+    #========================================================================
+    
     K_line=np.sum(K,axis=0)
-            
+    cutoff_line = np.zeros(len(K_line)+cutoff)
+    ind = np.where(np.abs(K_line[0:int(len(K_line)/2)] - cutoff) < y[2])[0][0]
+
+    cut_dist = xv[0,ind]
+
     plt.plot(x_range,K_line,'k',linewidth=1.4)
+    plt.plot(x_range,cutoff_line,'b--',linewidth=1.)
+    plt.plot(cut_dist,0.5*(max(K_line)-min(K_line))+min(K_line),'gd',markersize=5)
     plt.plot(recx1,0.5*(max(K_line)-min(K_line))+min(K_line),'rv',markersize=10)
     plt.plot(recx2,0.5*(max(K_line)-min(K_line))+min(K_line),'rv',markersize=10)
     plt.xlabel('Distance (m)')
@@ -147,15 +164,10 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],y=[-6000.0e3,6000.0e3,40.
         
     plt.show()
     
-    return K
-
-#==============================================================================
-#==============================================================================
-#==============================================================================
-
-def get_humkernel(stationdist,numseg):
-    print 'Nuts and kernels.'
     
+    return K, K_line, cut_dist
+
+ 
     
 #==============================================================================
 #==============================================================================
