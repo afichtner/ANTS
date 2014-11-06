@@ -125,8 +125,9 @@ class Nmeasure(object):
             #(i0,i1,i2,i3) = self.getwin_ind()
             #sig_a=data[i0:i1]
             #sig_c=data[i2:i3]
-        
-        msr = log(np.sum(np.power(data[0:(len(data)-1)/2)],2)/np.sum(np.power(data[len(data)-1)/2:len(data)],2))
+        acausal = data[0:(len(data)-1)/2]
+        causal = data[(len(data)-1)/2:len(data)]
+        msr = log(np.sum(np.power(causal,2)/np.sum(np.power(acausal,2))
         
         return msr
         # test: put in an exactly symmetric function or other known functions
