@@ -3,8 +3,8 @@
 <processing_parameters>
 
     <!--preprocessing run: Name, description. Must be included.-->
-	<prepname>hum_is_only_whales_farting</prepname>
-	<comment>This dataset will show that the regions of hum excitation coincide with the whales balcony</comment>
+	<prepname>noisy</prepname>
+	<comment>This dataset will be noisy.</comment>
     <!--print output-->
     <verbose>1</verbose>
 	<!--save output to file if set to 1. If set to 0, print to screen.-->
@@ -20,7 +20,7 @@
 
     <input>
         <!--input directory for processed data-->
-        <indirs>DATA/raw/hum_is_only_whales_farting/</indirs>
+        <indirs>DATA/raw/noisy/</indirs>
 		<!--time window covered roughly. (YYYY)-->
     </input>
 

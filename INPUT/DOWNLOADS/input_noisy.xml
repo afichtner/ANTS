@@ -13,7 +13,7 @@
 
     
     <!--File containing all the ids you'd like to download.-->
-    <ids>INPUT/STATION_IDS/stas_hum_whales.txt</ids>
+    <ids>INPUT/STATION_IDS/stas_noisy.txt</ids>
    
 
     <!--time window where data are requested-->

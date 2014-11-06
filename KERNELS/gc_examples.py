@@ -130,9 +130,9 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
                 #write
                 ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
         if plotstyle == 'gc':
-            ofid1.write('> -Z %7.2f\n' %(mesr))
-            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg1[0][1],seg1[0][0],seg1[-1][1],seg1[-1][0]))
             ofid1.write('> -Z %7.2f\n' %(-mesr))
+            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg1[0][1],seg1[0][0],seg1[-1][1],seg1[-1][0]))
+            ofid1.write('> -Z %7.2f\n' %(mesr))
             ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg2[0][1],seg2[0][0],seg2[-1][1],seg2[-1][0]))
         
     ofid1.close()
