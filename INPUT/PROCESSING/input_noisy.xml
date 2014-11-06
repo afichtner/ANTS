@@ -74,6 +74,7 @@
         <!--remove instrument response-->
         <instrument_response>
             <doit>1</doit>
+			<!--Unit: ACC, VEL, DIS-->
             <unit>VEL</unit>
             <respdir>DATA/resp/</respdir>
 			<freqs>0.001 0.006 0.1 0.2</freqs>
