@@ -266,15 +266,16 @@ def trim_next_sec(data,verbose,ofid):
             print('* Trimming to full second.\n',file=ofid)
 
     if isinstance(data,Trace):
-        starttime=data.stats.starttime
-        fullsecondtime_start=UTCDateTime(starttime,precision=0)
-        data.trim(starttime=fullsecondtime_start,nearest_sample=True)
+        sec_to_remove=data.stats.starttime.microsecond/1e6
+        sec_to_add=1.-sec_to_remove
+        data.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
         
     elif isinstance(data,Stream):
         for tr in data:
             starttime=tr.stats.starttime
-            fullsecondtime_start=UTCDateTime(starttime,precision=0)
-            tr.trim(starttime=fullsecondtime_start,nearest_sample=True)
+            sec_to_remove=data.stats.starttime.microsecond/1e6
+            sec_to_add=1.-sec_to_remove
+            tr.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
             
     return data
             
