@@ -252,8 +252,7 @@ def remove_response(data,respdir,unit,frstr,waterlevel,verbose, ofid):
 def trim_next_sec(data,verbose,ofid):
     
     """ 
-    Trim data to the full second and add a little buffer. Ensures that recordings start and end with a full second.
-    A little 10 s buffer of zeroes is added at both ends. Data should be tapered before this operation.
+    Trim data to the full second. Ensures that recordings start and end with a full second.
 
     data=trim_next_sec(data,verbose)
 
