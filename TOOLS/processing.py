@@ -268,14 +268,16 @@ def trim_next_sec(data,verbose,ofid):
     if isinstance(data,Trace):
         sec_to_remove=data.stats.starttime.microsecond/1e6
         sec_to_add=1.-sec_to_remove
-        data.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
+        if sec_to_add < 1.:
+            data.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
         
     elif isinstance(data,Stream):
         for tr in data:
             starttime=tr.stats.starttime
             sec_to_remove=data.stats.starttime.microsecond/1e6
             sec_to_add=1.-sec_to_remove
-            tr.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
+            if sec_to_add < 1.:
+                tr.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
             
     return data
             

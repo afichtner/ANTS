@@ -616,7 +616,9 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
             if corrtype == 'ccc' or corrtype == 'both':
                 ccc=classic_xcorr(tr1, tr2, mlag)
                 coh_ccc = hilbert(ccc)
-                tol = np.max(coh_ccc)/10000
+                tol = np.max(coh_ccc)/1000.
+                if tol < 1e-9:
+                    tol = 1e-9
                 coh_ccc = coh_ccc/(np.absolute(coh_ccc)+tol)
                 cccstack+=ccc
                 ccccnt+=1
@@ -656,7 +658,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
             if corrtype == 'pcc' or corrtype == 'both':
                 pcc=phase_xcorr(tr1, tr2, mlag, nu)
                 coh_pcc = hilbert(pcc)
-                tol = np.max(coh_pcc)/10000
+                tol = np.max(coh_pcc)/1000.
                 coh_pcc = coh_pcc/(np.absolute(coh_pcc)+tol)
                 pccstack+=pcc
                 pcccnt+=1

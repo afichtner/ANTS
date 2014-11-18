@@ -69,7 +69,8 @@ def seg_example_majarc():
     ofid2.close()
     os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')
     
-def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
+def seg_example_measr(infile,snr_min=10,nwin_min=1,nwin_max=None,order=1.,\
+                      Q=750,v=3800.,freq=0.02,plotstyle='points'):
     
     infile = open(infile,'r')
     data = infile.read().split('\n')
@@ -77,13 +78,21 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
     ofid1 = open('measurement_example_1.txt','w')
     ofid2 = open('measurement_stas_1.txt','w')
     
+    # count the valid measurements
+    hitcnt = 0
+    # how many windows, on average...?
+    avgwin = 0
+    
+    
     for entry in data:
         
         entry=entry.split()
         
         if len(entry) == 0: continue
-        if float(entry[4]) == 0.: continue
+        sta_dist = float(entry[4])
+        if sta_dist == 0.: continue
         if int(entry[5]) < nwin_min: continue
+        if nwin_max is not None and int(entry[5]) > nwin_max: continue
         if float(entry[6]) < snr_min and float(entry[7]) < snr_min: continue
         
         lat1 = float(entry[0])
@@ -95,7 +104,8 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
         if mesr == 'nan':
             continue
         
-        
+        hitcnt +=1
+        avgwin += int(entry[5])
         # write station coordinates to file
         ofid2.write("%8.3f %8.3f \n" %(lon1,lat1))
         ofid2.write("%8.3f %8.3f \n" %(lon2,lat2))
@@ -108,7 +118,7 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
         dist2 = geodesic.Geodesic.WGS84.Inverse(ap[0],ap[1],lat2,lon2)['s12']/1000.
         
         if dist-dist2>10:
-            print 'different distances!'
+            print 'different distances of station-antipodal point!'
             print dist, dist2
         # (half) Nr of segments
         # Now: one dot per thousand km.
@@ -119,28 +129,43 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,order=1.,plotstyle='points'):
             numseg = 1
         
         # get segments station 1 to antipode
-        seg1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg)
+        seg1 = gc.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg,True,sta_dist,freq,Q,v)
         # get segments station 2 to antipode
-        seg2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg)
+        seg2 = gc.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg,True,sta_dist,freq,Q,v)
         if plotstyle == 'points':
             for seg in seg1:
                 #write
-                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr))
+                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr*seg[2]))
             for seg in seg2:
                 #write
-                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-mesr))
+                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],mesr*seg[2]))
         if plotstyle == 'gc':
-            ofid1.write('> -Z %7.2f\n' %(-mesr))
-            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg1[0][1],seg1[0][0],seg1[-1][1],seg1[-1][0]))
-            ofid1.write('> -Z %7.2f\n' %(mesr))
-            ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg2[0][1],seg2[0][0],seg2[-1][1],seg2[-1][0]))
+            for i in range(len(seg1)-1):
+                seg = seg1[i]
+                ofid1.write('> -Z %7.2f\n' %(-mesr*seg[2]))
+                ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg[1],seg[0],seg1[i+1][1],seg1[i+1][0]))
+            for i in range(len(seg2)-1):
+                seg = seg2[i]
+                ofid1.write('> -Z %7.2f\n' %(mesr*seg[2]))
+                ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg[1],seg[0],seg2[i+1][1],seg2[i+1][0]))
         
     ofid1.close()
     ofid2.close()
+    
+    
+    
     if plotstyle == 'points':
         os.system('bash KERNELS/msr_example_1.gmt')
     elif plotstyle == 'gc':
         os.system('bash KERNELS/msr_example_2.gmt')
-    #os.system('rm measurement_*.txt')
+    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=msr_segments.jpg -r300 msr_segments.ps')
+    os.system('rm msr_segments.ps')
+    os.system('rm measurement_*.txt')
+    print 'Number of successful measurements:'
+    print hitcnt
+    print 'In percent of total data available:'
+    print float(hitcnt)/len(data)*100
+    print 'Average number of time windows in each stack:'
+    print avgwin/hitcnt
         
         

@@ -139,18 +139,23 @@ def plot_sect(cstream,prefilter=None,annotate=True,\
                 data = tr.data
             
             
-            wcount=' ('+str(int(corr.stats_a.sac['user0']))+' windows)'
+            wcount=' ('+str(int(corr.stats_a.sac['user0']))+')'
             
             plt.plot(np.linspace(-lag,lag,len(corr.correlation)),\
                 exagg*data+dist,'k')
             
-            plt.annotate(id, xy=(lag, dist+1),xytext=(-lag-3000,dist+1),\
+            plt.annotate(id, xy=(lag, dist+1),xytext=(-lag-5500,dist+1),\
                          fontsize=12,color='k')
-            plt.annotate(wcount, xy=(lag, dist+0.5),xytext=(lag,dist),\
+            plt.annotate(wcount, xy=(lag+1000, dist+0.5),xytext=(lag,dist),\
                          fontsize=12,color='k')
     plt.xlabel('Lag (s)')
     plt.ylabel('Station-station dist (1000 km)')
     plt.ylim([0,2000])
+    plt.xlim([-18000,18000])
+    if prefilter is not None:
+        plt.title('Correlation traces filtered between'+\
+                    ' %5.3f and %5.3f Hz\n Scaled for visibility by %g'\
+                         %(prefilter[0],prefilter[1],exagg))
     
     if save_as is not None:
         plt.savefig(save_as,format='eps')

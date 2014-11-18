@@ -5,9 +5,9 @@
 
 ps=msr_segments.ps
 
-gmt makecpt -Cpolar -T-2/2/0.25 -Z > t.cpt
-
-gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest -U > $ps
+gmt makecpt -Cpolar -T-2/2/0.0125 -Z > t.cpt
+gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -U -Wthin > $ps
+#gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest -U > $ps
 
 # plot the endpoints of the great circles
 
@@ -21,7 +21,9 @@ gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest 
 #done < measurement_example_1.txt
 
 
-gmt psxy measurement_example_1.txt -R -J -K -Vl -O -Sc0.03i -Ct.cpt >> $ps
+gmt psxy measurement_example_1.txt -R -J -K -O -Vl -Sc0.05i -Ct.cpt >> $ps
+
+gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -O -Wthin >> $ps
 
 while read lon1 lat1; do
 
