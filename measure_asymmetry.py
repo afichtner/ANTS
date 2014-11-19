@@ -12,19 +12,18 @@ import measure_asymmetry as ma
 
 
 def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
-               ps_nu=0,prefilter=None,\
+               prefilter=None,ps_nu=0,\
                 verbose=False,doplot=False,window='boxcar'):
     
     """
-    A script to plot cross-correlation traces sorted by interstation distance.
-    input: string: path to directory containing results of stack.py
-    g_speed: Fastest group speed in the package of frequencies. This will be used to pick the onset of the correlation signal. In km/sec !!
+    input: string: containing file path pattern for the files to analyse, e.g. DATA/correlations/hum/*pcc*corrname*SAC
+    g_speed: Group speed in the package of frequencies. This will be used to pick the center of the correlation signal. In m/sec
     w1,w2: Cut w1 seconds before and w2 seconds after the predicted 1-D arrival time.
-    ps_nu: integer; power to which the weighting by instantaneous phase stack is raised. ps=0 means linear stack.
     prefilter: Tuple of (float,float,integer) which stands for (lower corner, upper corner, order). A butterworth filter to restrict the correlations to a certain frequency band.
     verbose: Boolean, talk or not
-    savefig: Boolean, save plot or not
-    outdir: string, where to save plot and outfile. default working directory
+    doplot: plot every single measurement or not
+    window: choose between 'hann' and 'boxcar'
+    
     """
     
     
@@ -41,13 +40,18 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
         
     ofid2=open(filename+'.msr2.txt','w')
     files = glob(input)
-
-
     numwins=list()
     
     for file in files:
         
-        msr = Nmeasure(file,g_speed,w1,w2,prefilter,window)
+        trace = read(file)[0]
+        if ps_nu > 0:
+            psfile = file.rstrip('SAC')+'npy'
+            ps = np.load(psfile)
+            ps = np.abs(ps)
+            trace.data *= ps
+        
+        msr = Nmeasure(trace,g_speed,w1,w2,prefilter,window)
         if doplot==True:
             msr.plot()
         numwins.append(msr.nw)

@@ -26,6 +26,7 @@ class Nmeasure(object):
         self.groupspeed = groupspeed
         self.w1 = w1
         self.w2 = w2
+        self.nu = ps_nu
         self.filt = prefilter
         self.win = window
         self.id = self.corr.id+'--'+self.corr.stats.sac['kuser0'].strip()+\

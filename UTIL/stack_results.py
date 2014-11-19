@@ -47,7 +47,12 @@ def stack_phases(inp_ids, stackname, corrtype,\
                 weightstack = phaseweight
             else:
                 weightstack += phaseweight
-        filename = outdir+pws.split('/')[-1].rstrip('npy').rstrip('.*.')+'.'+stackname+'.npy'
+        inf = pws.split('/')[-1].split('.')
+        id = '/'+inf[0]+'.'+inf[1]+'.'+inf[2]+\
+                '.'+inf[3]+'.'+inf[4]+'.'+inf[5]+'.'+\
+                        inf[6]+'.'+inf[7]+'.'+inf[8]
+        filename = outdir+id+'.'+stackname+'.npy'
+        print filename
         np.save(filename,weightstack)
     
     
