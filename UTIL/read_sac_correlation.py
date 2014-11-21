@@ -32,7 +32,11 @@ def read_corr_sac(filepath,corrtype,verbose=False):
         stats_a=Stats()
         stats_b=Stats()
         
-        tr = read(file)[0]
+        try:
+            tr = read(file,format='SAC')[0]
+        except TypeError:
+            print 'A reading error occured.'
+            continue 
         st = tr.stats
         
         stats_a = st
