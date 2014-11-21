@@ -42,15 +42,22 @@ def stack_phases(inp_ids, stackname, corrtype,\
             continue
         
         for pws in entry:
+            
+            inf = pws.split('/')[-1].split('.')
+            
+            # Ignore locations 10 etc. for now
+            if inf[2] not in '00' or inf[6] not in '00':
+                continue 
+            
             phaseweight = np.load(pws)
             if 'phasestack' not in locals():
                 weightstack = phaseweight
             else:
                 weightstack += phaseweight
-        inf = pws.split('/')[-1].split('.')
-        id = '/'+inf[0]+'.'+inf[1]+'.'+inf[2]+\
-                '.'+inf[3]+'.'+inf[4]+'.'+inf[5]+'.'+\
-                        inf[6]+'.'+inf[7]+'.'+inf[8]
+        
+        id = '/'+inf[0]+'.'+inf[1]+\
+                '.*.'+inf[3]+'.'+inf[4]+'.'+inf[5]+'.*.'+\
+                inf[7]+'.'+inf[8]
         filename = outdir+id+'.'+stackname+'.npy'
         print filename
         np.save(filename,weightstack)

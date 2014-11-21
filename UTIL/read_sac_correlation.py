@@ -17,7 +17,7 @@ mpl.rc('font', **font)
 
 
 
-def read_corr_sac(filepath,corrtype,verbose=False):
+def read_corr_sac(filepath,corrtype,pw=False,verbose=False,psdir=None):
     
     fls = glob(filepath)
     
@@ -32,11 +32,8 @@ def read_corr_sac(filepath,corrtype,verbose=False):
         stats_a=Stats()
         stats_b=Stats()
         
-        try:
-            tr = read(file,format='SAC')[0]
-        except TypeError:
-            print('A reading error occured.')
-            continue 
+        
+        tr = read(file,format='SAC')[0]
         st = tr.stats
         
         stats_a = st
@@ -56,8 +53,17 @@ def read_corr_sac(filepath,corrtype,verbose=False):
         
         if str(stats_b.location)=='-12345':
             stats_b.location=''
-
         
+        if pw == True and psdir != None:
+            psfile = psdir+'/'+file.split('/')[-1].rstrip('SAC')+'npy'
+            psfile = psfile.replace('pcc','pcs')
+            psfile = psfile.replace('ccc','ccs')
+            psfile = psfile.replace('00','*')
+            psfile = psfile.replace('..','.*.')
+            if os.path.exists(psfile) == False: continue
+            ps = np.load(psfile)
+            tr.data *= np.abs(ps)
+            
         corr = Correlation(stats_a,stats_b,tr.data,max_lag=st.sac['e'],\
                                 correlation_type=corrtype,min_lag=0,n_stack=stats_a.sac['user0'])
         if verbose==True:
