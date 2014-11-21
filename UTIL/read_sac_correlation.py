@@ -35,7 +35,7 @@ def read_corr_sac(filepath,corrtype,verbose=False):
         try:
             tr = read(file,format='SAC')[0]
         except TypeError:
-            print 'A reading error occured.'
+            print('A reading error occured.')
             continue 
         st = tr.stats
         
