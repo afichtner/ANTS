@@ -12,7 +12,7 @@ class Nmeasure(object):
     what is the amplitude ratio causal to acausal?
     """
     
-    def __init__(self,trace,groupspeed,w1,w2,prefilter=None,window='boxcar'):
+    def __init__(self,trace,groupspeed,w1,w2):
         
         if isinstance(trace,str):
             self.corr = read(trace)[0]
@@ -26,27 +26,19 @@ class Nmeasure(object):
         self.groupspeed = groupspeed
         self.w1 = w1
         self.w2 = w2
-        self.nu = ps_nu
-        self.filt = prefilter
-        self.win = window
         self.id = self.corr.id+'--'+self.corr.stats.sac['kuser0'].strip()+\
                     '.'+self.corr.stats.sac['kevnm'].strip()+'.'+\
                         self.corr.stats.sac['kuser1'].strip()+'.'+\
                             self.corr.stats.sac['kuser2'].strip()
         self.nw = self.corr.stats.sac['user0']
-        if self.filt:
-            self.corr.filter('bandpass',freqmin=self.filt[0],\
-                                freqmax=self.filt[1],corners=self.filt[2],\
-                                    zerophase=True)
     
     
-    
-    def plot(self,savefig=False):
+    def plot(self,savefig=False,win_type='boxcar'):
         maxlag = self.corr.stats.sac['e']
         l = len(self.corr.data)
         lag = np.linspace(-maxlag,maxlag,l)
-        win = self.getwin_fun(self.win)
-        msr = self.msr(self.win)
+        win = self.getwin_fun(win_type)
+        msr = self.msr(win_type=win_type)
         nw = self.nw
         winlen = self.corr.stats.sac['user1']
         (snc,sna) = self.check_snr()[0:2]
@@ -109,12 +101,18 @@ class Nmeasure(object):
         
         return win_ind
         
-    def msr(self,win_type='boxcar'):
-        l = len(self.corr.data)
-        m = (len(self.corr.data)-1)/2
+    def msr(self,prefilter=None,win_type='boxcar'):
+        data = self.corr.copy()
+        if prefilter is not None:
+            data.filter('bandpass',freqmin=prefilter[0],\
+                                freqmax=prefilter[1],corners=prefilter[2],\
+                                    zerophase=True)
+        
+        l = len(data.data)
+        m = (len(data.data)-1)/2
         if win_type=='boxcar':
             win = self.getwin_fun('boxcar')
-            data=self.corr.data*win
+            data=data.data*win
             #win_ind = self.getwin_ind()
             #(i0,i1,i2,i3) = win_ind
                 
@@ -122,7 +120,7 @@ class Nmeasure(object):
             #sig_c = self.corr.data[i2:i3]
         elif win_type=='hann':
             win = self.getwin_fun('hann')
-            data=self.corr.data*win
+            data=data.data*win
             #(i0,i1,i2,i3) = self.getwin_ind()
             #sig_a=data[i0:i1]
             #sig_c=data[i2:i3]

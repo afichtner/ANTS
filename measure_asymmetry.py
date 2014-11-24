@@ -51,14 +51,14 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             ps = np.abs(ps)
             trace.data *= ps
         
-        msr = Nmeasure(trace,g_speed,w1,w2,prefilter,window)
+        msr = Nmeasure(trace,g_speed,w1,w2)
         if doplot==True:
-            msr.plot()
+            msr.plot(win_type=window)
         numwins.append(msr.nw)
         ofid1.write(msr.id + '  %g' %msr.nw)
         ofid2.write('%9.4f %9.4f %9.4f %9.4f %12.2f ' \
                     %msr.geoinf())
-        asym = msr.msr(window)
+        asym = msr.msr(prefilter=prefilter,win_type=window)
         if verbose==True:
             print file.split('/')[-1]
         
