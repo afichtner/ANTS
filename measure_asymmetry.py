@@ -45,11 +45,24 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
     for file in files:
         
         trace = read(file)[0]
-        if ps_nu > 0:
+        if ps_nu == 1:
             psfile = file.rstrip('SAC')+'npy'
+            psfile = psfile.replace('pcc','pcs')
+            psfile = psfile.replace('ccc','ccs')
+            psfile = psfile.replace('.00.','.*.')
+            psfile = psfile.replace('..','.*.')
             ps = np.load(psfile)
             ps = np.abs(ps)
             trace.data *= ps
+        elif ps_nu == 2:
+            psfile = file.rstrip('SAC')+'npy'
+            psfile = psfile.replace('pcc','pcs')
+            psfile = psfile.replace('ccc','ccs')
+            psfile = psfile.replace('.00.','.*.')
+            psfile = psfile.replace('..','.*.')
+            ps = np.load(psfile)
+            ps = np.abs(ps)
+            trace.data *= np.power(ps,2)
         
         msr = Nmeasure(trace,g_speed,w1,w2)
         if doplot==True:
