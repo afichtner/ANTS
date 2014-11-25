@@ -12,7 +12,7 @@ import measure_asymmetry as ma
 
 
 def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
-               prefilter=None,ps_nu=0,\
+               prefilter=None,ps_nu=0,psinput=None,psname=None,\
                 verbose=False,doplot=False,window='boxcar'):
     
     """
@@ -45,12 +45,21 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
     for file in files:
         
         trace = read(file)[0]
-        if ps_nu == 1:
-            psfile = file.rstrip('SAC')+'npy'
-            psfile = psfile.replace('pcc','pcs')
-            psfile = psfile.replace('ccc','ccs')
-            psfile = psfile.replace('.00.','.*.')
-            psfile = psfile.replace('..','.*.')
+        if ps_nu == 1 and psinput is not None:
+            inf=file.split('/')[-1].split('.')
+            psfile = psinput + ('/*.')+inf[1]+'.*.'+inf[3]+\
+                        '.*.'+inf[5]+'.*.'+inf[7]+'.pcs.'+psname+'.npy'
+            psfile=glob(psfile)
+            if len(psfile) > 1: 
+                print 'Warning! Ambiguous phase weight identifier.'
+                continue
+            else:
+                psfile = psfile[0]
+            #psfile = file.rstrip('SAC')+'npy'
+            #psfile = psfile.replace('pcc','pcs')
+            #psfile = psfile.replace('ccc','ccs')
+            #psfile = psfile.replace('.00.','.*.')
+            #psfile = psfile.replace('..','.*.')
             try:
                 ps = np.load(psfile)
             except IOError:
@@ -60,11 +69,21 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             ps = np.abs(ps)
             trace.data *= ps
         elif ps_nu == 2:
-            psfile = file.rstrip('SAC')+'npy'
-            psfile = psfile.replace('pcc','pcs')
-            psfile = psfile.replace('ccc','ccs')
-            psfile = psfile.replace('.00.','.*.')
-            psfile = psfile.replace('..','.*.')
+            inf=file.split('/')[-1].split('.')
+            psfile = psinput + ('/*.')+inf[1]+'.?.'+inf[3]+\
+                        '.*.'+inf[5]+'.?.'+inf[7]+'.pcs.'+psname+'.npy'
+            psfile=glob(psfile)
+            if len(psfile) > 1: 
+                print 'Warning! Ambiguous phase weight identifier.'
+                print psfile
+                continue
+            else:
+                psfile = psfile[0]
+            #psfile = file.rstrip('SAC')+'npy'
+            #psfile = psfile.replace('pcc','pcs')
+            #psfile = psfile.replace('ccc','ccs')
+            #psfile = psfile.replace('.00.','.*.')
+            #psfile = psfile.replace('..','.*.')
             try:
                 ps = np.load(psfile)
             except IOError:
