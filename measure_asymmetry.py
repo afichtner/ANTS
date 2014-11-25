@@ -48,7 +48,7 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
         if ps_nu == 1 and psinput is not None:
             inf=file.split('/')[-1].split('.')
             psfile = psinput + ('/*.')+inf[1]+'.*.'+inf[3]+\
-                        '.*.'+inf[5]+'.*.'+inf[7]+'.pcs.'+psname+'.npy'
+                        '.*.'+inf[5]+'.*.'+inf[7]+'.?cs.'+psname+'.npy'
             psfile=glob(psfile)
             if len(psfile) > 1: 
                 print 'Warning! Ambiguous phase weight identifier.'
@@ -75,7 +75,7 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
         elif ps_nu == 2:
             inf=file.split('/')[-1].split('.')
             psfile = psinput + ('/*.')+inf[1]+'.?.'+inf[3]+\
-                        '.*.'+inf[5]+'.?.'+inf[7]+'.pcs.'+psname+'.npy'
+                        '.*.'+inf[5]+'.?.'+inf[7]+'.?cs.'+psname+'.npy'
             psfile=glob(psfile)
             if len(psfile) > 1: 
                 print 'Warning! Ambiguous phase weight identifier.'
