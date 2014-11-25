@@ -53,8 +53,12 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             if len(psfile) > 1: 
                 print 'Warning! Ambiguous phase weight identifier.'
                 continue
-            else:
+            elif len(psfile) == 1
                 psfile = psfile[0]
+            else:
+                print 'No phase weight found. Skipping:\n'
+                print file
+                continue
             #psfile = file.rstrip('SAC')+'npy'
             #psfile = psfile.replace('pcc','pcs')
             #psfile = psfile.replace('ccc','ccs')
@@ -77,8 +81,12 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
                 print 'Warning! Ambiguous phase weight identifier.'
                 print psfile
                 continue
-            else:
+            elif len(psfile) == 1
                 psfile = psfile[0]
+            else:
+                print 'No phase weight found. Skipping:\n'
+                print file
+                continue
             #psfile = file.rstrip('SAC')+'npy'
             #psfile = psfile.replace('pcc','pcs')
             #psfile = psfile.replace('ccc','ccs')
