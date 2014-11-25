@@ -69,10 +69,10 @@ def seg_example_majarc():
     ofid2.close()
     os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')
     
-def seg_example_measr(infile,snr_min=10,nwin_min=1,nwin_max=None,order=1.,\
-                      Q=750,v=3800.,freq=0.02,plotstyle='points'):
+def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,\
+                      Q=750,v=3800.,freq=0.02,thresh=0.,plotstyle='points'):
     
-    infile = open(infile,'r')
+    infile = open(infid,'r')
     data = infile.read().split('\n')
     # output files
     ofid1 = open('measurement_example_1.txt','w')
@@ -101,7 +101,9 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,nwin_max=None,order=1.,\
         lon2 = float(entry[3])
         mesr = order*float(entry[8])
         
-        if mesr == 'nan':
+        if entry[8] == 'nan':
+            continue
+        if abs(float(entry[8])) < thresh:
             continue
         
         hitcnt +=1
@@ -158,7 +160,8 @@ def seg_example_measr(infile,snr_min=10,nwin_min=1,nwin_max=None,order=1.,\
         os.system('bash KERNELS/msr_example_1.gmt')
     elif plotstyle == 'gc':
         os.system('bash KERNELS/msr_example_2.gmt')
-    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=msr_segments.jpg -r300 msr_segments.ps')
+    filename = infid.rstrip('.msr2.txt')+'.jpg'
+    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 msr_segments.ps')
     os.system('rm msr_segments.ps')
     os.system('rm measurement_*.txt')
     print 'Number of successful measurements:'

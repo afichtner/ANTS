@@ -5,7 +5,7 @@
 
 ps=msr_segments.ps
 
-gmt makecpt -Cpolar -T-2/2/0.0125 -Z > t.cpt
+gmt makecpt -Cpolar -T-0.5/0.5/0.001 -Z > t.cpt
 gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -U -Wthin > $ps
 #gmt pscoast -Rg -JW0/9i -Glightgreen -Slightblue -A1000 -Dc -Bg30 -K -Wthinnest -U > $ps
 
@@ -21,7 +21,7 @@ gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -U -Wthin > $ps
 #done < measurement_example_1.txt
 
 
-gmt psxy measurement_example_1.txt -R -J -K -O -Vl -Sc0.05i -Ct.cpt >> $ps
+gmt psxy measurement_example_1.txt -R -J -K -O -Vl -Sc0.02i -Ct.cpt >> $ps
 
 gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -O -Wthin >> $ps
 

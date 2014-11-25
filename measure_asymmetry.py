@@ -51,7 +51,12 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             psfile = psfile.replace('ccc','ccs')
             psfile = psfile.replace('.00.','.*.')
             psfile = psfile.replace('..','.*.')
-            ps = np.load(psfile)
+            try:
+                ps = np.load(psfile)
+            except IOError:
+                print('Could not find phase coherence file. Skipping:')
+                print(psfile)
+                continue
             ps = np.abs(ps)
             trace.data *= ps
         elif ps_nu == 2:
@@ -60,7 +65,12 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             psfile = psfile.replace('ccc','ccs')
             psfile = psfile.replace('.00.','.*.')
             psfile = psfile.replace('..','.*.')
-            ps = np.load(psfile)
+            try:
+                ps = np.load(psfile)
+            except IOError:
+                print('Could not find phase coherence file. Skipping:')
+                print(psfile)
+                continue
             ps = np.abs(ps)
             trace.data *= np.power(ps,2)
         
