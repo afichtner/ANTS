@@ -16,6 +16,7 @@ if os.path.exists(datadir)==False:
     os.mkdir(datadir+'processed/out/')
     os.mkdir(datadir+'processed/xmlinput/')
     os.mkdir(datadir+'correlations/interm/')
+    os.mkdir(datadir+'correlations/out/')
     os.mkdir(datadir+'correlations/xmlinput/')
 
 testdir=cfg.testdir

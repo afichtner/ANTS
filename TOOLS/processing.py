@@ -274,10 +274,10 @@ def trim_next_sec(data,verbose,ofid):
     elif isinstance(data,Stream):
         for tr in data:
             starttime=tr.stats.starttime
-            sec_to_remove=data.stats.starttime.microsecond/1e6
+            sec_to_remove=tr.stats.starttime.microsecond/1e6
             sec_to_add=1.-sec_to_remove
             if sec_to_add < 1.:
-                tr.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
+                tr.trim(starttime=tr.stats.starttime+sec_to_add,nearest_sample=True)
             
     return data
             

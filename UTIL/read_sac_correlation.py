@@ -20,7 +20,8 @@ mpl.rc('font', **font)
 def read_corr_sac(filepath,corrtype,pw=False,verbose=False,psdir=None):
     
     fls = glob(filepath)
-    
+    print(fls[0])
+    print(fls[-1])
     cstream = CorrelationStream()
     
     for file in fls:

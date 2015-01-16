@@ -57,7 +57,12 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
                     newstream+=data[i]
                     i+=1
         # append the very last trace (if it has been merged already it will be sorted out at the next step.)
-        newstream+=data[i]          
+        # check the sampling rate of the trace
+        data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,4)
+        if data[i].stats.sampling_rate not in Fs:
+            print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
+        else:    
+            newstream+=data[i]          
         # remove the overlapping segments
         newstream._cleanup()
     

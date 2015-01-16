@@ -194,9 +194,14 @@ def ic(xmlinput,content=None):
             continue
         except:
             if verbose: print('** unexpected read error, skip.',file=ofid)
+            continue    
+        #- check if this file contains data
+        if len(data) == 0:
+            print('File contains no data!',file=None)
+            print('File contains no data!',file=ofid)
             continue
-    
-        #- clean the data merging segments with less than a specified number of seconds:
+        
+        #- clean the data merging segments with gap shorter than a specified number of seconds:
         data=mt.mergetraces(data,Fs_old,mergegap)
         data.split()
         

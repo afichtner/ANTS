@@ -34,8 +34,7 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
     ofid1.write('Window_start/end,before/after_arrival:  '+str(w1)+'/'+str(w2)+'\n')
     ofid1.write('Window_type: '+window+' \n\n')
     
-    if prefilter is not None:
-        ofid1.write('Prefilter: '+ str(prefilter)+ '\n\n')
+    ofid1.write('Prefilter: '+ str(prefilter)+ '\n\n')
      
         
     ofid2=open(filename+'.msr2.txt','w')
@@ -102,13 +101,15 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
             trace.data *= np.power(ps,2)
         
         msr = Nmeasure(trace,g_speed,w1,w2)
-        if doplot==True:
-            msr.plot(win_type=window)
+        
         numwins.append(msr.nw)
         ofid1.write(msr.id + '  %g' %msr.nw)
         ofid2.write('%9.4f %9.4f %9.4f %9.4f %12.2f ' \
                     %msr.geoinf())
         asym = msr.msr(prefilter=prefilter,win_type=window)
+        if doplot==True:
+            msr.plot(win_type=window)
+        
         if verbose==True:
             print file.split('/')[-1]
         

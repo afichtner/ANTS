@@ -44,14 +44,15 @@ class Nmeasure(object):
         (snc,sna) = self.check_snr()[0:2]
         (x1,y1) = (lag[0]+100,np.max(self.corr.data)/2)
         (x2,y2) = (lag[:-1]-100,np.max(self.corr.data)/2)
-        
+        plt.xlim([-3000,3000])
         plt.plot()
-        plt.plot(lag,self.corr.data,'k')
-        plt.plot(lag,win*np.max(self.corr.data),'r--')
-        plt.plot()           
-        plt.title(self.id)
-        plt.xlabel('Lag (sec)')
-        plt.ylabel('Correlation')
+        plt.plot(lag,self.corr.data,'k',linewidth=2.)
+        plt.plot(lag,win*np.max(self.corr.data),'r--',linewidth=2.)           
+        plt.title(self.id,fontweight='bold')
+        plt.xlabel('Lag (sec)',fontsize=16,fontweight='bold')
+        #plt.yticks([''])
+        plt.xticks([-3000,-1500,0,1500,3000],fontweight='bold')
+        plt.ylabel('Correlation',fontsize=16,fontweight='bold')
         plt.annotate('ln(amplitude ratio): %5.4f\ncausal window s/n: %5.4f\
         \nacausal window s/n: %5.4f\nnr. of stacked windows: %g\n window length (s): %g' \
                             %(msr,snc,sna,nw,winlen),\
@@ -102,7 +103,8 @@ class Nmeasure(object):
         return win_ind
         
     def msr(self,prefilter=None,win_type='boxcar'):
-        data = self.corr.copy()
+        #data = self.corr.copy()
+        data = self.corr
         if prefilter is not None:
             data.filter('bandpass',freqmin=prefilter[0],\
                                 freqmax=prefilter[1],corners=prefilter[2],\
