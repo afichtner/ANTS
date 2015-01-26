@@ -89,6 +89,7 @@ def ic(xmlinput,content=None):
            indirs=inp1['input']['indirs'].strip().split(' ')
            content=list()
            for indir in indirs:
+               print(indir)
                content.extend(glob(indir+'/*'))
            
        elif type(content)==str: 

@@ -141,7 +141,12 @@ def par_download(xmlinput):
                 print '\n Rank '+str(rank)+'\n'
                 print '\n Attempting to download data from: '+id+'\n'
                 print filename
-                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                
+                if dat['datprov'] == 'iris':
+                    reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                elif dat['datprov'] == 'eth':
+                    reqstring=exdir+'/FetchDataArc '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                    
                 os.system(reqstring)
             t += winlen
           

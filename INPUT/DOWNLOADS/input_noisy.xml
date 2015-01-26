@@ -11,7 +11,9 @@
     <!--user identity-->
     <user>hugo_bruno@web.de</user>
 
-    
+	<!--data center. ETH for SED data, does not support minimum length-->
+	<dataprov>eth</dataprov>
+	
     <!--File containing all the ids you'd like to download.-->
     <ids>INPUT/STATION_IDS/sta_noisy.txt</ids>
    

@@ -3,6 +3,8 @@ import numpy as np
 import gc_geolib as gc
 from geographiclib import geodesic,geodesicline
 from obspy.core.util.geodetics import gps2DistAzimuth
+import sys
+sys.path.append('./gmt_scripts/')
 
 def gc_example():
     p=geodesic.Geodesic.WGS84.Inverse(40.6, -73.8, 1.4, 104)
@@ -136,7 +138,7 @@ def seg_example_sensi():
     
     
 def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=0.,\
-                      Q=750,v=3800.,freq=0.02,thresh=0.,segper=1000.,plotstyle='points'):
+                      Q=750,v=3800.,freq=0.02,thresh=0.,segper=1000.,plotstyle='points',distmult=1.):
     
     infile = open(infid,'r')
     data = infile.read().split('\n')
@@ -155,10 +157,10 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
         entry=entry.split()
         
         if len(entry) == 0: continue
-        sta_dist = float(entry[4])
+        sta_dist = float(entry[4])*distmult
         if sta_dist == 0.: continue
-        if int(entry[5]) < nwin_min: continue
-        if nwin_max is not None and int(entry[5]) > nwin_max: continue
+        if int(float(entry[5])) < nwin_min: continue
+        if nwin_max is not None and int(float(entry[5])) > nwin_max: continue
         if float(entry[6]) < snr_min and float(entry[7]) < snr_min: continue
         
         lat1 = float(entry[0])
@@ -173,7 +175,7 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
             continue
         
         hitcnt +=1
-        avgwin += int(entry[5])
+        avgwin += int(float(entry[5]))
         # write station coordinates to file
         ofid2.write("%8.3f %8.3f \n" %(lon1,lat1))
         ofid2.write("%8.3f %8.3f \n" %(lon2,lat2))
@@ -248,11 +250,11 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
     
     
     if plotstyle == 'points':
-        os.system('bash KERNELS/msr_example_1.gmt')
+        os.system('bash KERNELS/gmt_scripts/msr_example_1.gmt')
     elif plotstyle == 'gc':
-        os.system('bash KERNELS/msr_example_2.gmt')
+        os.system('bash KERNELS/gmt_scripts/msr_example_2.gmt')
     filename = infid.rstrip('.msr2.txt')+'.jpg'
-    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 msr_segments.ps')
+    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 temp/msr_segments.ps')
     #os.system('rm msr_segments.ps')
     #os.system('rm measurement_*.txt')
     print 'Number of successful measurements:'

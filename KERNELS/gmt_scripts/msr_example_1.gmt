@@ -3,7 +3,7 @@
 # GMT experiment with great circles
 
 
-ps=msr_segments.ps
+ps=../temp/msr_segments.ps
 
 gmt makecpt -Cpolar -T-2.1/2.1/0.0125 -Z > t.cpt
 gmt pscoast -Rg -JW0/9i -A1000 -Dc -Bg30 -K -U -Wthin > $ps
