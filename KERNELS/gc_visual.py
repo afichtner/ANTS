@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import gc_geolib as gc
+import UTIL.geolib as gc
 from geographiclib import geodesic,geodesicline
 from obspy.core.util.geodetics import gps2DistAzimuth
 import sys
@@ -138,13 +138,14 @@ def seg_example_sensi():
     
     
 def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=0.,\
-                      Q=750,v=3800.,freq=0.02,thresh=0.,segper=1000.,plotstyle='points',distmult=1.):
+                      Q=750,v=3800.,freq=0.02,thresh=0.,segper=1000.,plotstyle='points',\
+                      distmult=1.,plot_off=False):
     
     infile = open(infid,'r')
     data = infile.read().split('\n')
     # output files
-    ofid1 = open('measurement_example.txt','w')
-    ofid2 = open('measurement_stas.txt','w')
+    ofid1 = open('KERNELS/temp/measurement_example.txt','w')
+    ofid2 = open('KERNELS/temp/measurement_stas.txt','w')
     
     # count the valid measurements
     hitcnt = 0
@@ -247,16 +248,19 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
     ofid1.close()
     ofid2.close()
     
+    if hitcnt == 0:
+        print 'No measurements suit your criteria.'
+        return()
     
-    
-    if plotstyle == 'points':
+    if plotstyle == 'points' and plot_off == False:
         os.system('bash KERNELS/gmt_scripts/msr_example_1.gmt')
-    elif plotstyle == 'gc':
+    elif plotstyle == 'gc' and plot_off == False:
         os.system('bash KERNELS/gmt_scripts/msr_example_2.gmt')
-    filename = infid.rstrip('.msr2.txt')+'.jpg'
-    os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 temp/msr_segments.ps')
-    #os.system('rm msr_segments.ps')
-    #os.system('rm measurement_*.txt')
+    
+    if plot_off == False:
+        filename = infid.rstrip('.msr2.txt')+'.jpg'
+        os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 KERNELS/temp/msr_segments.ps')
+   
     print 'Number of successful measurements:'
     print hitcnt
     print 'In percent of total data available:'
@@ -264,14 +268,12 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
     print 'Average number of time windows in each stack:'
     print avgwin/hitcnt
     
-def plot_smoothmap(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=0.,\
-                      Q=150,v=3600.,freq=0.005,segper=1000.):
-    #generate the input file from the measurement file                           
-    #seg_example_measr(infid,snr_min,nwin_min,nwin_max,order,minmsr,\
-    #                      Q,v,freq,segper,plotstyle='points')
-                          
+def bin_by_coord(infid,snr_min=10,nwin_min=1,nwin_max=None,minmsr=0.,\
+                    ddeg_x=1.,ddeg_y=1.):
+                        
     dat = open(infid,'r')
     dat = dat.read().split('\n')
+    
     lats=[]
     lons= []
     vals = []
@@ -279,8 +281,10 @@ def plot_smoothmap(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=0.,
     coords = []
     
     for entry in dat:
+        
         if entry.split()==[]:
             continue
+            
         lon = float(entry.split()[0])
         lat = float(entry.split()[1])
         val = float(entry.split()[2])
@@ -291,8 +295,8 @@ def plot_smoothmap(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=0.,
             vals.append(val)
             hits.append(1)
             coords.append((lat,lon))
+        
         else:
-            
             i = np.where(np.array(lats)==lat)
             
             for ind in i[0]:

@@ -64,8 +64,8 @@ def find_common_segments(str1,str2,verbose=False):
         start = max(start1,start2)
         end = min(end1, end2)
         
-        str1new += str1.slice(starttime=start,endtime=end)
-        str2new += str2.slice(starttime=start,endtime=end)
+        str1new += str1[n1].slice(starttime=start,endtime=end)
+        str2new += str2[n2].slice(starttime=start,endtime=end)
         
         # increase index
         

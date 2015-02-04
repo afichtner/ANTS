@@ -1,6 +1,38 @@
 import os
-from math import exp, pi
+import INPUT.MODELS.wgs84 as wgs84
+from math import exp, pi, cos, sin, sqrt
 from geographiclib import geodesic,geodesicline
+
+def len_deg_lon(lat):
+    
+    # This is the length of one degree of longitude 
+    # approx. after WGS84, at latitude lat
+    # in m
+    lat = pi/180*lat
+    dlon = (pi*wgs84.a*cos(lat))/180*sqrt((1-wgs84.e_2*sin(lat)**2))
+    return round(dlon,2)
+
+def len_deg_lat(lat):
+    # This is the length of one degree of latitude 
+    # approx. after WGS84, between lat-0.5deg and lat+0.5 deg
+    # in m
+    lat = pi/180*lat
+    dlat = 111132.954 - 559.822 * cos(2*lat) + 1.175*cos(4*lat)
+    return round(dlat,2)
+    
+
+def area_of_sqdeg(lat):
+    # Give back the approx. area of a square degree at latitude lat
+    # The sphericity of the Earth is not (yet) taken into account
+    # This is a piecewise flat earth
+    # in m^2
+    l_lat = len_deg_lat(lat)
+    l_lon = len_deg_lon(lat)
+    
+    return round(l_lat*l_lon,2)
+        
+
+
 
 def get_gcsegs(lat1,lon1,lat2,lon2,num,atten=False,\
                 sta_dist=None,freq=None,Q=None,v=None):
