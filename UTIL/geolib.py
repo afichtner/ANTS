@@ -41,25 +41,26 @@ def get_gcsegs(lat1,lon1,lat2,lon2,num,atten=False,\
     and lat2lon2 into num equal segments
     
     """
-    
+    # Distance between the station and the antipode of the station station midpoint
     p=geodesic.Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2) 
     l=geodesic.Geodesic.WGS84.Line(p['lat1'],p['lon1'],p['azi1'])
     newcoords = list()
-
+    
     if atten == False:
         for i in range(num+1):
             b=l.Position(i*p['s12']/(num))
             newcoords.append((b['lat2'],b['lon2']))
-    
+            
     else: 
        #determine omega
        w = 2 * pi * freq
        for i in range(num+1):
-           #determine x
-           x = sta_dist / 2. + i * p['s12'] / (num)
+           #determine x; the path obtained with geodesic is split in equal length segments.
+           x = sta_dist / 2. + i * p['s12']/num
+           #x = i * p['s12'] / (num)
+
            # determine K on the ray
            k = exp(-w * x / (v * Q))
-
            b=l.Position(i*p['s12']/(num))
            newcoords.append((b['lat2'],b['lon2'],k)) 
         

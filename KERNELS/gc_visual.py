@@ -3,6 +3,7 @@ import numpy as np
 import UTIL.geolib as gc
 from geographiclib import geodesic,geodesicline
 from obspy.core.util.geodetics import gps2DistAzimuth
+import matplotlib.pyplot as plt
 import sys
 sys.path.append('./gmt_scripts/')
 
@@ -38,7 +39,78 @@ def segments_example():
             ofid2.write("%7.2f %7.2f \n" %(seg[0],seg[1]))
     ofid1.close()
     ofid2.close()    
-    os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')    
+    os.system('bash KERNELS/segments_example.gmt; rm example_seg?.txt')
+    
+def kernel_line_example():
+    hrv = [42.5064,-72.5583]
+    aqu = [42.354,13.405]
+    freq = 0.007
+    Q = 138
+    v = 3600
+    
+    sta_dist = gps2DistAzimuth(hrv[0],hrv[1],aqu[0],aqu[1])[0]
+    mp = gc.get_midpoint(hrv[0],hrv[1],aqu[0],aqu[1])
+    # find antipode of midpoint
+    ap = gc.get_antipode(mp[0],mp[1])
+    seg1 = gc.get_gcsegs(hrv[0],hrv[1],ap[0],ap[1],100,True,sta_dist,freq,Q,v)
+    msr = np.zeros(len(seg1))
+    dists = np.zeros(len(seg1))
+    ofid1 = open('examplekernel1_analytic.txt','w')
+    ofid1.write('Station 1, lat/lon: %6.3f/%6.3f\n' %(hrv[0],hrv[1]))
+    ofid1.write('Station 2, lat/lon: %6.3f/%6.3f\n' %(aqu[0],aqu[1]))
+    ofid1.write('Frequency: %6.4f\n' %freq)
+    ofid1.write('Group velocity: %6.4f\n' %v)
+    ofid1.write('Quality factor: %g\n' %Q)
+    ofid1.write('U*Q: %g\n' %(v*Q))
+    ofid1.write('Distance in m    |     Ray kernel value  \n')
+    ofid1.write('===============================\n')
+    
+    i=0
+    for entry in seg1:
+        dists[i]=gps2DistAzimuth(entry[0],entry[1],seg1[0][0],seg1[0][1])[0]
+        msr[i]=entry[2]
+        ofid1.write("%7.3f   %7.3f\n" %(dists[i],msr[i]))
+        i+=1
+    ofid1.close()
+        
+    plt.plot(dists/1000.,msr/max(msr),'g')
+    
+
+    
+    elan = [43.2317,3.434]
+    pvlz = [35.173,4.301]
+    freq = 0.15
+    Q = 120
+    v = 3600
+    
+    ofid2 = open('examplekernel2_analytic.txt','w')
+    ofid2.write('Station 1, lat/lon: %6.3f/%6.3f\n' %(elan[0],elan[1]))
+    ofid2.write('Station 2, lat/lon: %6.3f/%6.3f\n' %(pvlz[0],pvlz[1]))
+    ofid2.write('Frequency: %6.4f\n' %freq)
+    ofid2.write('Group velocity: %6.4f\n' %v)
+    ofid2.write('Quality factor: %g\n' %Q)
+    ofid2.write('U*Q: %g\n' %(v*Q))
+    ofid2.write('Distance in m    |     Ray kernel value  \n')
+    ofid2.write('===============================\n')
+    sta_dist = gps2DistAzimuth(elan[0],elan[1],pvlz[0],pvlz[1])[0]
+    mp = gc.get_midpoint(elan[0],elan[1],pvlz[0],pvlz[1])
+    # find antipode of midpoint
+    ap = gc.get_antipode(mp[0],mp[1])
+    seg1 = gc.get_gcsegs(elan[0],elan[1],pvlz[0],pvlz[1],100,True,sta_dist,freq,Q,v)
+    msr = np.zeros(len(seg1))
+    dists = np.zeros(len(seg1))
+    i=0
+    for entry in seg1:
+        dists[i]=gps2DistAzimuth(entry[0],entry[1],seg1[0][0],seg1[0][1])[0]
+        msr[i]=entry[2]
+        ofid2.write("%7.3f   %7.3f\n" %(dists[i],msr[i]))
+        i+=1
+    ofid2.close()
+    plt.plot(dists/1000.,msr/max(msr),'b')
+    plt.xlabel('Distance from station-station midpoint (km)')
+    plt.ylabel('Norm. sensitivity source psd distribution ()')
+    
+    plt.show()
     
 def seg_example_majarc():
     rome = (41.99,12.5)
@@ -152,9 +224,10 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
     # how many windows, on average...?
     avgwin = 0
     
-    
+    mycounter=0
     for entry in data:
-        
+        print mycounter
+        mycounter+=1
         entry=entry.split()
         
         if len(entry) == 0: continue

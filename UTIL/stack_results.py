@@ -12,6 +12,7 @@ import os
 import numpy as np
 from glob import glob
 
+
 def stack_results(inp_ids, stackname, corrtype, \
                    outdir='DATA/stacks/',verbose=False):
     

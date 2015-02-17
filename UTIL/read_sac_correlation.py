@@ -20,56 +20,59 @@ mpl.rc('font', **font)
 def read_corr_sac(filepath,corrtype,pw=False,verbose=False,psdir=None):
     
     fls = glob(filepath)
-    print(fls[0])
-    print(fls[-1])
     cstream = CorrelationStream()
     
-    for file in fls:
-        corrtype=file.split('/')[-1].split('.')[8]
-        # The tag should become obsolete here once the correlation 
-        # metainformation is all contained in the correlation file.
-        tag = file.split('/')[-1].split('.')[9]
-        
-        stats_a=Stats()
-        stats_b=Stats()
-        
-        
-        tr = read(file,format='SAC')[0]
-        st = tr.stats
-        
-        stats_a = st
-        stats_a.network = str(stats_a.network)
-        stats_a.station = str(stats_a.station)
-        stats_a.location = str(stats_a.location)
-        stats_a.channel = str(stats_a.channel)
-        
-        # hide the tag somewhere
-        stats_a.sac['kt2'] = tag
-        
-        stats_b.network=str(st.sac['kuser0']).strip()
-        stats_b.station=str(st.sac['kevnm']).strip()
-        stats_b.location=str(st.sac['kuser1']).strip()
-        stats_b.channel=str(st.sac['kuser2']).strip()
-        stats_b.sampling_rate=float(st.sampling_rate)
-        
-        if str(stats_b.location)=='-12345':
-            stats_b.location=''
-        
-        if pw == True and psdir != None:
-            psfile = psdir+'/'+file.split('/')[-1].rstrip('SAC')+'npy'
-            psfile = psfile.replace('pcc','pcs')
-            psfile = psfile.replace('ccc','ccs')
-            psfile = psfile.replace('00','*')
-            psfile = psfile.replace('..','.*.')
-            if os.path.exists(psfile) == False: continue
-            ps = np.load(psfile)
-            tr.data *= np.abs(ps)
+    if len(fls) > 0:
+        print(fls[0])
+        print(fls[-1])
+    
+    
+        for file in fls:
+            corrtype=file.split('/')[-1].split('.')[8]
+            # The tag should become obsolete here once the correlation 
+            # metainformation is all contained in the correlation file.
+            tag = file.split('/')[-1].split('.')[9]
             
-        corr = Correlation(stats_a,stats_b,tr.data,max_lag=st.sac['e'],\
-                                correlation_type=corrtype,min_lag=0,n_stack=stats_a.sac['user0'])
-        if verbose==True:
-            print(corr)
-        cstream+=corr
+            stats_a=Stats()
+            stats_b=Stats()
+            
+            
+            tr = read(file,format='SAC')[0]
+            st = tr.stats
+            
+            stats_a = st
+            stats_a.network = str(stats_a.network)
+            stats_a.station = str(stats_a.station)
+            stats_a.location = str(stats_a.location)
+            stats_a.channel = str(stats_a.channel)
+            
+            # hide the tag somewhere
+            stats_a.sac['kt2'] = tag
+            
+            stats_b.network=str(st.sac['kuser0']).strip()
+            stats_b.station=str(st.sac['kevnm']).strip()
+            stats_b.location=str(st.sac['kuser1']).strip()
+            stats_b.channel=str(st.sac['kuser2']).strip()
+            stats_b.sampling_rate=float(st.sampling_rate)
+            
+            if str(stats_b.location)=='-12345':
+                stats_b.location=''
+            
+            if pw == True and psdir != None:
+                psfile = psdir+'/'+file.split('/')[-1].rstrip('SAC')+'npy'
+                psfile = psfile.replace('pcc','pcs')
+                psfile = psfile.replace('ccc','ccs')
+                psfile = psfile.replace('00','*')
+                psfile = psfile.replace('..','.*.')
+                if os.path.exists(psfile) == False: continue
+                ps = np.load(psfile)
+                tr.data *= np.abs(ps)
+                
+            corr = Correlation(stats_a,stats_b,tr.data,max_lag=st.sac['e'],\
+                                    correlation_type=corrtype,min_lag=0,n_stack=stats_a.sac['user0'])
+            if verbose==True:
+                print(corr)
+            cstream+=corr
     return cstream
 
 
