@@ -34,7 +34,8 @@ class Nmeasure(object):
     
     
     def plot(self,savefig=False,win_type='boxcar'):
-        maxlag = self.corr.stats.sac['e']
+        #maxlag = self.corr.stats.sac['e']
+        maxlag = float(self.corr.stats.npts)/self.corr.stats.sampling_rate
         l = len(self.corr.data)
         lag = np.linspace(-maxlag,maxlag,l)
         win = self.getwin_fun(win_type)
@@ -44,7 +45,7 @@ class Nmeasure(object):
         (snc,sna) = self.check_snr()[0:2]
         (x1,y1) = (lag[0]+100,np.max(self.corr.data)/2)
         (x2,y2) = (lag[:-1]-100,np.max(self.corr.data)/2)
-        plt.xlim([-3000,3000])
+        #plt.xlim([-3000,3000])
         plt.plot()
         plt.plot(lag,self.corr.data,'k',linewidth=2.)
         plt.plot(lag,win*np.max(self.corr.data),'r--',linewidth=2.)           
@@ -73,6 +74,7 @@ class Nmeasure(object):
         # Get a window function; this can be extended to a Gaussian, a hanning...
         
         l = len(self.corr.data)
+        print l
         win = np.zeros(l)
         
         if win_type=='boxcar':
@@ -111,6 +113,9 @@ class Nmeasure(object):
                                     zerophase=True)
         
         l = len(data.data)
+        if l == 0:
+            print 'No data'
+            return np.nan
         m = (len(data.data)-1)/2
         if win_type=='boxcar':
             win = self.getwin_fun('boxcar')
@@ -126,6 +131,7 @@ class Nmeasure(object):
             #(i0,i1,i2,i3) = self.getwin_ind()
             #sig_a=data[i0:i1]
             #sig_c=data[i2:i3]
+        
         acausal = data[0:(len(data)-1)/2]
         causal = data[(len(data)-1)/2:len(data)]
         msr = log(np.sum(np.power(causal,2))/np.sum(np.power(acausal,2)))
@@ -148,12 +154,12 @@ class Nmeasure(object):
             winsig_a = self.corr.data[i0:i1]
             #winnoi_a = np.array(self.corr.data[i0-nw:i0]) + \
             #            np.array(self.corr.data[i1:i1+nw])
-            winnoi_a = np.array(self.corr.data[i0-nw:i0])
+            winnoi_a = np.array(self.corr.data[i0-2*nw:i0-nw])
                         
             winsig_c = self.corr.data[i2:i3]
             #winnoi_c = list(self.corr.data[i2-nw:i2]) + \
             #            list(self.corr.data[i3:i3+nw])
-            winnoi_c = np.array(self.corr.data[i3:i3+nw])
+            winnoi_c = np.array(self.corr.data[i3+nw:i3+2*nw])
             
             # Test: the winsig and winnoi must have the same length
                         

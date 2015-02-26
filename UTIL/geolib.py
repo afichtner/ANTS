@@ -28,8 +28,11 @@ def area_of_sqdeg(lat):
     # in m^2
     l_lat = len_deg_lat(lat)
     l_lon = len_deg_lon(lat)
-    
-    return round(l_lat*l_lon,2)
+    if l_lat*l_lon == 0:
+        area = 0.000001
+    else:
+        area = round(l_lat*l_lon,2)
+    return area
         
 
 
