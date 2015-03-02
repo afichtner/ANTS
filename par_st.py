@@ -212,6 +212,9 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     corrtype=inp['correlations']['corrtype']
     prepname=inp['selection']['prepname']
     tfpws = bool(int(inp['correlations']['tfpws']))
+    onebit = bool(int(inp['treatment']['onebit']))
+    glitch = bool(int(inp['treatment']['glitch']))
+    glitchvalue = float(inp['treatment']['glitchcap'])
     
     if inp['bandpass']['doit']=='1':
         freqmin=float(inp['bandpass']['f_min'])
@@ -374,7 +377,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,\
                 winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,\
-                freqmax,corrname,corrtype,check,verbose)
+                freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
             
             if npcc!=0 or nccc!=0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id_1,\
@@ -393,7 +396,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,\
                 str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                freqmin,freqmax,corrname,corrtype,check,verbose)
+                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
                 
             if npcc != 0 or nccc != 0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,\
@@ -405,7 +408,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component RR
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,\
                 str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                freqmin,freqmax,corrname,corrtype,check,verbose)
+                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
             if npcc != 0 or nccc != 0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,\
                     id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -418,7 +421,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component T1R2
                 (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,\
                     str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                    freqmin,freqmax,corrname,corrtype,check,verbose)
+                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
                 if npcc != 0 or nccc != 0:
                     savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,\
                     id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -428,7 +431,7 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component R1T2
                 (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,\
                     str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                    freqmin,freqmax,corrname,corrtype,check,verbose)
+                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
                 if npcc != 0 or nccc != 0:
                     savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,\
                     id2_T,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -506,7 +509,7 @@ def parlistpairs(infile,nf,corrname,corrtype,auto=False):
     
     
 def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
-                    fmin,fmax,corrname,corrtype,check,verbose):
+                    fmin,fmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose):
     """
     Step through the traces in the relevant streams and correlate whatever 
     overlaps enough.
@@ -530,6 +533,7 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
     fmin: Minimum frequency the signal was filtered to (or 0.001 Hz)
     fmax: Maximum frequency the signal was filtered to (or 0.5*sampling 
     frequency)
+    onebit: Boolean, do one-bitting or not
     verbose, boolean: loud or quiet
     
     output:
@@ -581,7 +585,11 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
         tr1=str1[n1].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
         tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
         
-        #- Downsample
+        #==============================================================================
+        #- Data treatment        
+        #==============================================================================
+        
+        #- Downsampling ===============================================================
         if len(tr1.data)>40 and len(tr2.data)>40:
             k=0
             while k<len(Fs_new):
@@ -595,7 +603,35 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
         else:
             t1 = t2 - overlap
             continue   
-    
+        
+        
+        #- Glitch correction ==========================================================
+        if glitch == True:
+            std1 = np.std(tr1.data*1.e6)
+            print(std1)
+            gllow = glitchvalue * -std1
+            glupp = glitchvalue * std1
+            tr1.data = np.clip(tr1.data*1.e6,gllow,glupp)/1.e6
+            
+            std2 = np.std(tr2.data*1.e6)
+            print(std2)
+            gllow = glitchvalue * -std2
+            glupp = glitchvalue * std2
+            tr2.data = np.clip(tr2.data*1.e6,gllow,glupp)/1.e6
+            
+            tr2.plot()
+        #- Whitening ==================================================================
+        
+        #- One-bitting ================================================================
+        
+        if onebit == True:
+            tr1.data = np.sign(tr1.data)
+            tr2.data = np.sign(tr2.data)
+        
+            
+        #==============================================================================
+        #- Checks     
+        #============================================================================== 
         
         if len(tr1.data) == len(tr2.data):
             mlag = maxlag / tr1.stats.delta
@@ -611,8 +647,11 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
             if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
                 t1 = t2 - overlap
                 continue
-                
-            #- Classical correlation part =====================================
+        #==============================================================================
+        #- Correlations proper 
+        #==============================================================================       
+        
+        #- Classical correlation part =====================================
             if corrtype == 'ccc' or corrtype == 'both':
                 ccc=classic_xcorr(tr1, tr2, mlag)
                 coh_ccc = hilbert(ccc)
@@ -721,7 +760,7 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
  
     traces=glob(indir+'/'+id+'.*.'+prepname+'.*')
     traces.sort()
-    readit=False
+    readone=False
     
     
     if len(traces) == 0:
@@ -752,15 +791,16 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
             if len(tr.data)*tr.stats.delta<winlen-tr.stats.delta:
                 continue
             
+            
             #- Bandpass filter
             if prefilt is not None:
                 tr.filter('bandpass',freqmin=prefilt[0],freqmax=prefilt[1],\
                 corners=prefilt[2],zerophase=True)
-            
-            if readit==False:
+                
+            if readone==False:
                 colltr=tr.copy()
                 #print(colltr,file=None)
-                readit=True
+                readone=True
                 #print('Started coll. trace',file=None)
                 #print(colltr,file=None)
             else:
@@ -769,10 +809,10 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
                 except TypeError:
                     continue   
      
-    if readit == True:           
-        return (colltr,readit)
+    if readone == True:           
+        return (colltr,readone)
     else:
-        return(Trace(),readit)
+        return(Trace(),readone)
     
    
 def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\

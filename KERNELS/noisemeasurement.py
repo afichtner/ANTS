@@ -149,7 +149,7 @@ class Nmeasure(object):
             
             Fs = self.corr.stats.sampling_rate
             (i0,i1,i2,i3) = win_ind
-            nw = int((self.w1+self.w2)*Fs)
+            nw = int((self.w1+self.w2)*Fs/2)
             
             winsig_a = self.corr.data[i0:i1]
             #winnoi_a = np.array(self.corr.data[i0-nw:i0]) + \
