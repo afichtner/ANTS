@@ -82,6 +82,9 @@ def par_download(xmlinput):
     else:
         vfetchdata=''
         
+    # Quality?
+    quality = dat['quality']
+        
     # time interval of request
     t1=dat['time']['starttime']
     t1str=UTCDateTime(t1).strftime('%Y.%j.%H.%M.%S')
@@ -142,7 +145,10 @@ def par_download(xmlinput):
                 print '\n Attempting to download data from: '+id+'\n'
                 print filename
                 
-                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+' -msl '+minlen+' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -o '+filename
+                reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ \
+                 ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+ \
+                 ' -msl '+minlen+' --lat '+lat_min+':'+lat_max+ \
+                ' --lon '+lon_min+':'+lon_max+' -o '+filename+' -Q '+quality
                   
                 os.system(reqstring)
             t += winlen
