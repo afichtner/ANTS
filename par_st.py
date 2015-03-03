@@ -24,7 +24,6 @@ if __name__=='__main__':
     xmlin=str(sys.argv[1])
     pst.par_st(xmlin)
     
-import matplotlib.pyplot as plt
 
 def par_st(xmlinput):
     """
@@ -215,6 +214,9 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
     onebit = bool(int(inp['treatment']['onebit']))
     glitch = bool(int(inp['treatment']['glitch']))
     glitchvalue = float(inp['treatment']['glitchcap'])
+    whiten = bool(int(inp['treatment']['whitening']))
+    whitefreq=inp['treatment']['white_freq'].split(' ')
+    whitefreq = [float(wf) for wf in whitefreq]
     
     if inp['bandpass']['doit']=='1':
         freqmin=float(inp['bandpass']['f_min'])
@@ -377,7 +379,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,\
                 winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,freqmin,\
-                freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
+                freqmax,corrname,corrtype,onebit,glitch,glitchvalue,\
+                    whiten, whitefreq,check,verbose)
             
             if npcc!=0 or nccc!=0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id_1,\
@@ -396,7 +399,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,\
                 str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
+                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,\
+                    whiten, whitefreq,check,verbose)
                 
             if npcc != 0 or nccc != 0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,\
@@ -408,7 +412,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component RR
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,\
                 str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
+                freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,\
+                    whiten, whitefreq,check,verbose)
             if npcc != 0 or nccc != 0:
                 savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,\
                     id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -421,7 +426,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component T1R2
                 (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_T,\
                     str2_R,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
+                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,\
+                    whiten, whitefreq,check,verbose)
                 if npcc != 0 or nccc != 0:
                     savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_T,\
                     id2_R,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -431,7 +437,8 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
             # Component R1T2
                 (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1_R,\
                     str2_T,winlen,overlap,maxlag,pccnu,tfpws,startday,endday,Fs,\
-                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose)
+                    freqmin,freqmax,corrname,corrtype,onebit,glitch,glitchvalue,\
+                    whiten, whitefreq, check,verbose)
                 if npcc != 0 or nccc != 0:
                     savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1_R,\
                     id2_T,geoinf,winlen,overlap,maxlag,pccnu,tfpws,startday,\
@@ -509,7 +516,8 @@ def parlistpairs(infile,nf,corrname,corrtype,auto=False):
     
     
 def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
-                    fmin,fmax,corrname,corrtype,onebit,glitch,glitchvalue,check,verbose):
+                    fmin,fmax,corrname,corrtype,onebit,glitch,glitchvalue,whiten,\
+                    whitefreq,check,verbose):
     """
     Step through the traces in the relevant streams and correlate whatever 
     overlaps enough.
@@ -608,20 +616,34 @@ def corr_pairs(str1,str2,winlen,overlap,maxlag,nu,tfpws,startday,endday,Fs_new,\
         #- Glitch correction ==========================================================
         if glitch == True:
             std1 = np.std(tr1.data*1.e6)
-            print(std1)
             gllow = glitchvalue * -std1
             glupp = glitchvalue * std1
             tr1.data = np.clip(tr1.data*1.e6,gllow,glupp)/1.e6
             
             std2 = np.std(tr2.data*1.e6)
-            print(std2)
             gllow = glitchvalue * -std2
             glupp = glitchvalue * std2
             tr2.data = np.clip(tr2.data*1.e6,gllow,glupp)/1.e6
             
-            tr2.plot()
         #- Whitening ==================================================================
         
+        if whiten == True:
+            freqaxis = np.fft.fftfreq(n=len(tr1.data),d=tr1.stats.delta)
+            taperaxis = np.zeros(len(tr1.data)/2+1)
+            spec1 = np.fft.rfft(tr1.data)
+            spec2 = np.fft.rfft(tr2.data)
+            ind_fw1 = int(round(whitefreq[0]*(len(tr1.data)*tr1.stats.delta)))
+            ind_fw2 = int(round(whitefreq[1]*(len(tr1.data)*tr1.stats.delta)))
+            taperaxis[ind_fw1:ind_fw2] += np.hanning(ind_fw2-ind_fw1)
+            
+            spec1[ind_fw1:ind_fw2+1]/=abs(spec1)[ind_fw1:ind_fw2+1]
+            spec2[ind_fw1:ind_fw2+1]/=abs(spec2)[ind_fw1:ind_fw2+1]
+            spec1*=taperaxis
+            spec2*=taperaxis
+            
+            tr1.data = np.fft.irfft(spec1,n=len(tr1.data))
+            tr2.data = np.fft.irfft(spec2,n=len(tr2.data))
+            
         #- One-bitting ================================================================
         
         if onebit == True:
