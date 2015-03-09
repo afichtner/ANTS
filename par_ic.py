@@ -69,7 +69,8 @@ def ic(xmlinput,content=None):
        xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
        
        if os.path.exists(xmlinname)==True and update == False:
-           print('Name tag already in use! New generic name tag chosen. Please review tag later to avoid overwriting.',file=None)
+           print('Name tag already in use! New generic name tag chosen. \
+           Please review tag later to avoid overwriting.',file=None)
            prepname = UTCDateTime().strftime('proc%Y-%j')
            xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
            print('New tag is '+prepname,file=None)
@@ -101,7 +102,8 @@ def ic(xmlinput,content=None):
            
        #- If only a check run is performed, then only a couple of files are preprocessed
        if check and len(content)>4:
-           content=[content[0],content[1],content[len(content)-2],content[len(content)-1]]
+           content=[content[0],content[1],content[len(content)-2],\
+           content[len(content)-1]]
            
    
     #==============================================================================================
@@ -125,10 +127,12 @@ def ic(xmlinput,content=None):
     update=bool(int(inp1['update']))
     datadir=cfg.datadir
     if update ==True:
-        ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+str(rank)+'.txt','w')
+        ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+\
+        str(rank)+'.txt','w')
     else:
-        ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+'.txt','w')
-        
+        ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+\
+        '.txt','w')
+    check=bool(int(inp1['check']))    
     respdir=inp1['processing']['instrument_response']['respdir']
     unit=inp1['processing']['instrument_response']['unit']
     freqs=inp1['processing']['instrument_response']['freqs']
@@ -164,11 +168,13 @@ def ic(xmlinput,content=None):
     #- Print some nice comments to output file ---------------------------------------- 
     if rank == 0:      
         if verbose:
-            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d, %H:%M')+' GMT\n',file=None)
+            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d, %H:%M')+\
+            ' GMT\n',file=None)
             print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
             print('Broadcasting took '+str(t2)+' seconds \n',file=None)
             
-    print('\nHi I am rank number %d and I am processing the following files for you: \n' %rank,file=ofid)
+    print('\nHi I am rank number %d and I am processing the following files for you:\
+           \n' %rank,file=ofid)
     for fname in mycontent:
         ofid.write(fname+'\n')
     
@@ -183,7 +189,8 @@ def ic(xmlinput,content=None):
     for filepath in mycontent:
         
         if verbose==True:
-            print('===========================================================',file=ofid)
+            print('===========================================================',\
+            file=ofid)
             print('* opening file: '+filepath+'\n',file=ofid)
             
         #- read data
@@ -229,6 +236,14 @@ def ic(xmlinput,content=None):
         for k in np.arange(n_traces):
             trace=data[k]
             
+            if check==True:
+                ctr=trace.copy()
+                ctr.stats.network='Original Data'
+                ctr.stats.station=''
+                ctr.stats.location=''
+                ctr.stats.channel=''
+                cstr=Stream(ctr)
+            
             if update == True:
                 if len(glob(getfilepath(trace.stats,prepname,True))) > 0:
                     print('File already processed, proceeding...',file=ofid)
@@ -236,7 +251,8 @@ def ic(xmlinput,content=None):
                 else:
                     print('Updating...',file=ofid)
             
-            if verbose==True: print('-----------------------------------------------------------',file=ofid)
+            if verbose==True: print('-----------------------------------------\
+            ------------------',file=ofid)
     
             #==================================================================================
             # basic quality checks
@@ -244,15 +260,18 @@ def ic(xmlinput,content=None):
     
             #- check NaN
             if True in np.isnan(trace.data):
-                if verbose==True: print('** trace contains NaN, discarded',file=ofid)
+                if verbose==True: print('** trace contains NaN, discarded',\
+                file=ofid)
                 continue
     
             #- check infinity
             if True in np.isinf(trace.data):
-                if verbose==True: print('** trace contains infinity, discarded',file=ofid)
+                if verbose==True: print('** trace contains infinity, discarded',\
+                file=ofid)
                 continue
     
-            if verbose==True: print('* number of points: '+str(trace.stats.npts)+'\n',file=ofid)
+            if verbose==True: print('* number of points: '+str(trace.stats.npts)+\
+            '\n',file=ofid)
     
             #==================================================================================
             # processing (detrending, filtering, response removal, decimation)
@@ -272,7 +291,8 @@ def ic(xmlinput,content=None):
     
             if inp1['processing']['taper']['doit']=='1':
     
-                trace=proc.taper(trace,float(inp1['processing']['taper']['taper_width']),verbose,ofid)
+                trace=proc.taper(trace,float(inp1['processing']['taper']\
+                ['taper_width']),verbose,ofid)
                 
           
             
@@ -290,15 +310,31 @@ def ic(xmlinput,content=None):
     
             if inp1['processing']['instrument_response']['doit']=='1':
     
-                removed,newtrace=proc.remove_response(newtrace,respdir,unit,freqs,wl,verbose,ofid)
+                removed,newtrace=proc.remove_response(newtrace,respdir,unit,\
+                freqs,wl,verbose,ofid)
                 if removed==False:
-                    print('** Instrument response could not be removed! Trace discarded.',file=ofid)
+                    print('** Instrument response could not be removed! \
+                    Trace discarded.',file=ofid)
                     continue
                     
                 if True in np.isnan(newtrace):
-                    print('** Deconvolution seems unstable! Trace discarded.',file=ofid)
+                    print('** Deconvolution seems unstable! Trace discarded.',\
+                    file=ofid)
                     continue
-          
+        
+            if check==True:
+                ctr = newtrace.copy()
+                ctr.stats.network='After IC to '+unit
+                ctr.stats.station=''
+                ctr.stats.location=''
+                ctr.stats.channel=''
+                cstr.append(ctr)
+                cstr.plot(outfile=datadir+'/processed/out/'+\
+                filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
+                cstr.trim(endtime=cstr[0].stats.starttime+3600)
+                cstr.plot(outfile=datadir+'/processed/out/'+\
+                filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
+                
             #- merge all into final trace =========================================================
             colloc_data+=newtrace
              
@@ -311,16 +347,19 @@ def ic(xmlinput,content=None):
         colloc_data._cleanup()
 
         for k in range(len(colloc_data)):
-            if ((inp1['processing']['instrument_response']['doit']=='1') and (removed==1)) or \
+            if ((inp1['processing']['instrument_response']['doit']=='1') and \
+            (removed==1)) or \
                 inp1['processing']['instrument_response']['doit']!='1':
                 
                 filepathnew = getfilepath(mydir,colloc_data[k].stats,prepname)
                 
                 #- write to file
-                colloc_data[k].write(filepathnew,format=colloc_data[k].stats._format)
+                colloc_data[k].write(filepathnew,\
+                format=colloc_data[k].stats._format)
                        
                 if verbose==True:
                     print('* renamed file: '+filepathnew,file=ofid)
+        
         del colloc_data
         del data
         
@@ -343,9 +382,11 @@ def getfilepath(mydir,stats,prepname,startonly=False):
     yr=str(t1[0:4])
     
     if startonly == False:
-        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
+        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+\
+        channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
     else:
-        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+channel+'.' + t1 + '.*.'+prepname+'.'+format
+        filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+\
+        channel+'.' + t1 + '.*.'+prepname+'.'+format
     return filepathnew
         
     
