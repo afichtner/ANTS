@@ -44,7 +44,8 @@ def get_staxml(net,sta):
 
 #==============================================================================================
 
-def get_coord_dist(net1, sta1, net2, sta2):
+def get_coord_staxml(net1, sta1, net2, sta2):
+
 
     try:
         stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
@@ -69,13 +70,15 @@ def get_coord_dist(net1, sta1, net2, sta2):
             
     (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
     (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')
+    return (lat1,lon1,lat2,lon2)
+
+#==============================================================================
+def get_geoinf(lat1,lon1,lat2,lon2):
+    
     dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
     az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]
     baz=gps2DistAzimuth(lat1, lon1, lat2, lon2)[2]
-    
-    #except:
-    #    (lat1, lon1, lat2, lon2, dist)=('?', '?','?','?','?')
-    
+   
     return (lat1, lon1, lat2, lon2, dist, az, baz)
 
 #==============================================================================================
