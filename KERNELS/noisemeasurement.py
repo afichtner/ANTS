@@ -21,8 +21,7 @@ class Nmeasure(object):
         else:
             msg='Input to measurement must be path to file or Trace.'
             return TypeError(msg)
-        #self.min_snr = min_snr
-        #self.min_win = min_win
+
         self.groupspeed = groupspeed
         self.w1 = w1
         self.w2 = w2
@@ -39,23 +38,33 @@ class Nmeasure(object):
         l = len(self.corr.data)
         lag = np.linspace(-maxlag,maxlag,l)
         win = self.getwin_fun(win_type)
+        win_noise = np.zeros(len(win))
+        (i0,i1,i2,i3) = self.getwin_ind()
+        Fs = self.corr.stats.sampling_rate
+        nw = int((self.w1+self.w2)*Fs)
+        win_noise[i0-2*nw:i0-nw]+=1.
+        win_noise[i3+nw:i3+2*nw]+=1.
+        
         msr = self.msr(win_type=win_type)
         nw = self.nw
         winlen = self.corr.stats.sac['user1']
+        
         (snc,sna) = self.check_snr()[0:2]
         (x1,y1) = (lag[0]+100,np.max(self.corr.data)/2)
-        (x2,y2) = (lag[:-1]-100,np.max(self.corr.data)/2)
-        #plt.xlim([-3000,3000])
+        #(x2,y2) = ()#(lag[:-1]-100,np.max(self.corr.data)/2)
+        plt.xlim([-3000,3000])
         plt.plot()
-        plt.plot(lag,self.corr.data,'k',linewidth=2.)
-        plt.plot(lag,win*np.max(self.corr.data),'r--',linewidth=2.)           
+        plt.plot(lag,self.corr.data,'k',linewidth=1.7)
+        plt.plot(lag,win*np.max(self.corr.data),'r--',linewidth=1.5)
+        plt.plot(lag,win_noise*np.max(self.corr.data)*0.5,'b--',linewidth=1.5)
         plt.title(self.id,fontweight='bold')
         plt.xlabel('Lag (sec)',fontsize=16,fontweight='bold')
-        #plt.yticks([''])
+        plt.yticks([''])
         plt.xticks([-3000,-1500,0,1500,3000],fontweight='bold')
         plt.ylabel('Correlation',fontsize=16,fontweight='bold')
+        plt.legend(['data','signal window','noise window'])
         plt.annotate('ln(amplitude ratio): %5.4f\ncausal window s/n: %5.4f\
-        \nacausal window s/n: %5.4f\nnr. of stacked windows: %g\n window length (s): %g' \
+        \nacausal window s/n: %5.4f\nnr. of stacked windows: %g\nwindow length (s): %g' \
                             %(msr,snc,sna,nw,winlen),\
                                 xy=(x1,y1),xytext=(x1,y1),\
                                     bbox=dict(boxstyle="round", fc="0.8"))
@@ -149,7 +158,7 @@ class Nmeasure(object):
             
             Fs = self.corr.stats.sampling_rate
             (i0,i1,i2,i3) = win_ind
-            nw = int((self.w1+self.w2)*Fs/2)
+            nw = int((self.w1+self.w2)*Fs)
             
             winsig_a = self.corr.data[i0:i1]
             #winnoi_a = np.array(self.corr.data[i0-nw:i0]) + \
