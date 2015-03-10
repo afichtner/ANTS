@@ -6,18 +6,22 @@ import antconfig as cfg
 datadir=cfg.datadir
 if os.path.exists(datadir)==False:
     os.mkdir(datadir)
+if os.path.exists(datadir+'resp/')==False:    
     os.mkdir(datadir+'resp/')
+if os.path.exists(datadir+'raw/')==False:
     os.mkdir(datadir+'raw/')
     os.mkdir(datadir+'raw/latest/')
+if os.path.exists(datadir+'processed/')==False:
     os.mkdir(datadir+'processed/')
-    os.mkdir(datadir+'correlations/')
-    os.mkdir(datadir+'stationxml/')
-    
     os.mkdir(datadir+'processed/out/')
     os.mkdir(datadir+'processed/xmlinput/')
+if os.path.exists(datadir+'correlations/')==False:
+    os.mkdir(datadir+'correlations/')
     os.mkdir(datadir+'correlations/interm/')
     os.mkdir(datadir+'correlations/out/')
     os.mkdir(datadir+'correlations/xmlinput/')
+if os.path.exists(datadir+'stationxml/')==False:
+    os.mkdir(datadir+'stationxml/')
 
 testdir=cfg.testdir
 if os.path.exists(testdir)==False:

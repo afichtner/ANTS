@@ -50,17 +50,15 @@ class Nmeasure(object):
         winlen = self.corr.stats.sac['user1']
         
         (snc,sna) = self.check_snr()[0:2]
-        (x1,y1) = (lag[0]+100,np.max(self.corr.data)/2)
-        #(x2,y2) = ()#(lag[:-1]-100,np.max(self.corr.data)/2)
-        plt.xlim([-3000,3000])
+        (x1,y1) = (-maxlag+100,np.min(self.corr.data)/2)
+        
         plt.plot()
         plt.plot(lag,self.corr.data,'k',linewidth=1.7)
         plt.plot(lag,win*np.max(self.corr.data),'r--',linewidth=1.5)
         plt.plot(lag,win_noise*np.max(self.corr.data)*0.5,'b--',linewidth=1.5)
+        
         plt.title(self.id,fontweight='bold')
         plt.xlabel('Lag (sec)',fontsize=16,fontweight='bold')
-        plt.yticks([''])
-        plt.xticks([-3000,-1500,0,1500,3000],fontweight='bold')
         plt.ylabel('Correlation',fontsize=16,fontweight='bold')
         plt.legend(['data','signal window','noise window'])
         plt.annotate('ln(amplitude ratio): %5.4f\ncausal window s/n: %5.4f\
@@ -68,6 +66,11 @@ class Nmeasure(object):
                             %(msr,snc,sna,nw,winlen),\
                                 xy=(x1,y1),xytext=(x1,y1),\
                                     bbox=dict(boxstyle="round", fc="0.8"))
+                                    
+                                    
+        plt.xlim([-maxlag,maxlag])
+        plt.xticks([-maxlag,-maxlag/2.,0,maxlag/2.,maxlag],fontweight='bold')
+        
         plt.show()
       
       
@@ -83,7 +86,6 @@ class Nmeasure(object):
         # Get a window function; this can be extended to a Gaussian, a hanning...
         
         l = len(self.corr.data)
-        print l
         win = np.zeros(l)
         
         if win_type=='boxcar':

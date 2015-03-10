@@ -13,7 +13,7 @@ import measure_asymmetry as ma
 
 def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
                prefilter=None,ps_nu=0,psinput=None,psname=None,\
-                verbose=False,doplot=False,window='boxcar'):
+                verbose=False,doplot=False,window='boxcar',dohist=False):
     
     """
     input: string: containing file path pattern for the files to analyse, e.g. DATA/correlations/hum/*pcc*corrname*SAC
@@ -120,7 +120,7 @@ def meas_asym(input,filename,g_speed=3000.,w1=200.,w2=200.,\
         ofid1.write('%10.6f\n' %asym)
         ofid2.write('%10.6f\n' %asym)
         
-    if doplot == True:
+    if dohist == True:
         plot_hist(numwins,filename)
     
     ofid1.close()
