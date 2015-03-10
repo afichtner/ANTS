@@ -10,7 +10,7 @@
 	<!--save output to file if set to 1. If set to 0, print to screen.-->
 	<outfile>1</outfile>
     <!--plot and save time series and psd at various processing stages-->
-    <check>0</check>
+    <check>1</check>
 	<!--update mode, will search for already existing files in the out directories and only process the others.-->
 	<update>0</update>
     
@@ -21,7 +21,6 @@
     <input>
         <!--input directory for processed data-->
         <indirs>DATA/raw/noisy/</indirs>
-		<!--time window covered roughly. (YYYY)-->
     </input>
 
     <!--*************************************************************************************************-->

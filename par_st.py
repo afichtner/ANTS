@@ -332,10 +332,19 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
 #==============================================================================
         #- Rotate horizontal traces        
 #==============================================================================
-
+        #- Get information on the geography of the two traces
+        #- This is all not very beautiful, could be done up sometime
+        try: 
+            lat1 = str1[0].stats['lat']
+            lon1 = str1[0].stats['lon']
+            lat2 = str2[0].stats['lat']
+            lon2 = str2[0].stats['lon']
+        except KeyError:
+            (lat1,lon1,lat2,lon2) = rxml.get_coord_staxml(id1[0].\
+            split('.')[0],id1[0].split('.')[1],\
+            id2[0].split('.')[0],id2[0].split('.')[1])   
         #- Geoinf: (lat1, lon1, lat2, lon2, dist, az, baz)
-        geoinf=rxml.get_coord_dist(id1[0].split('.')[0],id1[0].split('.')[1],\
-            id2[0].split('.')[0],id2[0].split('.')[1])
+        geoinf=rxml.get_geoinf(lat1,lon1,lat2,lon2)
         
         if comp=='EN':
             try:
@@ -819,12 +828,13 @@ def addtr(id,indir,prepname,winlen,endday,prefilt):
                 tr.filter('bandpass',freqmin=prefilt[0],freqmax=prefilt[1],\
                 corners=prefilt[2],zerophase=True)
                 
+            #- Insert latitude, longitude in trace header
+                
+            
             if readone==False:
                 colltr=tr.copy()
-                #print(colltr,file=None)
                 readone=True
-                #print('Started coll. trace',file=None)
-                #print(colltr,file=None)
+                
             else:
                 try:
                     colltr+=tr

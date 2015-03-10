@@ -9,7 +9,7 @@
 	<!--provide a name that will appear as 'stamp' on all correlations calculated in this run-->
 	<corrname>noisy</corrname>
 	<!--Describe briefly-->
-	<comment>Who reads the comments anyway?</comment>
+	<comment>Now with glitch correction</comment>
 	<!--Updating on a previous run? -->
 	<update>0</update>
 	
@@ -60,7 +60,17 @@
     <!--*************************************************************************************************-->
     <!--Correlations-->
     <!--*************************************************************************************************-->
-    
+	<!--apply pretreatment-->
+	<treatment>
+		<glitch>0</glitch>
+		<glitchcap>2.5</glitchcap>
+		<!--one-bitting is not recommended! !-->
+		<onebit>0</onebit>
+		<!--whitening is in an experimental stage, application not recommended 		either.-->
+		<whitening>0</whitening>
+		<white_freq>0.033 10.</white_freq>
+	</treatment>
+	
     <!--apply bandpass before correlating-->
     <bandpass>
         <doit>1</doit>
@@ -74,7 +84,7 @@
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
 		 <!--Type of correlation: 'pcc','pcc','both'-->
-		<corrtype>pcc</corrtype>       
+		<corrtype>ccc</corrtype>       
 	 	<!--Maximum lag in seconds-->
         <max_lag>12000</max_lag>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2013)-->
