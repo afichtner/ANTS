@@ -1,6 +1,6 @@
 from cmath import sqrt, exp, pi
 
-import scipy as sp
+from scipy.special import hankel2
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -147,7 +147,7 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],\
     #= Compute kernel
     #========================================================================
 
-    K=kern_g2d(xv,yv,recx1,recy1,recx2,recy2,omega,c,rho,Q,sigma)
+    K=kern_g2d(xv,yv,recx1,recy1,recx2,recy2,omega,c,rho,Q,sigma,farfield=False)
     
     if filter == True:
         K=filter_kern2d(x_range,y_range,K,0.5*c/f)
@@ -212,7 +212,7 @@ def kernel_g2d_example(x=[-20000.0e3,20000.0e3,40.0e3],\
 #==============================================================================
 #==============================================================================
 
-def kern_g2d(x,y,x1,y1,x2,y2,omega,c,rho,Q,sigma):
+def kern_g2d(x,y,x1,y1,x2,y2,omega,c,rho,Q,sigma,farfield=True):
     """
     Compute noise correlation source kernel. Input: see above.
     Computes the kernel as G1*G2'*f in the frequency domain
@@ -223,8 +223,8 @@ def kern_g2d(x,y,x1,y1,x2,y2,omega,c,rho,Q,sigma):
     K=np.zeros(np.shape(x),dtype=np.complex)
     
     #- Green's functions
-    G1=green2d(x,y,x1,y1,omega,c,rho,Q)
-    G2=green2d(x,y,x2,y2,omega,c,rho,Q)
+    G1=green2d(x,y,x1,y1,omega,c,rho,Q,farfield)
+    G2=green2d(x,y,x2,y2,omega,c,rho,Q,farfield)
     #- Adjoint source
     f=adj_src(x,y,x1,y1,x2,y2,omega,c,rho,Q,rec_dist,sigma)
     #f = 1.+1.j
@@ -237,7 +237,7 @@ def kern_g2d(x,y,x1,y1,x2,y2,omega,c,rho,Q,sigma):
 #==============================================================================
 #==============================================================================
 
-def green2d(x,y,xr,yr,omega,c,rho,Q):
+def green2d(x,y,xr,yr,omega,c,rho,Q,farfield=True):
     
     """
     Analytic 2-D Green's function for a homogeneous plane. Far-field.
@@ -276,11 +276,13 @@ def green2d(x,y,xr,yr,omega,c,rho,Q):
     
     radius=np.sqrt((x-xr)**2+(y-yr)**2)
     radius+=(dx+dy)/4.0
-
-    A=(1.0/(4.0*1.j*rho*c**2))*np.sqrt(2.0*c/(np.pi*radius*np.abs(omega)))
-    G=A*np.exp(-1.j*(omega*radius/c-np.pi/4.0))
-    G=G*np.exp(-np.abs(omega)*radius/(2.0*c*Q))
-
+    if farfield == True:
+        A=(1.0/(4.0*1.j*rho*c**2))*np.sqrt(2.0*c/(np.pi*radius*np.abs(omega)))
+        G=A*np.exp(-1.j*(omega*radius/c-np.pi/4.0))
+        G=G*np.exp(-np.abs(omega)*radius/(2.0*c*Q))
+    else:
+        A = (1.0/(4.0*1.j*rho*c**2))
+        G = A * hankel2(0,omega*radius/c)
     return G
     
 #==============================================================================
