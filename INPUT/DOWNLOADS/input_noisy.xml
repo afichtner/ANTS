@@ -21,7 +21,7 @@
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
         <starttime>2006-01-01,00:00:00</starttime>
-        <endtime>2006-02-01,00:00:00</endtime>
+        <endtime>2007-01-01,00:00:00</endtime>
 		<!--Divide up in segments for long or highly sampled data...-->
 		<len>864000</len>
 		<!--minimum length of downloaded segments in seconds-->
