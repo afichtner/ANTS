@@ -12,7 +12,7 @@
     <user>hugo_bruno@web.de</user>
 	
     <!--File containing all the ids you'd like to download.-->
-    <ids>INPUT/STATION_IDS/sta_jordan.txt</ids>
+    <ids>INPUT/STATION_IDS/sta_noisy.txt</ids>
    
 	<!--Quality: B best, Q, R, D.-->
 	<quality>?</quality>
