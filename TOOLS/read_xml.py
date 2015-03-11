@@ -55,7 +55,7 @@ def get_coord_staxml(net1, sta1, net2, sta2):
         try:
             get_staxml(net1,sta1)
         except:
-            return(0,0,0,0,0,0,0)
+            return(0,0,0,0)
         
     
     try:
@@ -66,7 +66,7 @@ def get_coord_staxml(net1, sta1, net2, sta2):
         try:
             get_staxml(net2,sta2)
         except:
-            return(0,0,0,0,0,0,0)
+            return(0,0,0,0)
             
     (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
     (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')
