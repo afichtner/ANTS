@@ -870,13 +870,15 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
     if corrtype =='pcc' or corrtype == 'both':
         tr_pcc=obs.Trace(data=pcc)
         tr_pcc.stats.sac={}
+        tr_pcc.stats.sac['kt8']='pcc'
         tr_pcc.stats.sac['user0']=npcc
         traces.append(tr_pcc)
         
         
-    elif corrtype =='ccc' or corrtype == 'both':
+    if corrtype =='ccc' or corrtype == 'both':
         tr_ccc=obs.Trace(data=ccc)
         tr_ccc.stats.sac={}
+        tr_ccc.stats.sac['kt8']='ccc'
         tr_ccc.stats.sac['user0']=nccc
         traces.append(tr_ccc)
         
@@ -910,7 +912,7 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
         tr.stats.sac['kuser0']=id2.split('.')[0]
         tr.stats.sac['kuser1']=id2.split('.')[2]
         tr.stats.sac['kuser2']=id2.split('.')[3]
-
+        
     
     
     if corrtype == 'pcc' or corrtype =='both':

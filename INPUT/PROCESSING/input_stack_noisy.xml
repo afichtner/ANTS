@@ -84,7 +84,7 @@
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
 		 <!--Type of correlation: 'pcc','pcc','both'-->
-		<corrtype>ccc</corrtype>       
+		<corrtype>both</corrtype>       
 	 	<!--Maximum lag in seconds-->
         <max_lag>12000</max_lag>
         <!--For phase cross-correlation: Specify exponent (cf Schimmel et al. 2013)-->
