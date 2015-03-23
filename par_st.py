@@ -342,7 +342,14 @@ def corrblock(inp,block,dir,corrname,ofid=None,verbose=False):
         except KeyError:
             (lat1,lon1,lat2,lon2) = rxml.get_coord_staxml(id1[0].\
             split('.')[0],id1[0].split('.')[1],\
-            id2[0].split('.')[0],id2[0].split('.')[1])   
+            id2[0].split('.')[0],id2[0].split('.')[1])
+            if (lat1,lon1,lat2,lon2) ==(0,0,0,0):
+                print('Problems with metadata: No station coordinates \
+found, setting distance to zero for station pair:')
+                print(id1[0].\
+            split('.')[0],id1[0].split('.')[1],\
+            id2[0].split('.')[0],id2[0].split('.')[1]+'\n')
+            
         #- Geoinf: (lat1, lon1, lat2, lon2, dist, az, baz)
         geoinf=rxml.get_geoinf(lat1,lon1,lat2,lon2)
         

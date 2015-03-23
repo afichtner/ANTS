@@ -332,7 +332,7 @@ def seg_example_measr(infid,snr_min=10,nwin_min=1,nwin_max=None,order=1.,minmsr=
     
     if plot_off == False:
         filename = infid.rstrip('.msr2.txt')+'.jpg'
-        os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r600 KERNELS/temp/msr_segments.ps')
+        os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+' -r200 KERNELS/temp/msr_segments.ps')
    
     print 'Number of successful measurements:'
     print hitcnt

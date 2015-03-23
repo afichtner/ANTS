@@ -20,8 +20,8 @@
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
-        <starttime>2001-01-01,00:00:00</starttime>
-        <endtime>2002-01-01,00:00:00</endtime>
+        <starttime>2012-01-01,00:00:00</starttime>
+        <endtime>2012-02-01,00:00:00</endtime>
 		<!--Divide up in segments for long or highly sampled data...-->
 		<len>864000</len>
 		<!--minimum length of downloaded segments in seconds-->

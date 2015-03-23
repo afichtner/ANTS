@@ -22,14 +22,15 @@ def read_xml(filename):
 #==============================================================================================
 
 def find_coord(path_to_xml):
-    tree=et.parse(path_to_xml)
-    root=tree.getroot()
-    
-    sta=path_to_xml.split('/')[-1].split('.')[1]
-
-    lat=root.find('*//Station').find('Latitude').text
-    lon=root.find('*//Station').find('Longitude').text
-    return sta, float(lat),float(lon)
+    try:
+        inf = read_xml(path_to_xml)
+        sta=path_to_xml.split('/')[-1].split('.')[1]
+        lat=inf[1]['Network']['Station']['Latitude']
+        lon=inf[1]['Network']['Station']['Longitude']
+        return sta, float(lat),float(lon)
+    except:
+        msg='xmlfile not found!'
+        return '000',0,0
     
 #==============================================================================================
     
@@ -46,30 +47,31 @@ def get_staxml(net,sta):
 
 def get_coord_staxml(net1, sta1, net2, sta2):
 
-
     try:
         stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
-    
+        (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
     except IndexError:
-        print 'Trying to download stationxml nr. 1...'
-        try:
-            get_staxml(net1,sta1)
-        except:
-            return(0,0,0,0)
+        #print 'Trying to download stationxml nr. 1...'
+        #try:
+        #    get_staxml(net1,sta1)
+        #except:
+        return(0,0,0,0)
         
     
     try:
         stafile2=glob(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'*.xml')[0]    
-        
+        (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')
     except IndexError:
-        print 'Trying to download stationxml nr. 2...'
-        try:
-            get_staxml(net2,sta2)
-        except:
-            return(0,0,0,0)
+        #print 'Trying to download stationxml nr. 2...'
+        #try:
+        #    get_staxml(net2,sta2)
+        #except:
+        return(0,0,0,0)
             
-    (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
-    (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')
+    
+    if staname1 =='000' or staname2 =='000':
+        return(0,0,0,0)
+    
     return (lat1,lon1,lat2,lon2)
 
 #==============================================================================
