@@ -75,13 +75,14 @@ def get_coord_staxml(net1, sta1, net2, sta2):
     return (lat1,lon1,lat2,lon2)
 
 #==============================================================================
-def get_geoinf(lat1,lon1,lat2,lon2):
+def get_geoinf(x1,y1,x2,y2,inp='coord'):
     
-    dist=gps2DistAzimuth(lat1, lon1, lat2, lon2)[0]
-    az=gps2DistAzimuth(lat1, lon1, lat2, lon2)[1]
-    baz=gps2DistAzimuth(lat1, lon1, lat2, lon2)[2]
+    if inp == 'coord':
+        dist=gps2DistAzimuth(x1, y1, x2, y2)[0]
+        az=gps2DistAzimuth(x1, y1, x2, y2)[1]
+        baz=gps2DistAzimuth(x1, y1, x2, y2)[2]
    
-    return (lat1, lon1, lat2, lon2, dist, az, baz)
+    return (x1, y1, x2, y2, dist, az, baz)
 
 #==============================================================================================
     
