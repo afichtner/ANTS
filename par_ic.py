@@ -341,7 +341,10 @@ def ic(xmlinput,content=None):
             ofid.flush()
             
             del newtrace
-
+        
+        if len(colloc_data) == 0: 
+            print('*** NO data returned from this file: '+filepath.split('/')[-1])
+            continue
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
 
