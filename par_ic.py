@@ -187,7 +187,6 @@ def ic(xmlinput,content=None):
         
     
     for filepath in mycontent:
-        
         if verbose==True:
             print('===========================================================',\
             file=ofid)
