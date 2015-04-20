@@ -33,8 +33,8 @@ class Nmeasure(object):
     
     
     def plot(self,savefig=False,win_type='boxcar'):
-        #maxlag = self.corr.stats.sac['e']
-        maxlag = float(self.corr.stats.npts)/self.corr.stats.sampling_rate
+        maxlag = self.corr.stats.sac['e']
+        #maxlag = float(self.corr.stats.npts)/self.corr.stats.sampling_rate
         l = len(self.corr.data)
         lag = np.linspace(-maxlag,maxlag,l)
         win = self.getwin_fun(win_type)
@@ -90,12 +90,12 @@ class Nmeasure(object):
         
         if win_type=='boxcar':
             (i0,i1,i2,i3) = self.getwin_ind()
-            win[i0:i1] += 1.
+            win[i0+1:i1+1] += 1.
             win[i2:i3] += 1.
         elif win_type == 'hann':
             (i0,i1,i2,i3) = self.getwin_ind() #Maybe the window should be broader in this case?
-            win[i0:i1] += np.hanning(i1-i0)
-            win[i2+1:i3+1] += np.hanning(i3-i2)
+            win[i0+1:i1+1] += np.hanning(i1-i0)
+            win[i2:i3] += np.hanning(i3-i2)
         return win
                 
     def getwin_ind(self):
@@ -119,6 +119,7 @@ class Nmeasure(object):
         #data = self.corr.copy()
         data = self.corr
         if prefilter is not None:
+        
             data.filter('bandpass',freqmin=prefilter[0],\
                                 freqmax=prefilter[1],corners=prefilter[2],\
                                     zerophase=True)

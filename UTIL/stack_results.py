@@ -63,7 +63,9 @@ def stack_phases(inp_ids, stackname, corrtype,\
         print filename
         np.save(filename,weightstack)
     
-    
+#==============================================================================
+#= The following script creates a list of IDS to allow stacking data from files #= that are either located in different directories (like data_1,data_2), or that have a different name tag.
+#==============================================================================
 def create_idlist(corr_ids,corrtype,prefix,cha1='LHZ',cha2='LHZ',\
                     autocorr=False,outfile='dummyids.txt',outfile2='dummyids2.txt'):
     

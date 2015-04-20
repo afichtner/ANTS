@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# GMT experiment with great circles
+
+# Output postscript file 
+ps=msr_segments.ps
+
+# make color scale
+gmt makecpt -Cpolar -T-1.3/1.3/0.125 -Z -Di > t.cpt
+
+# plot coastlines
+gmt pscoast -R30/60/0/30 -JW45/5i  -Di -B10g10 -K -U -Wthin > $ps
+
+# plot measurements as dots
+gmt psxy temp_asym_msr.txt -R -J -K -O -Vl -Sc0.07i -Ct.cpt >> $ps
+
+# coastlines again for visibility
+gmt pscoast -R -J  -D -B -K -O -Wthin >> $ps
+
+# plot stations
+while read lon1 lat1; do
+
+    (echo $lon1 $lat1) | gmt psxy -R -J -K -Vl -O -St0.1i -Gred -Wthin >> $ps
+	
+done < temp_asym_stas.txt
+
+# plot color scale bar
+gmt psscale -P -D9.3i/2.25i/7.5c/0.3c -B0.5 -O -Ct.cpt  >> $ps
+
+rm t.cpt

@@ -16,13 +16,18 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
     """
     #Clean up
     data._cleanup()
+    
+    if len(data)==0:
+        print('** Stream contains no traces after cleanup.',file=ofid)
+        return Stream()
+        
     if len(data)==1:
         
         data[0].stats.sampling_rate = round(data[0].stats.sampling_rate,4)
         
         # Throw data with the wrong sampling rate out.
         if data[0].stats.sampling_rate not in Fs:
-            print('Bad sampling rate: '+str(data[0].stats.sampling_rate),file=ofid)
+            print('** Bad sampling rate: '+str(data[0].stats.sampling_rate),file=ofid)
             return Stream()
         else:
             return data
@@ -34,7 +39,7 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
             data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,4)
             # Throw data with the wrong sampling rate out.
             if data[i].stats.sampling_rate not in Fs:
-                print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
+                print('** Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
                 i+=1
                 continue
            
@@ -63,7 +68,7 @@ def mergetraces(data,Fs,maxgap=10.0,ofid=None):
         # check the sampling rate of the trace
         data[i].stats.sampling_rate = round(data[i].stats.sampling_rate,4)
         if data[i].stats.sampling_rate not in Fs:
-            print('Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
+            print('** Bad sampling rate: '+str(data[i].stats.sampling_rate),file=ofid)
         else:    
             newstream+=data[i]          
         # remove the overlapping segments

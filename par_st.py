@@ -900,7 +900,7 @@ def savecorrsac(ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc,id1,id2,geoinf,winlen,\
         tr.stats.sac['e']=maxlag
         tr.stats.sac['kt0']=startday.strftime('%Y%j')
         tr.stats.sac['kt1']=endday.strftime('%Y%j')
-        tr.stats.sac['iftype']=5
+        tr.stats.sac['iftype']=1
         tr.stats.sac['stla']=lat1
         tr.stats.sac['stlo']=lon1
         tr.stats.sac['kevnm']=id2.split('.')[1]

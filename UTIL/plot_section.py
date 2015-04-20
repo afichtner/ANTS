@@ -15,7 +15,7 @@ import matplotlib as mpl
 mpl.rcParams['axes.color_cycle'] = ['k']
 
 def plot_section(inpattern,ps_nu=0,dist_scaling=10000,\
-             maxlag=200,r_speed=None, excludeauto=True, annotate=False,\
+             maxlag=200,r_speed=None, winwidth=None,excludeauto=True, annotate=False,\
              prefilter=None, scaling=True,verbose=False, savepng=False,\
              savesvg=False,outdir='./'):
     """
@@ -162,7 +162,10 @@ def plot_section(inpattern,ps_nu=0,dist_scaling=10000,\
     # =========================================================================
     
     if r_speed is not None:
-        plt.plot(taxis,taxis*r_speed,'r--',linewidth=1.2)
+        plt.plot(taxis,taxis*r_speed,'r--',linewidth=1.5)
+    if winwidth is not None:
+        plt.plot(taxis,taxis*r_speed+winwidth,'b--',linewidth=1.2)
+        plt.plot(taxis,taxis*r_speed-winwidth,'b--',linewidth=1.2)
     
     # =========================================================================
     # save plot
