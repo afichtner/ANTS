@@ -1,34 +1,26 @@
 # Input parameters for rapid source distribution estimate
-
+# ============================================================================
+# Input paths
+# ============================================================================
+# Measurement input
 input='DATA/examples/*.SAC'
-out_basename='TEST/test_measure_filt2'
-inp_binning='TEST/test_measure_filt2.msr2.txt'
+# Binning input file
+inp_binning='../master_students/Myrna/noise_afar_2001.msr2.txt'
+# Plotting input file
+inp_plotting = '../master_students/Myrna/noise_afar_2001.msr2.txt'
+
+out_basename=''
 verbose=True
 doplot=True
-dohist=True
+dohist=False
 
 g_speed=2900.
 f_centr=0.15
 q=120
 hw=40
-# Segment per ? km
-segper=100.
-# Binning: Min lon
-lonmin=30
-# Binning: Max lon
-lonmax=60
-# Binning: Min lat
-latmin=0
-# Binning: Max lat
-latmax=30
-# Binning: d_deg lon
-ddeg_lon=2
-# Binning: d_deg lat
-ddeg_lat=2
 
-
-# Prefilter format (freq_low,freq_high,corners) or None
-prefilter=(0.1,0.25,3)
+# Prefilter (format: (freq_low,freq_high,corners) or None)
+prefilter=(0.1,0.2,3)
 
 # window type
 window='hann'
@@ -47,3 +39,24 @@ snr_min=10.
 
 # Sign convention: Obspy ccc 1, obspy pcc -1
 signconv=1.
+
+# ============================================================================
+# Inputs relevant for binning
+# ============================================================================ 
+
+# Segment per ? km
+segper=100.
+# Binning: Min lon
+lonmin=30
+# Binning: Max lon
+lonmax=60
+# Binning: Min lat
+latmin=0
+# Binning: Max lat
+latmax=30
+# Binning: d_deg lon
+ddeg_lon=3
+# Binning: d_deg lat
+ddeg_lat=3
+
+

@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # GMT plot great circles
-ps=temp_msr_segments.ps
-gmt makecpt -Cpolar -T-1.5/1.5/0.125 -Z -Di > t.cpt
-gmt pscoast -Rg -JW45/5i -A100 -Di -B10g10/g10 -Glightgreen -Slightblue -K -Wthin > $ps
+ps=gmt_scripts/temp/msr_segments.ps
+gmt makecpt -Cpolar -T-1.5/1.5/0.125 -Z -Di > gmt_scripts/temp/t.cpt
+gmt pscoast -R30/60/0/20 -JW45/5i -A100 -Di -B10g10/g10 -Glightgreen -Slightblue -K -Wthin > $ps
 
 
 
 # plot the segments
-gmt psxy temp_asym_msr.txt -m -Ct.cpt -R -J -Vl -O -K -Wthicker >> $ps
+gmt psxy gmt_scripts/temp/asym_msr.txt -m -Cgmt_scripts/temp/t.cpt -R -J -Vl -O -K -Wthicker >> $ps
 
 # plot coastline on top for visibility
 gmt pscoast -R -J -A -Di -B -K -O -Wthick -U >> $ps
@@ -16,9 +16,9 @@ gmt pscoast -R -J -A -Di -B -K -O -Wthick -U >> $ps
 # plot the stations
 while read lon1 lat1; do
 		(echo $lon1 $lat1) | gmt psxy -R -J -Vl -O -St0.1i -Gred -Wthin -K >> $ps
-done < temp_asym_stas.txt
+done < gmt_scripts/temp/asym_stas.txt
 
 # add a color scale
-gmt psscale -P -D9.7i/2.25i/7.5c/0.3c -B0.5 -O -Ct.cpt  >> $ps
+gmt psscale -P -D9.7i/2.25i/7.5c/0.3c -B0.5 -O -Cgmt_scripts/temp/t.cpt  >> $ps
 
 rm t.cpt

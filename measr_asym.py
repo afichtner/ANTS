@@ -15,13 +15,20 @@ import measr_inp as minp
 
 if __name__=='__main__':
     import measr_asym as ma
-    if sys.argv[1] == 'measure':
+    if len(sys.argv) == 1:
+        print 'Arguments: measure, bin_values, plot_greatcirc'
+        print 'Input file: measr_inp.py\n'
+    elif sys.argv[1] == 'measure':
         ma.meas_asym()
     elif sys.argv[1] == 'bin_values':
         ma.seg_measr(plotstyle='points',plot_off=True)
         ma.bin_asym()
     elif sys.argv[1] == 'plot_greatcirc':
         ma.seg_measr(plotstyle='gc')
+    else:
+        print '\nInvalid input argument!'
+        print 'Arguments: measure, bin_values, plot_greatcirc'
+        print 'Input file: measr_inp.py\n'
 
 def meas_asym():
     
@@ -97,15 +104,15 @@ def meas_asym():
     ofid2.close()
     
 def bin_asym():
-    dat = open('temp_asym_msr.txt','r')
+    dat = open('gmt_scripts/temp/asym_msr.txt','r')
     dat = dat.read().strip().split('\n')
     lons,lats,vals,hits = bin_ind(minp.latmin,minp.latmax,minp.lonmin,\
     minp.lonmax,minp.ddeg_lat,minp.ddeg_lon,dat)
                             
     # write the results
-    ofid1 = open('temp_vals_xyz.txt','w')
-    ofid2 = open('temp_hits_xyz.txt','w')
-    ofid3 = open('temp_info_xyz.txt','w')
+    ofid1 = open('gmt_scripts/temp/vals_xyz.txt','w')
+    ofid2 = open('gmt_scripts/temp/hits_xyz.txt','w')
+    ofid3 = open('gmt_scripts/temp/info_xyz.txt','w')
     for i in range(0,len(vals)):
         for j in range(0,len(lats)):
             areaweight = gl.area_of_sqdeg(lats[j])/gl.area_of_sqdeg(0.)
@@ -137,11 +144,11 @@ def bin_asym():
 def seg_measr(plotstyle='points',plot_off=False):
     
     print 'Determining great circle segments...'
-    infile = open(minp.inp_binning,'r')
+    infile = open(minp.inp_plotting,'r')
     data = infile.read().split('\n')
     # output files
-    ofid1 = open('temp_asym_msr.txt','w')
-    ofid2 = open('temp_asym_stas.txt','w')
+    ofid1 = open('gmt_scripts/temp/asym_msr.txt','w')
+    ofid2 = open('gmt_scripts/temp/asym_stas.txt','w')
     
     # count the valid measurements
     hitcnt = 0
@@ -236,7 +243,7 @@ def seg_measr(plotstyle='points',plot_off=False):
     if plot_off == False:
         filename = minp.out_basename+'.jpg'
         os.system('gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile='+filename+\
-        ' -r200 temp_msr_segments.ps')
+        ' -r200 gmt_scripts/temp/msr_segments.ps')
    
     print 'Number of successful measurements:'
     print hitcnt
