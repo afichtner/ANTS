@@ -1,0 +1,9 @@
+gmt_scripts/msr_points.gmt
+gmt_scripts/msr_gcsegs.gmt
+gmt_scripts/plot_binned_asymmetries.sh
+INPUT/*.xml
+*.pyc
+antconfig.py
+*/*.pyc
+.DS_Store
+INPUT/STATION_LISTS/*
