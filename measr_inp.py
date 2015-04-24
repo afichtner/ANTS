@@ -5,16 +5,18 @@
 # Measurement input
 input='DATA/examples/*.SAC'
 # Binning input file
-inp_binning='../master_students/Myrna/noise_afar_2001.msr2.txt'
+inp_binning='example_asymmetry.msr2.txt'
 # Plotting input file
-inp_plotting = '../master_students/Myrna/noise_afar_2001.msr2.txt'
+inp_plotting = 'example_asymmetry.msr2.txt'
 
-out_basename=''
+out_basename='example_asymmetry'
 verbose=True
 doplot=True
 dohist=False
 
 g_speed=2900.
+# If you have group speed measurements in a file, provide its path here. Otherwise set to None
+g_speed_msr = None
 f_centr=0.15
 q=120
 hw=40
@@ -47,16 +49,16 @@ signconv=1.
 # Segment per ? km
 segper=100.
 # Binning: Min lon
-lonmin=30
+lonmin=-10
 # Binning: Max lon
-lonmax=60
+lonmax=30
 # Binning: Min lat
-latmin=0
+latmin=30
 # Binning: Max lat
-latmax=30
+latmax=60
 # Binning: d_deg lon
-ddeg_lon=3
+ddeg_lon=0.5
 # Binning: d_deg lat
-ddeg_lat=3
+ddeg_lat=0.5
 
 
