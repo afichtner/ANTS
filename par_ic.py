@@ -14,8 +14,8 @@ from glob import glob
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 import TOOLS.processing as proc
-import TOOLS.normalisation as nrm
 import TOOLS.read_xml as rxml 
 import TOOLS.mergetraces as mt
 import antconfig as cfg
@@ -101,7 +101,7 @@ def ic(xmlinput,content=None):
        content.sort()
            
        #- If only a check run is performed, then only a couple of files are preprocessed
-       if check and len(content)>4:
+       if check==True and len(content)>4:
            content=[content[0],content[1],content[len(content)-2],\
            content[len(content)-1]]
            

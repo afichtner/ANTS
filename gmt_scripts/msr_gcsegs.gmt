@@ -8,7 +8,7 @@ gmt pscoast -R30/60/0/20 -JW45/5i -A100 -Di -B10g10/g10 -Glightgreen -Slightblue
 
 
 # plot the segments
-gmt psxy gmt_scripts/temp/asym_msr.txt -m -Cgmt_scripts/temp/t.cpt -R -J -Vl -O -K -Wthicker >> $ps
+gmt psxy gmt_scripts/temp/asym_msr.txt -m -Cgmt_scripts/temp/t.cpt -R -J -V -O -K -Wthicker >> $ps
 
 # plot coastline on top for visibility
 gmt pscoast -R -J -A -Di -B -K -O -Wthick -U >> $ps

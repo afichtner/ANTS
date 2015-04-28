@@ -16,8 +16,9 @@ import measr_inp as minp
 if __name__=='__main__':
     import measr_asym as ma
     if len(sys.argv) == 1:
+        print 'Usage: python measr_asym.py <argument>'
         print 'Arguments: measure, bin_values, plot_greatcirc'
-        print 'Input file: measr_inp.py\n'
+        print 'Please edit the input file: measr_inp.py\n'
     elif sys.argv[1] == 'measure':
         ma.meas_asym()
     elif sys.argv[1] == 'bin_values':
@@ -49,6 +50,13 @@ def meas_asym():
     ofid2=open(minp.out_basename+'.msr2.txt','w')
     files = glob(minp.input)
     numwins=list()
+    if minp.g_speed_msr == None:
+        g_speed = minp.g_speed
+    else:
+        fid = open(minp.g_speed_msr,'r')
+        gspeeds = fid.read().split('\n')
+        #for entry in gspeeds:
+        #    
     
     for file in files:
         
