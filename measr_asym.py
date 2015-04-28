@@ -225,14 +225,14 @@ def seg_measr(plotstyle='points',plot_off=False):
             for i in range(len(seg1)-1):
                 seg = seg1[i]
                 val = mesr*seg[2]
-                ofid1.write('> -Z %7.2f\n' %(-val))
+                ofid1.write('> -Z%3.2f\n' %(-val))
                 ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg[1],seg[0],\
                 seg1[i+1][1],seg1[i+1][0]))
                 
             for i in range(len(seg2)-1):
                 seg = seg2[i]
                 val = mesr*seg[2]
-                ofid1.write('> -Z %7.2f\n' %(val))
+                ofid1.write('> -Z%3.2f\n' %(val))
                 ofid1.write("%7.2f %7.2f \n %7.2f %7.2f\n" %(seg[1],seg[0],\
                 seg2[i+1][1],seg2[i+1][0]))
         
