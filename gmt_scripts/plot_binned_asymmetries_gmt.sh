@@ -1,12 +1,12 @@
 #!/bin/bash
 
-region=-10/20/30/60
-proj=N0/5i
-cpt_val='gmt_scripts/temp/polar01.cpt'
+region=-180/180/-80/80
+proj=N0/8i
+cpt_val='gmt_scripts/temp/polar1.cpt'
 cpt_hit='gmt_scripts/temp/haxby100.cpt'
-squaresize='0.3i'
-gridding='5g5/5g5'
-outfile='gmt_scripts/temp/example'
+squaresize='0.05i'
+gridding='60g10/30g10'
+outfile='hum_2008.006.008.ccc'
 coastres='i'
 valueint=0.5
 
@@ -16,7 +16,7 @@ gmt psxy ./gmt_scripts/temp/vals_xyz.txt -R$region -J$proj -K -B$gridding -C$cpt
 gmt pscoast -R -J -D$coastres -K -O -Wthick >> testmap.ps
 gmt psscale -P -D9i/2.i/5.5c/0.3c -B$valueint -O -C$cpt_val >> testmap.ps
 gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.jpg -r600 testmap.ps
-
+rm testmap.ps
 
 # plot the values with continents in black
 gmt psxy ./gmt_scripts/temp/vals_xyz.txt -R$region -J$proj -K -B$gridding -C$cpt_val -Ss$squaresize >> testmap.ps

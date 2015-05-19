@@ -123,14 +123,20 @@ def bin_asym():
     ofid3 = open('gmt_scripts/temp/info_xyz.txt','w')
     for i in range(0,len(vals)):
         for j in range(0,len(lats)):
-            areaweight = gl.area_of_sqdeg(lats[j])/gl.area_of_sqdeg(0.)
+            if minp.bin_weight == True:
+                areaweight = gl.area_of_sqdeg(lats[j])/gl.area_of_sqdeg(0.)
+            else:
+                areaweight = 1.
             if hits[i,j]>0:
                 ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
                             vals[i,j]/hits[i,j]/areaweight))
+            else:
+                ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
+                            0.))
             ofid2.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
             ceil(hits[i,j]/areaweight)))
         
-    ofid3.write('input file: '+minp.inp_binning+'\n')
+    ofid3.write('input file: '+minp.inp_binning_plotting+'\n')
     ofid3.write('Q = %6.2f \n' %minp.q)
     ofid3.write('freq = %6.2f Hz\n' %minp.f_centr)
     ofid3.write('group v = %6.2f m/s\n' %(minp.g_speed))
@@ -152,7 +158,7 @@ def bin_asym():
 def seg_measr(plotstyle='points',plot_off=False):
     
     print 'Determining great circle segments...'
-    infile = open(minp.inp_plotting,'r')
+    infile = open(minp.inp_binning_plotting,'r')
     data = infile.read().split('\n')
     # output files
     ofid1 = open('gmt_scripts/temp/asym_msr.txt','w')
@@ -168,7 +174,7 @@ def seg_measr(plotstyle='points',plot_off=False):
     for entry in data:
         entry=entry.split()
         
-        if len(entry) == 0: continue
+        if len(entry) < 9: continue
         totcnt +=1
         sta_dist = float(entry[4])
         if sta_dist == 0.: continue
@@ -205,10 +211,12 @@ def seg_measr(plotstyle='points',plot_off=False):
             numseg = 1
         
         # get segments station 1 to antipode
-        seg1 = gl.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg,True,sta_dist,\
+        seg1 = gl.get_gcsegs(lat1,lon1,ap[0],ap[1],numseg,minp.num_max,True,\
+        sta_dist,\
         minp.f_centr,minp.q,minp.g_speed)
         # get segments station 2 to antipode
-        seg2 = gl.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg,True,sta_dist,\
+        seg2 = gl.get_gcsegs(lat2,lon2,ap[0],ap[1],numseg,minp.num_max,True,\
+        sta_dist,\
         minp.f_centr,minp.q,minp.g_speed)
         
         if plotstyle == 'points':
@@ -351,10 +359,15 @@ def plot_measr(correlation):
     win_signl, win_noise, success = get_wins(correlation)
     
     if success == True:
-        id = correlation.id + '--' + correlation.stats.sac['kuser0'].strip()+\
-        '.'+correlation.stats.sac['kevnm'].strip()+'.'+\
-            correlation.stats.sac['kuser1'].strip()+'.'+\
-                correlation.stats.sac['kuser2'].strip()
+        net = correlation.stats.sac['kuser0'].strip()
+        sta = correlation.stats.sac['kevnm'].strip()
+        loc = correlation.stats.sac['kuser1'].strip()
+        cha = correlation.stats.sac['kuser2'].strip()
+        if loc == '-12345':
+            loc = ''
+        
+        id = correlation.id + '--' + net +'.'+sta+'.'+loc+'.'+cha
+                
                 
         maxlag = (correlation.stats.npts-1)/2/correlation.stats.sampling_rate
         lag = np.linspace(-maxlag,maxlag,len(correlation.data))
@@ -435,6 +448,6 @@ def get_wins(correlation):
     success = True
     
     return win_signl, win_noise, success
-    
 
+    
     

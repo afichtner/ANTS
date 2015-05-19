@@ -2,6 +2,23 @@ import os
 import INPUT.MODELS.wgs84 as wgs84
 from math import exp, pi, cos, sin, sqrt
 from geographiclib import geodesic,geodesicline
+# Can approximate pieces of Earth surface area by spherical earth surface element or by square lat-lon boxes on the ellipsoid. Quite similar results. 
+
+
+def approx_surf_el(dlat,dlon,lat):
+    # determine colatitude:
+    colat = abs(lat-90.)
+    # Radians
+    colat = colat/180.*pi
+    dlat = dlat/180.*pi
+    dlon = dlon/180.*pi
+    
+    return(dlat*dlon*sin(colat))
+
+def area_surfel(dlat,dlon,lat,r):
+    surf_el = approx_surf_el(dlat,dlon,lat)
+    
+    return(r**2*surf_el)
 
 def len_deg_lon(lat):
     
@@ -37,11 +54,16 @@ def area_of_sqdeg(lat):
 
 
 
-def get_gcsegs(lat1,lon1,lat2,lon2,num,atten=False,\
+def get_gcsegs(lat1,lon1,lat2,lon2,num,num_max=None,atten=False,\
                 sta_dist=None,freq=None,Q=None,v=None):
     """
     Obtain coordinates of locations that separate the great circle b/w lat1lon1 
     and lat2lon2 into num equal segments
+    lat1, lon1, lat2, lon2: Coordinates of the two points that define the great circle ends
+    num: number of segments the gc is split into
+    atten: Use attenuation or not
+    sta_dist, freq, Q, v: interstation distance, central frequency, quality fac-
+    tor and group velocity; all needed only if atten==True
     
     """
     # Distance between the station and the antipode of the station station midpoint
@@ -49,15 +71,20 @@ def get_gcsegs(lat1,lon1,lat2,lon2,num,atten=False,\
     l=geodesic.Geodesic.WGS84.Line(p['lat1'],p['lon1'],p['azi1'])
     newcoords = list()
     
+    # With num_max, can limit the number of segments we want to get at all.
+    if num_max==None:
+        num_max=num+1
+    
+    
     if atten == False:
-        for i in range(num+1):
+        for i in range(num_max):
             b=l.Position(i*p['s12']/(num))
             newcoords.append((b['lat2'],b['lon2']))
             
     else: 
        #determine omega
        w = 2 * pi * freq
-       for i in range(num+1):
+       for i in range(num_max):
            #determine x; the path obtained with geodesic is split in equal length segments.
            x = sta_dist / 2. + i * p['s12']/num
            #x = i * p['s12'] / (num)
