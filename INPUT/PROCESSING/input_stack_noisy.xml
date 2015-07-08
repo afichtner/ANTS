@@ -62,6 +62,8 @@
     <!--*************************************************************************************************-->
 	<!--apply pretreatment-->
 	<treatment>
+		<rms>0</rms>
+		<rmsthresh>0</rmsthresh>
 		<glitch>0</glitch>
 		<glitchcap>2.5</glitchcap>
 		<!--one-bitting is not recommended! !-->
@@ -83,7 +85,7 @@
     <correlations>
 		<!--Autocorrelation yes or no-->
 		<autocorr>0</autocorr>
-		 <!--Type of correlation: 'pcc','pcc','both'-->
+		 <!--Type of correlation: 'ccc','pcc','both'-->
 		<corrtype>both</corrtype>       
 	 	<!--Maximum lag in seconds-->
         <max_lag>12000</max_lag>

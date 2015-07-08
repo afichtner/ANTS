@@ -55,7 +55,7 @@ def area_of_sqdeg(lat):
 
 
 def get_gcsegs(lat1,lon1,lat2,lon2,num,num_max=None,atten=False,\
-                sta_dist=None,freq=None,Q=None,v=None):
+                sta_dist=None,freq=None,Q=None,v=None,line_kern=False):
     """
     Obtain coordinates of locations that separate the great circle b/w lat1lon1 
     and lat2lon2 into num equal segments
@@ -89,8 +89,12 @@ def get_gcsegs(lat1,lon1,lat2,lon2,num,num_max=None,atten=False,\
            x = sta_dist / 2. + i * p['s12']/num
            #x = i * p['s12'] / (num)
 
-           # determine K on the ray
-           k = exp(-w * x / (v * Q))
+           # determine K on the station-station line:
+           if line_kern == True:
+               k = exp(-w * x / (v * Q))/sqrt(x**2+sta_dist**2/4)
+           # The following kernel is integrated along the y-direction
+           else:
+               k = exp(-w * x / (v * Q))
            b=l.Position(i*p['s12']/(num))
            newcoords.append((b['lat2'],b['lon2'],k)) 
         

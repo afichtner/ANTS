@@ -19,27 +19,33 @@ if __name__=='__main__':
         print 'Usage: python measr_asym.py <argument>'
         print 'Arguments: measure, bin_values, plot_greatcirc'
         print 'Please edit the input file: measr_inp.py\n'
-    elif sys.argv[1] == 'measure':
-        ma.meas_asym()
+    
+    inp = sys.argv[2] if len(sys.argv) == 3 else None
+   
+    if sys.argv[1] == 'measure':
+        ma.meas_asym(inp)
     elif sys.argv[1] == 'bin_values':
-        ma.seg_measr(plotstyle='points',plot_off=True)
-        ma.bin_asym()
+        ma.seg_measr(inp,plotstyle='points',plot_off=True)
+        ma.bin_asym(inp)
     elif sys.argv[1] == 'plot_greatcirc':
-        ma.seg_measr(plotstyle='gc')
+        ma.seg_measr(inp,plotstyle='gc')
     else:
         print '\nInvalid input argument!'
         print 'Arguments: measure, bin_values, plot_greatcirc'
         print 'Input file: measr_inp.py\n'
 
-def meas_asym():
+def meas_asym(input=None):
     
     """
     input: Provide in input file measr_inp.py
     """
     
+    if input == None:
+        input = minp.input
+    
     #Initialize output file
     ofid1=open(minp.out_basename+'.msr1.txt','w')
-    ofid1.write('Input_pattern:  '+minp.input+'\n')
+    ofid1.write('Input_pattern:  '+input+'\n')
     ofid1.write('Group_speed/evaluated_phase: '+str(minp.g_speed)+'\n')
     ofid1.write('Window halfwidth: '+str(minp.hw)+' seconds\n')
     ofid1.write('Window_type: '+minp.window+' \n\n')
@@ -48,7 +54,7 @@ def meas_asym():
      
         
     ofid2=open(minp.out_basename+'.msr2.txt','w')
-    files = glob(minp.input)
+    files = glob(input)
     numwins=list()
     if minp.g_speed_msr == None:
         g_speed = minp.g_speed
@@ -111,7 +117,11 @@ def meas_asym():
     ofid1.close()
     ofid2.close()
     
-def bin_asym():
+def bin_asym(input=None):
+    
+    if input == None:
+        input = minp.input
+    
     dat = open('gmt_scripts/temp/asym_msr.txt','r')
     dat = dat.read().strip().split('\n')
     lons,lats,vals,hits = bin_ind(minp.latmin,minp.latmax,minp.lonmin,\
@@ -136,12 +146,12 @@ def bin_asym():
             ofid2.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
             ceil(hits[i,j]/areaweight)))
         
-    ofid3.write('input file: '+minp.inp_binning_plotting+'\n')
-    ofid3.write('Q = %6.2f \n' %minp.q)
-    ofid3.write('freq = %6.2f Hz\n' %minp.f_centr)
-    ofid3.write('group v = %6.2f m/s\n' %(minp.g_speed))
-    ofid3.write('snr_min: '+str(minp.snr_min)+'\n')
-    ofid3.write('sign convention: %6.2f\n' %minp.signconv)
+    ofid3.write('input file: '+input+'\n')
+    #ofid3.write('Q = %6.2f \n' %minp.q)
+    #ofid3.write('freq = %6.2f Hz\n' %minp.f_centr)
+    #ofid3.write('group v = %6.2f m/s\n' %(minp.g_speed))
+    #ofid3.write('snr_min: '+str(minp.snr_min)+'\n')
+    #ofid3.write('sign convention: %6.2f\n' %minp.signconv)
     ofid3.write('great circle segments of %6.2f km length\n' %minp.segper)
     ofid3.write('latmin, lonmin, latmax, lonmax: %6.2f %6.2f %6.2f %6.2f deg\n'\
      %(minp.latmin,minp.lonmin,minp.latmax,minp.lonmax))
@@ -155,10 +165,12 @@ def bin_asym():
 
 
 
-def seg_measr(plotstyle='points',plot_off=False):
+def seg_measr(input=None,plotstyle='points',plot_off=False):
+    if input == None:
+        input = minp.input
     
     print 'Determining great circle segments...'
-    infile = open(minp.inp_binning_plotting,'r')
+    infile = open(input,'r')
     data = infile.read().split('\n')
     # output files
     ofid1 = open('gmt_scripts/temp/asym_msr.txt','w')
@@ -170,6 +182,8 @@ def seg_measr(plotstyle='points',plot_off=False):
     totcnt = 0
     # how many windows, on average...?
     avgwin = 0
+    # station pairs
+    stas = []
     
     for entry in data:
         entry=entry.split()
@@ -191,9 +205,12 @@ def seg_measr(plotstyle='points',plot_off=False):
         hitcnt +=1
         avgwin += int(float(entry[5]))
         
+        if lat1 == -12345 or lat2 == -12345: continue
         # write station coordinates to file
-        ofid2.write("%8.3f %8.3f \n" %(lon1,lat1))
-        ofid2.write("%8.3f %8.3f \n" %(lon2,lat2))
+        #ofid2.write("%8.3f %8.3f \n" %(lon1,lat1))
+        #ofid2.write("%8.3f %8.3f \n" %(lon2,lat2))
+        stas.append((lon1,lat1))
+        stas.append((lon2,lat2))
         
         # find midpoint
         mp = gl.get_midpoint(lat1,lon1,lat2,lon2)
@@ -245,6 +262,10 @@ def seg_measr(plotstyle='points',plot_off=False):
                 seg2[i+1][1],seg2[i+1][0]))
         
     ofid1.close()
+    
+    
+    for item in set(stas):
+        ofid2.write("%8.3f %8.3f \n" %(item[0],item[1]))
     ofid2.close()
     
     if hitcnt == 0:

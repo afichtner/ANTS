@@ -1,14 +1,16 @@
 #!/bin/bash
+gmt makecpt -Cpolar -T-5./5./0.125 -Z -Di > gmt_scripts/temp/t.cpt
 
-region=-180/180/-80/80
-proj=N0/8i
-cpt_val='gmt_scripts/temp/polar1.cpt'
+region=-20/30/30/60
+proj=N0/7i
+cpt_val='gmt_scripts/temp/t.cpt'
 cpt_hit='gmt_scripts/temp/haxby100.cpt'
-squaresize='0.05i'
-gridding='60g10/30g10'
-outfile='hum_2008.006.008.ccc'
+squaresize=0.25i
+gridding='10g5/10g5'
+outfile=$1
+#'hum_feb.05.ccc'
 coastres='i'
-valueint=0.5
+valueint=1.
 
 
 # plot the values themselves
@@ -19,11 +21,11 @@ gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.jpg -r600 testmap.ps
 rm testmap.ps
 
 # plot the values with continents in black
-gmt psxy ./gmt_scripts/temp/vals_xyz.txt -R$region -J$proj -K -B$gridding -C$cpt_val -Ss$squaresize >> testmap.ps
-gmt pscoast -R -J -D$coastres -K -O -Wthick -Gblack >> testmap.ps
-gmt psscale -P -D9i/2.i/5.5c/0.3c -B$valueint -O -C$cpt_val >> testmap.ps
-gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.cont.jpg -r600 testmap.ps
-rm testmap.ps
+#gmt psxy ./gmt_scripts/temp/vals_xyz.txt -R$region -J$proj -K -B$gridding #-C$cpt_val -Ss$squaresize >> testmap.ps
+#gmt pscoast -R -J -D$coastres -K -O -Wthick -Gblack >> testmap.ps
+#gmt psscale -P -D9i/2.i/5.5c/0.3c -B$valueint -O -C$cpt_val >> testmap.ps
+#gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.cont.jpg -r600 testmap.ps
+#rm testmap.ps
 
 # plot the hits
 gmt psxy ./gmt_scripts/temp/hits_xyz.txt -R$region -J$proj -K -B$gridding -C$cpt_hit -Ss$squaresize >> testmap.ps
@@ -33,10 +35,10 @@ gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.hits.jpg -r600 testmap.
 rm testmap.ps
 
 # plot the stations that participated in this measurement
-gmt psxy ./gmt_scripts/temp/asym_stas.txt -R$region -J$proj -K -B$gridding -Gred -Wthin -St0.075i >> testmap.ps
-gmt pscoast -R -J -D$coastres -O -Wthick >> testmap.ps
-gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.stations.jpg -r600 testmap.ps
-rm testmap.ps
+#gmt psxy ./gmt_scripts/temp/asym_stas.txt -R$region -J$proj -K -B$gridding -Gred -Wthin -St0.075i >> testmap.ps
+#gmt pscoast -R -J -D$coastres -O -Wthick >> testmap.ps
+#gs -dBATCH -dNOPAUSE -sDEVICE=jpeg -sOutputFile=$outfile.stations.jpg -r600 testmap.ps
+#rm testmap.ps
 
 
 cp gmt_scripts/temp/vals_xyz.txt $outfile.vals.txt

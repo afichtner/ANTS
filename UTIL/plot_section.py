@@ -88,6 +88,7 @@ def plot_section(inpattern,ps_nu=0,dist_scaling=10000,\
           
         if ps_nu==0:
             stacktype='ls'
+            print stacktype
         else:
             stacktype='pws'+str(ps_nu)
             psid = re.sub('SAC','npy',file)
