@@ -11,7 +11,6 @@ import TOOLS.processing as proc
 import TOOLS.rotationtool as rt
 import INPUT.CORRELATION.input_correlation as inp
 
-from mpi4py import MPI
 from math import sqrt
 from glob import glob
 from obspy.core import Stats, Trace
@@ -24,7 +23,7 @@ from scipy.signal import hilbert
 if __name__=='__main__':
     import par_st_daint as pst
     rank = os.environ['ALPS_APP_PE']
-    size=int(sys.argv[2])
+    size=int(sys.argv[1])
     pst.par_st(size,rank)
     
 
@@ -59,16 +58,17 @@ def par_st(size,rank):
         print('The size is '+str(size),file=None)
         
         
-        #- copy the input xml to the output directory for documentation -------
-        if os.path.exists(cfg.datadir+'/correlations/input/'+\
-            inp.corrname+'.txt') == False or\
-                 inp.update == True:
-            corrname=inp.corrname
-        else:
-            msg = 'Avoiding to overwrite data: choose a new name tag or change\
+    #- copy the input xml to the output directory for documentation -------
+    if os.path.exists(cfg.datadir+'/correlations/input/'+\
+        inp.corrname+'.txt') == False or\
+            inp.update == True:
+        corrname=inp.corrname
+    else:
+        msg = 'Avoiding to overwrite data: choose a new name tag or change\
               update mode to True. Name tag %s already taken.' %inp.corrname
-            raise ValueError(msg)
+        raise ValueError(msg)
         
+    if rank == 0:
         if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
             os.mkdir(cfg.datadir+'correlations/'+corrname)
          
@@ -540,9 +540,6 @@ def corr_pairs(str1,str2,corrname,geoinf):
     n2=0
     cccstack=np.zeros(tlen)
     pccstack=np.zeros(tlen)
-    cstack_ccc=np.zeros(tlen,dtype=np.complex)
-    cstack_pcc=np.zeros(tlen,dtype=np.complex)
-    
     
     
     while n1<len(str1) and n2<len(str2):
@@ -587,7 +584,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     tr2=proc.downsample(tr2,Fs_new[k],False,None)
                 k+=1
         else:
-            t1 = t2 - inp.overlap
+            t1 = t2 - inp.olap
             continue   
 
         #- Check window RMS ==========================================================       
@@ -644,13 +641,14 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
             # Check if the traces are both long enough
             if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
                 continue
             if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
+
                 continue
             if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
                 continue
         #==============================================================================
         #- Correlations proper 
@@ -694,7 +692,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     
                     timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
                     savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'ccc',win_dir,params,timestring)
+                    corrname,'ccc',win_dir,params,timestring,t1,t2)
                             
                     
             #- Phase correlation part =========================================
@@ -728,7 +726,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                         os.mkdir(win_dir)
                     timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
                     savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'pcc',win_dir,None,timestring)
+                    corrname,'pcc',win_dir,None,timestring,t1,t2)
                        
                
         #Update starttime
@@ -814,7 +812,8 @@ def addtr(id):
     
    
 def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
-    corrname,corrtype,outdir,params=None,timestring=''):
+    corrname,corrtype,outdir,params=None,timestring='',startday=None,\
+    endday=None):
     
     
     

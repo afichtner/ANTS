@@ -553,9 +553,6 @@ def corr_pairs(str1,str2,corrname,geoinf):
     n2=0
     cccstack=np.zeros(tlen)
     pccstack=np.zeros(tlen)
-    cstack_ccc=np.zeros(tlen,dtype=np.complex)
-    cstack_pcc=np.zeros(tlen,dtype=np.complex)
-    
     
     
     while n1<len(str1) and n2<len(str2):
@@ -687,7 +684,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 
                 
                 if inp.get_pws == True:
-                    coh_ccc = np.zeros(nextpow2(len(ccc)))
+                    coh_ccc = np.zeros(nextpow2(len(ccc)),dtype=np.complex)
                     coh_ccc[0:len(ccc)] += ccc*np.hanning(len(ccc))
                     coh_ccc = hilbert(ccc)
                     tol = np.max(coh_ccc)/1000.
@@ -711,7 +708,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     
                     timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
                     savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'ccc',win_dir,params,timestring)
+                    corrname,'ccc',win_dir,params,timestring,startday=t1,endday=t2)
                             
                     
             #- Phase correlation part =========================================
@@ -725,7 +722,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 
                 
                 if inp.get_pws == True:
-                    coh_pcc = np.zeros(nextpow2(len(pcc)))
+                    coh_pcc = np.zeros(nextpow2(len(pcc)),dtype=np.complex)
                     coh_pcc[0:len(pcc)] += pcc*np.hanning(len(pcc))
                     coh_pcc = hilbert(pcc)
                     tol = np.max(coh_pcc)/1000.
@@ -747,7 +744,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                         os.mkdir(win_dir)
                     timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
                     savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'pcc',win_dir,None,timestring)
+                    corrname,'pcc',win_dir,None,timestring,startday=t1,endday=t2)
                        
                
         #Update starttime
@@ -831,7 +828,8 @@ def addtr(id):
     
    
 def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
-    corrname,corrtype,outdir,params=None,timestring=''):
+    corrname,corrtype,outdir,params=None,timestring='',startday=None,\
+    endday=None):
     
     
     
@@ -844,8 +842,10 @@ def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
     tr=obs.Trace(data=correlation)
     tr.stats.sac={}
     
-    startday=obs.UTCDateTime(inp.startdate)
-    endday=obs.UTCDateTime(inp.enddate)
+    if startday == None:
+        startday=obs.UTCDateTime(inp.startdate)
+    if endday == None:
+        endday=obs.UTCDateTime(inp.enddate)
         
     (lat1, lon1, lat2, lon2, dist, az, baz)=geoinf
     
