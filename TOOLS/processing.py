@@ -262,13 +262,14 @@ def trim_next_sec(data,verbose,ofid):
     
     """
 
-    if verbose: 
-            print('* Trimming to full second.\n',file=ofid)
+    
 
     if isinstance(data,Trace):
         sec_to_remove=data.stats.starttime.microsecond/1e6
         sec_to_add=1.-sec_to_remove
-        if sec_to_add < 1.:
+        if sec_to_add > data.stats.delta:
+            if verbose: 
+                    print('* Trimming to full second.\n',file=ofid)
             data.trim(starttime=data.stats.starttime+sec_to_add,nearest_sample=True)
         
     elif isinstance(data,Stream):
@@ -276,7 +277,9 @@ def trim_next_sec(data,verbose,ofid):
             starttime=tr.stats.starttime
             sec_to_remove=tr.stats.starttime.microsecond/1e6
             sec_to_add=1.-sec_to_remove
-            if sec_to_add < 1.:
+            if sec_to_add > tr.stats.delta:
+                if verbose: 
+                        print('* Trimming to full second.\n',file=ofid)
                 tr.trim(starttime=tr.stats.starttime+sec_to_add,nearest_sample=True)
             
     return data

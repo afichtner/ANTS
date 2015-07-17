@@ -24,7 +24,10 @@ from scipy.signal import hilbert
 
 if __name__=='__main__':
     import par_st as pst
-    
+    if inp.update == False and os.path.exists(cfg.datadir+\
+    '/correlations/input/'+inp.corrname+'.txt') == True:
+        sys.exit('Choose a new correlation name tag or set update=True.\
+         Aborting.')
     pst.par_st()
     
 
@@ -56,19 +59,8 @@ def par_st():
 #==============================================================================
 
     if rank==0:
-    
+        corrname = inp.corrname
         print('The size is '+str(size),file=None)
-        
-        
-        #- copy the input xml to the output directory for documentation -------
-        if os.path.exists(cfg.datadir+'/correlations/input/'+\
-            inp.corrname+'.txt') == False or\
-                 inp.update == True:
-            corrname=inp.corrname
-        else:
-            msg = 'Avoiding to overwrite data: choose a new name tag or change\
-              update mode to True. Name tag %s already taken.' %inp.corrname
-            raise ValueError(msg)
         
         if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
             os.mkdir(cfg.datadir+'correlations/'+corrname)
@@ -475,7 +467,7 @@ def parlistpairs(corrname):
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' + \
                 idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
             
-            if glob(fileid) != []:
+            if glob(fileid) != [] and inp.update == True:
                 continue
             
             #- Autocorrelation?
@@ -553,7 +545,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
     n2=0
     cccstack=np.zeros(tlen)
     pccstack=np.zeros(tlen)
-    
+    cstack_ccc=np.zeros(tlen)
+    cstack_pcc=np.zeros(tlen)
     
     while n1<len(str1) and n2<len(str2):
     
@@ -695,7 +688,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     cstack_ccc+=coh_ccc
                 else: 
                     coh_ccc = None
-                
+                    cstack_ccc = None
                     
                 if inp.write_all==True:
                     id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
@@ -733,7 +726,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     cstack_pcc+=coh_pcc
                 else: 
                     coh_pcc = None
-                
+                    cstack_pcc = None
                 if inp.write_all==True:
                     id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
                     id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
