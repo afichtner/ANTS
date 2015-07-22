@@ -3,8 +3,8 @@ gmt_scripts/msr_gcsegs.gmt
 gmt_scripts/plot_binned_asymmetries.sh
 gmt_scripts/temp/*
 INPUT/*.xml
+INPUT/input_*.py
 *.pyc
 antconfig.py
 */*.pyc
 .DS_Store
-INPUT/STATION_LISTS/*
