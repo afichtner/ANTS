@@ -11,7 +11,6 @@ import TOOLS.processing as proc
 import TOOLS.rotationtool as rt
 import INPUT.input_correlation as inp
 
-from mpi4py import MPI
 from math import sqrt
 from glob import glob
 from obspy.core import Stats, Trace

@@ -9,7 +9,6 @@ import time
 from math import ceil
 from obspy import read, Stream,  Trace, UTCDateTime
 from obspy.signal import filter
-from mpi4py import MPI
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -37,17 +36,7 @@ def ic(rank,size,content=None):
     Command line argument 1 must be xml input file.
     
     """
-
-    #==============================================================================================
-    # preliminaries
-    #==============================================================================================
-    
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size=comm.Get_size()
-    t0=time.time()
-   
-    #==============================================================================================
+ #==============================================================================================
     #- MASTER process:
     #- reads in xmlinput
     #- creates output directory
