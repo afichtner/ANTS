@@ -41,7 +41,6 @@ def get_staxml(net,sta):
     # Metadata request with obspy
     if os.path.exists(outfile)==False:
         client.get_stations(network=net,station=sta,filename=outfile)
-        os.system('UTIL/ch_rootelem.sh '+outfile)
 
 #==============================================================================================
 

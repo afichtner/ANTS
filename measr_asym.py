@@ -9,7 +9,7 @@ from geographiclib import geodesic,geodesicline
 from math import ceil, log
 import matplotlib.pyplot as plt
 
-import UTIL.geolib as gl
+import TOOLS.geolib as gl
 import INPUT.input_measurement as minp
 
 
