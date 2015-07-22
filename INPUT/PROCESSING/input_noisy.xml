@@ -47,6 +47,8 @@
             <length_in_sec>131072</length_in_sec>
         </split>
         <!--trim to nearest second-->
+		<!--Explanation: In specific cases, trimming can ensure better synchronicity of traces. These cases occurr when you plan to decimate data that is originally sampled at higher than 1 Hz. Decimation is done without considerations of synchronicity. That means, if a 20-Hz trace starts at midnight and half a second, and we decimate this trace to 1 Hz, we might end up with a shift between this trace and another trace (which would start at midnight -1/20 second) that is almost half a second. Therefore, it is desirable to trim the first trace to as close to midnight as the sampling rate allows, before decimation. This is done by setting this flag to 1.
+		The best synchronicity we can hope to achieve is anything between 0 and the sampling interval of the data.-->
         <trim>1</trim>
         <!--remove linear trend-->
         <detrend>1</detrend>

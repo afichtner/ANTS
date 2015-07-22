@@ -1,4 +1,5 @@
 # A script to download ambient vibration records
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -6,19 +7,18 @@ from obspy import UTCDateTime
 from math import ceil
 
 from mpi4py import MPI
-
+from glob import glob
 import TOOLS.read_xml as rxml 
 import antconfig as cfg
 
 
 if __name__=='__main__':
     import par_download as pd
-    xmlin=str(sys.argv[1])
-    print 'XML input file: '+ xmlin
-    pd.par_download(xmlin)
+    
+    pd.par_download()
+    
 
-
-def par_download(xmlinput):
+def par_download():
     
     """
     
@@ -42,13 +42,15 @@ def par_download(xmlinput):
     #==============================================================================================
     
     if rank==0:
-    
+        
+        
+       
        datadir=cfg.datadir
-       dat=rxml.read_xml(xmlinput)[1]
+       dat=rxml.read_xml(os.path.join(cfg.inpdir,'input_download.xml'))[1]
       
        # network, channel, location and station list
-       stafile=dat['ids']
-       fh=open(stafile, 'r')
+       stalist=os.path.join(cfg.inpdir,'downloadlist.txt')
+       fh=open(stalist,'r')
        ids=fh.read().split('\n')
        
     #==============================================================================================
@@ -131,8 +133,11 @@ def par_download(xmlinput):
             tstart = UTCDateTime(t).strftime('%Y-%m-%d,%H:%M:%S')
             tstartstr = UTCDateTime(t).strftime('%Y.%j.%H.%M.%S')
             
-            tstep = (UTCDateTime(t)+winlen).strftime('%Y-%m-%d,%H:%M:%S')
-            tstepstr = (UTCDateTime(t)+winlen).strftime('%Y.%j.%H.%M.%S')
+            tstep = min((UTCDateTime(t)+winlen),UTCDateTime(t2)).\
+            strftime('%Y-%m-%d,%H:%M:%S')
+            tstepstr = min((UTCDateTime(t)+winlen),UTCDateTime(t2)).\
+            strftime('%Y.%j.%H.%M.%S')
+            
             
             #-Formulate a polite request
             filename=targetloc+id+'.'+tstartstr+'.'+tstepstr+'.mseed'
@@ -141,9 +146,9 @@ def par_download(xmlinput):
                 station=id.split('.')[1]
                 channel=id.split('.')[3]
                 #print network, station, location, channel
-                print '\n Rank '+str(rank)+'\n'
-                print '\n Attempting to download data from: '+id+'\n'
-                print filename
+                print('\n Rank '+str(rank)+'\n',file=None)
+                print('\n Attempting to download data from: '+id+'\n',file=None)
+                print(filename,None)
                 
                 reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ \
                  ' -S '+station+' -C '+channel+' -s '+tstart+' -e '+tstep+ \
@@ -158,10 +163,71 @@ def par_download(xmlinput):
     stafile=dat['ids']
     t1s=t1str.split('.')[0]+'.'+t1str.split('.')[1]
     t2s=t2str.split('.')[0]+'.'+t2str.split('.')[1]
-    cleanupinfo=targetloc+stafile.split('/')[-1].split('.')[0]+'.'+t1s+'.'+t2s+'.rank'+str(rank)
     
-    cmd=('./UTIL/cleandir.sh '+targetloc+' '+cleanupinfo)     
+    cmd=('./UTIL/cleandir.sh '+targetloc)     
     os.system(cmd)
     os.system('mv '+targetloc+'* '+targetloc+'/..')
     os.system('rmdir '+targetloc)
-      #return
+    
+    
+    # Download resp files for all epochs!
+    respfileloc=datadir+'resp/'
+        
+    if os.path.isdir(respfileloc)==False:
+        cmd='mkdir '+respfileloc
+        os.system(cmd)
+    
+    
+    for id in myids:
+        if id=='': continue
+        
+        network=id.split('.')[0]
+        station=id.split('.')[1]
+        channel=id.split('.')[3]
+        
+        print('\n Downloading response information from: '+id+'\n')
+        reqstring=exdir+'/FetchData '+vfetchdata+' -N '+network+ ' -S '+station+' -C '+channel+\
+        ' --lat '+lat_min+':'+lat_max+' --lon '+lon_min+':'+lon_max+' -rd '+respfileloc
+        os.system(reqstring)
+        
+    comm.Barrier()
+
+    
+    if rank==0:
+        outfile=os.path.join(cfg.datadir,'raw/latest/download_report.txt')
+        outf=open(outfile,'w')
+        
+        print('Attempting to download data from stations: \n',file=outf)
+        print('****************************************** \n',file=outf)
+        for id in ids:
+            print(id,file=outf)
+        print('****************************************** \n',file=outf)
+        stalist=os.path.join(cfg.inpdir,'downloadlist.txt')
+        fh=open(stalist,'r')
+        ids=fh.read().split('\n')
+        
+        noreturn=[]
+        
+        for id in ids:
+            if id=='': continue
+            fls=glob(os.path.join(cfg.datadir,'raw/latest',id+'*'))
+            if fls != []:
+                print('Files downloaded for id: '+id,file=outf)
+                print('First file: '+fls[0],file=outf)
+                print('Last file: '+fls[-1],file=outf)
+                print('****************************************** \n',file=outf)    
+            else: 
+                noreturn.append(id)
+            
+        if noreturn != []:
+            print('NO files downloaded for: \n',file=outf)
+            
+            print(noreturn,file=outf)
+     
+        print('****************************************** \n',file=outf)
+        print('Download parameters were: \n',file=outf)
+        print('****************************************** \n',file=outf)
+        outf.close()
+        
+        os.system('cat '+cfg.inpdir+'/input_download.xml >> '+outfile)
+        

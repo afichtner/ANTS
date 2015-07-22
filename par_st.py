@@ -9,7 +9,7 @@ import antconfig as cfg
 import numpy as np
 import TOOLS.processing as proc
 import TOOLS.rotationtool as rt
-import INPUT.CORRELATION.input_correlation as inp
+import INPUT.input_correlation as inp
 
 from mpi4py import MPI
 from math import sqrt
@@ -21,6 +21,7 @@ from obspy.signal import xcorr
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
+import matplotlib.pyplot as plt
 
 if __name__=='__main__':
     import par_st as pst
@@ -506,9 +507,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
     overlap, int: overlap in seconds
     maxlag, int: maximum lag for correlation in seconds
     nu, int: pcc nu, exponent for phase cross correlation
-    tfpws, boolean: type of phase weighted stack (if true time-frequency pws 
-    is 
-    calculated, otherwise time domain)
+
     startday, UTCDateTime object: Time where stack should start (if data 
     available)
     endday, UTCDateTime object: Maximum time until where stacking should be 
@@ -574,6 +573,9 @@ def corr_pairs(str1,str2,corrname,geoinf):
         tr1=str1[n1].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
         tr2=str2[n2].slice(starttime=t1,endtime=t2-1/Fs_new[-1])
         
+        if tr1.stats.npts != tr2.stats.npts:
+            t1 = t2 - inp.olap
+            continue
         #==============================================================================
         #- Data treatment        
         #==============================================================================
@@ -590,13 +592,9 @@ def corr_pairs(str1,str2,corrname,geoinf):
                     tr2=proc.downsample(tr2,Fs_new[k],False,None)
                 k+=1
         else:
-            t1 = t2 - inp.overlap
+            t1 = t2 - inp.olap
             continue   
 
-        #- Check window RMS ==========================================================       
-        #if inp.apply_rmssel == True:
-        #    rms.rms_select(tr1,1)
-        #    rms.rms_select(tr2,1)
         #- Glitch correction ==========================================================
         if inp.cap_glitches == True:
             std1 = np.std(tr1.data*1.e6)
@@ -612,23 +610,46 @@ def corr_pairs(str1,str2,corrname,geoinf):
         
             
 #        #- Whitening            ==================================================================
-#        
-#        if whiten == True:
-#            freqaxis = np.fft.fftfreq(n=len(tr1.data),d=tr1.stats.delta)
-#            taperaxis = np.zeros(len(tr1.data)/2+1)
-#            spec1 = np.fft.rfft(tr1.data)
-#            spec2 = np.fft.rfft(tr2.data)
-#            ind_fw1 = int(round(whitefreq[0]*(len(tr1.data)*tr1.stats.delta)))
-#            ind_fw2 = int(round(whitefreq[1]*(len(tr1.data)*tr1.stats.delta)))
-#            taperaxis[ind_fw1:ind_fw2] += np.hanning(ind_fw2-ind_fw1)
-#            
-#            spec1[ind_fw1:ind_fw2+1]/=abs(spec1)[ind_fw1:ind_fw2+1]
-#            spec2[ind_fw1:ind_fw2+1]/=abs(spec2)[ind_fw1:ind_fw2+1]
-#            spec1*=taperaxis
-#            spec2*=taperaxis
-#            
-#            tr1.data = np.fft.irfft(spec1,n=len(tr1.data))
-#            tr2.data = np.fft.irfft(spec2,n=len(tr2.data))
+        
+        if inp.apply_white == True:
+            df = 1/(tr1.stats.npts*tr1.stats.delta)
+            print(df)
+            freqaxis=np.fft.fftfreq(tr1.stats.npts,tr1.stats.delta)
+            ind_fw1 = int(round(inp.white_freqs[0]/df))
+            ind_fw2 = int(round(inp.white_freqs[1]/df))
+            print(ind_fw1,ind_fw2)
+            print(freqaxis[ind_fw1])
+            print(freqaxis[ind_fw2])
+            
+            length_taper = int(round((inp.white_freqs[1]-inp.white_freqs[0])*\
+            inp.white_tape/df))
+            
+            taper_left = np.linspace(0.,np.pi/2,length_taper)
+            taper_left = np.square(np.sin(taper_left))
+            
+            taper_right = np.linspace(np.pi/2,np.pi,length_taper)
+            taper_right = np.square(np.sin(taper_right))
+            
+            taper = np.zeros(tr1.stats.npts)
+            taper[ind_fw1:ind_fw2] += 1.
+            taper[ind_fw1:ind_fw1+length_taper] = taper_left
+            taper[ind_fw2-length_taper:ind_fw2] = taper_right
+            
+            tr1.taper(max_percentage=0.05, type='cosine')
+            tr2.taper(max_percentage=0.05, type='cosine')
+            
+            spec1 = np.fft.fft(tr1.data)
+            spec2 = np.fft.fft(tr2.data)
+            print(len(taper))
+            print(len(spec1))
+            spec1 /= np.abs(spec1)
+            spec1 *= taper
+            spec2 /= np.abs(spec2)
+            spec2 *= taper
+            
+            
+            tr1.data = np.real(np.fft.ifft(spec1,n=len(tr1.data)))
+            tr2.data = np.real(np.fft.ifft(spec2,n=len(tr2.data)))
             
         #- One-bitting ================================================================
         
@@ -647,13 +668,13 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
             # Check if the traces are both long enough
             if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
                 continue
             if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
                 continue
             if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
-                t1 = t2 - inp.overlap
+                t1 = t2 - inp.olap
                 continue
         #==============================================================================
         #- Correlations proper 
@@ -668,7 +689,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 # normalization by trace energy
                 en1 = params[2]
                 en2 = params[3]
-                ccc/=(sqrt(en1)*sqrt(en2))
+                if inp.normalize_correlation ==True:
+                    ccc/=(sqrt(en1)*sqrt(en2))
                 
                 cccstack+=ccc
                 ccccnt+=1
@@ -843,7 +865,11 @@ def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
     (lat1, lon1, lat2, lon2, dist, az, baz)=geoinf
     
     
-    
+    # Add a preprocessing string:
+    prepstring = ' '
+    if inp.cap_glitches == True: prepstring += 'g'
+    if inp.apply_white == True: prepstring += 'w'
+    if inp.apply_onebit == True: prepstring += 'o'
 
     tr.stats.sampling_rate=inp.Fs[-1]
     tr.stats.starttime=obs.UTCDateTime(2000, 01, 01)-inp.max_lag*inp.Fs[-1]
@@ -852,6 +878,7 @@ def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
     tr.stats.location=id1.split('.')[2]
     tr.stats.channel=id1.split('.')[3]
     
+    tr.stats.sac['kt2']=prepstring
     tr.stats.sac['kt8']=corrtype
     tr.stats.sac['user0']=n_stack
     tr.stats.sac['user1']=inp.winlen
@@ -914,7 +941,7 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
         data1/=np.max(np.abs(data1))
         data2/=np.max(np.abs(data2))
     
-    # Make the data more convenient for C function
+    # Make the data more convenient for C function np.correlate
     data1 = np.ascontiguousarray(data1, np.float32)
     data2 = np.ascontiguousarray(data2, np.float32)
     
@@ -937,6 +964,7 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
 
     rng1 = np.max(std1)/np.mean(std1)
     rng2 = np.max(std2)/np.mean(std2)
+    
     
     # Obtain correlation via FFT and IFFT
     ccv = np.correlate(data1,data2,mode='full')

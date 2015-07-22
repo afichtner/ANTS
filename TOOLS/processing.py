@@ -197,7 +197,7 @@ def lowpass(data,corners,f_max,verbose, ofid):
 # REMOVE INSTRUMENT RESPONSE
 #==================================================================================================
 
-def remove_response(data,respdir,unit,frstr,waterlevel,verbose, ofid):
+def remove_response(data,respdir,unit,freqs,waterlevel,verbose, ofid):
 
     """
     Remove instrument response located in respdir from data. Unit is displacement (DIS), velocity (VEL) or acceleration (ACC).
@@ -222,12 +222,11 @@ def remove_response(data,respdir,unit,frstr,waterlevel,verbose, ofid):
             print('* remove instrument response, unit='+unit+'\n',file=ofid)
                     
         resp_dict = {"filename": resp_file, "units": unit, "date": data.stats.starttime}
-        freqs=[]
-        for fr in frstr.split(' '):
-            freqs.append(float(fr))
         
         try:
-            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),nfft_pow2=True, simulate_sensitivity=False,pre_filt=tuple(freqs),pitsasim=False,sacsim=True)
+            data.simulate(seedresp=resp_dict, water_level=float(waterlevel),\
+            nfft_pow2=True, simulate_sensitivity=False,pre_filt=tuple(freqs),\
+            pitsasim=False,sacsim=True)
         except ValueError:
             if verbose==True: 
                 print('** could not remove instrument response\n',file=ofid)
@@ -329,7 +328,7 @@ def downsample(data, Fsnew, verbose, ofid):
     else:
         
         dec=int(Fs/Fsnew)
-        data=antialias(data,Fsnew*0.5,verbose,ofid)
+        data=antialias(data,Fsnew*0.4,verbose,ofid)
         data.decimate(dec, no_filter=True, strict_length = False)
         
         try:

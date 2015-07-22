@@ -49,7 +49,7 @@ def mergetraces(data, Fs, maxgap=10.0, ofid=None):
     
     # loop through ids
     for id in list(traces_dict.keys()):
-        print('===================')
+        #print('===================')
         
         trace_list = traces_dict[id]
         cur_trace = Stream(trace_list.pop(0))
@@ -57,23 +57,23 @@ def mergetraces(data, Fs, maxgap=10.0, ofid=None):
         # work through all traces of same id
         while trace_list:
             trace = trace_list.pop(0)
-            print('===================')
+            #print('===================')
             print(cur_trace)
-            print('Next trace:')
+            #print('Next trace:')
             print(trace)
             # Case 1: Overlap =================================================
             # Overlaps should be removed in any case, as we don't want to correlate the data twice; especially if they differ between traces (which is most likely the case due to different tapering etc.)
             # Case 2: Perfectly adjacent ======================================
             # Case 3: Short gap ===============================================
             if trace.stats.starttime - cur_trace[-1].stats.endtime <= maxgap:
-                print('Overlap or adjacent or short gap.')
+                #print('Overlap or adjacent or short gap.')
                 
                 cur_trace += trace
                 cur_trace.merge(method=1,interpolation_samples=0,\
                 fill_value=0)
             # Case 4: Long gap ================================================
             else:
-                print('Long gap.')
+                #print('Long gap.')
                 # Add to output stream
                 data += cur_trace
                 # Start new stream

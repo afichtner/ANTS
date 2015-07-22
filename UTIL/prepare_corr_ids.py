@@ -7,7 +7,7 @@ def prepare_corr_ids(indir,prepname):
     if os.path.exists('INPUT/ID_LISTS')==False:
         os.mkdir('INPUT/ID_LISTS')
     
-    outfile='INPUT/ID_LISTS/ids_'+prepname+'_corr.txt'
+    outfile='INPUT/correlationlist_new.txt'
     fid = open(outfile,'w')
     
     idlist = glob(indir+'/*.'+prepname+'.mseed')

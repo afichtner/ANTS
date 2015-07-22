@@ -3,25 +3,24 @@
 # Input paths
 # ============================================================================
 # Measurement input or input file for great circle plotting and binning.
-input='../time_dependent_sources/ch_convergence/ch_compare_threedays/*.2014.013.03.*.SAC'
+input='DATA/correlations/noisy/*ccc.noisy.SAC'
 #'../time_dependent_sources/120_months_of_hum/data/hum_05_ccc_feb.006.008.ccc.hann.msr2.txt'
-out_basename='../time_dependent_sources/ch_convergence/ch_stacks_oneday/ch.2014.013.03.primary.hann'
+out_basename='noisy_asymmetry'
 # ============================================================================
 # Input relating to the measurement
 # ============================================================================
 verbose=True
-doplot=False
-dohist=False
+doplot=True
 
-g_speed=2900.
+g_speed=3700.
 # If you have group speed measurements in a file, provide its path here. Otherwise set to None
 g_speed_msr = None
-f_centr=0.075
-q=120.
-hw=40
+f_centr=0.0067
+q=140.
+hw=600
 
 # Prefilter (format: (freq_low,freq_high,corners) or None)
-prefilter=(0.05,0.1,3)
+prefilter=(0.005,0.01,3)
 
 # window type
 window='hann'
@@ -30,7 +29,7 @@ window='hann'
 win_overlap = True
 
 # Separation of noise window from signal window: 1 --> 1*halfwidth, 2 --> 2*halfwidth etc.
-sepsignoise = 1.  
+sepsignoise = 4.  
 
 # Phase weighted stack? Set to value > 0 to include
 ps_nu=0
@@ -40,7 +39,7 @@ ps_nu=0
 # ============================================================================
 
 # length of great circle segments in km
-segper=10.
+segper=100.
 
 # Maximum number of such segments to consider. If set to 'None' they go all
 # the way to the antipodal point 
@@ -60,17 +59,17 @@ signconv=1.
 
 
 # Binning: Min lon
-lonmin=-20
+lonmin=-180
 # Binning: Max lon
-lonmax=30
+lonmax=180
 # Binning: Min lat
-latmin=30
+latmin=-90
 # Binning: Max lat
-latmax=60
+latmax=90
 # Binning: d_deg lon
-ddeg_lon=1.
+ddeg_lon=2.
 # Binning: d_deg lat
-ddeg_lat=1.
+ddeg_lat=2900.
 # Bin weighting by approximate size of square
 bin_weight=False
 

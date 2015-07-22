@@ -18,16 +18,16 @@ import numpy as np
 import TOOLS.processing as proc
 import TOOLS.read_xml as rxml 
 import TOOLS.mergetraces as mt
+
 import antconfig as cfg
+import INPUT.input_correction as inp
 
 if __name__=='__main__':
     import par_ic as pic
-    xmlin=str(sys.argv[1])
-    print('XML input file: '+ xmlin,file=None)
-    pic.ic(xmlin)
+    pic.ic()
 
 
-def ic(xmlinput,content=None):
+def ic(content=None):
     
     """
     
@@ -55,28 +55,26 @@ def ic(xmlinput,content=None):
     if rank==0:
     
        datadir=cfg.datadir
-       inp1=rxml.read_xml(xmlinput)[1]
-       
-       verbose=bool(int(inp1['verbose']))
-       update=bool(int(inp1['update']))
-       check=bool(int(inp1['check']))
-       prepname=inp1['prepname']
+       verbose=inp.verbose
+       update=inp.update
+       check=inp.check
+       prepname=inp.prepname
        #startyr=int(inp1['input']['startyr'][0:4])
        #endyr=int(inp1['input']['endyr'][0:4])
       
        
        #- copy the input xml to the output directory for documentation ===============================
-       xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
+       inname=datadir+'/processed/input/ic.'+prepname+'.txt'
        
-       if os.path.exists(xmlinname)==True and update == False:
+       if os.path.exists(inname)==True and update == False:
            print('Name tag already in use! New generic name tag chosen. \
            Please review tag later to avoid overwriting.',file=None)
            prepname = UTCDateTime().strftime('proc%Y-%j')
-           xmlinname=datadir+'/processed/xmlinput/ic.'+prepname+'.xml'
-           print('New tag is '+prepname,file=None)
+           inname=datadir+'/processed/input/ic.'+prepname+'.txt'
+           print('New tag is '+prepname,file=None)    
        
        if update == False:
-           shutil.copy(xmlinput,xmlinname)
+           shutil.copy(os.path.join(cfg.inpdir,'input_correction.py'),inname)
        
        
        #for i in range(startyr-1,endyr+1):
@@ -87,7 +85,7 @@ def ic(xmlinput,content=None):
        
        #- check what input is, list input from different directories =================================
        if content==None:
-           indirs=inp1['input']['indirs'].strip().split(' ')
+           indirs=inp.indirs
            content=list()
            for indir in indirs:
                print(indir)
@@ -114,40 +112,34 @@ def ic(xmlinput,content=None):
     
     else:
         content=list()
-        inp1=list()
         prepname=''
        
     t1=time.time()-t0
     content=comm.bcast(content, root=0)
-    inp1=comm.bcast(inp1, root=0)
     prepname=comm.bcast(prepname, root=0)
     t2=time.time()-t0-t1
     
-    verbose=bool(int(inp1['verbose']))
-    update=bool(int(inp1['update']))
+    verbose=inp.verbose
+    update=inp.update
     datadir=cfg.datadir
+    
     if update ==True:
         ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+\
         str(rank)+'.txt','w')
     else:
         ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+\
         '.txt','w')
-    check=bool(int(inp1['check']))    
-    respdir=inp1['processing']['instrument_response']['respdir']
-    unit=inp1['processing']['instrument_response']['unit']
-    freqs=inp1['processing']['instrument_response']['freqs']
-    wl=inp1['processing']['instrument_response']['waterlevel']
-    seglen=float(inp1['processing']['split']['length_in_sec'])
-    minlen=float(inp1['quality']['min_length_in_sec'])
-    mergegap=float(inp1['quality']['maxgaplen'])
-    Fs_original=inp1['processing']['decimation']['Fs_old'].split(' ')
-    Fs_old=list()
-    for fs in Fs_original:
-        Fs_old.append(float(fs))
-    Fs_down=inp1['processing']['decimation']['Fs_new'].split(' ')
-    Fs_new=list()
-    for fs in Fs_down:
-        Fs_new.append(float(fs))
+    
+    check=inp.check
+    respdir=inp.respdir
+    unit=inp.unit
+    freqs=inp.freqs
+    wl=inp.waterlevel
+    seglen=inp.length_in_sec
+    minlen=inp.min_length_in_sec
+    mergegap=inp.maxgaplen
+    Fs_original=inp.Fs_old
+    Fs_new=inp.Fs_new
     Fs_new.sort() # Now in ascending order
     Fs_new=Fs_new[::-1] # Now in descending order
     
@@ -209,7 +201,7 @@ def ic(xmlinput,content=None):
             continue
         
         #- clean the data merging segments with gap shorter than a specified number of seconds:
-        data=mt.mergetraces(data,Fs_old,mergegap)
+        data=mt.mergetraces(data,Fs_original,mergegap)
         data.split()
         
         #- initialize stream to 'recollect' the split traces
@@ -217,7 +209,7 @@ def ic(xmlinput,content=None):
         
       
         #- split traces into shorter segments======================================================
-        if inp1['processing']['split']['doit']=='1':
+        if inp.split_do == True:
             data=proc.slice_traces(data,seglen,minlen,verbose,ofid)
         n_traces=len(data)
         if verbose==True:
@@ -225,7 +217,7 @@ def ic(xmlinput,content=None):
             
         #- trim ===============================================================================
         
-        if inp1['processing']['trim']=='1':
+        if inp.trim == True:
             data=proc.trim_next_sec(data,verbose,ofid)
         
         
@@ -244,7 +236,7 @@ def ic(xmlinput,content=None):
                 cstr=Stream(ctr)
             
             if update == True:
-                if len(glob(getfilepath(trace.stats,prepname,True))) > 0:
+                if len(glob(getfilepath(mydir,trace.stats,prepname,True))) > 0:
                     print('File already processed, proceeding...',file=ofid)
                     break
                 else:
@@ -277,21 +269,20 @@ def ic(xmlinput,content=None):
             #==================================================================================
                               
             #- demean============================================================================
-            if inp1['processing']['detrend']=='1':
+            if inp.detrend == True:
     
                 trace=proc.detrend(trace,verbose,ofid)
                 
-            if inp1['processing']['demean']=='1':
+            if inp.demean == True:
     
                 trace=proc.demean(trace,verbose,ofid)
             
     
             #- taper edges ========================================================================
     
-            if inp1['processing']['taper']['doit']=='1':
+            if inp.taper_do == True:
     
-                trace=proc.taper(trace,float(inp1['processing']['taper']\
-                ['taper_width']),verbose,ofid)
+                trace=proc.taper(trace,inp.taper_width,verbose,ofid)
                 
           
             
@@ -307,7 +298,7 @@ def ic(xmlinput,content=None):
                
             #- remove instrument response =========================================================
     
-            if inp1['processing']['instrument_response']['doit']=='1':
+            if inp.remove_response == True:
     
                 removed,newtrace=proc.remove_response(newtrace,respdir,unit,\
                 freqs,wl,verbose,ofid)
@@ -349,9 +340,9 @@ def ic(xmlinput,content=None):
         colloc_data._cleanup()
 
         for k in range(len(colloc_data)):
-            if ((inp1['processing']['instrument_response']['doit']=='1') and \
+            if ((inp.remove_response==True) and \
             (removed==1)) or \
-                inp1['processing']['instrument_response']['doit']!='1':
+                inp.remove_response==False:
                 
                 filepathnew = getfilepath(mydir,colloc_data[k].stats,prepname)
                 

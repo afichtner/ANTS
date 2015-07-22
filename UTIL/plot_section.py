@@ -34,7 +34,7 @@ def plot_section(inpattern,ps_nu=0,dist_scaling=10000,\
     prefilter: Tuple of (float,float,integer) which stands for (lower corner,
     upper corner, order). A butterworth filter to restrict the correlations 
     to a certain frequency band.
-    scaling: Boolean, should all traces be scaled to unity or not
+    scaling: Boolean, should all traces be normalized to unity or not
     verbose: Boolean, talk or not
     savefig: Boolean, save plot or not
     outdir: string, where to save plot

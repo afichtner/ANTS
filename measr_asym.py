@@ -10,7 +10,7 @@ from math import ceil, log
 import matplotlib.pyplot as plt
 
 import UTIL.geolib as gl
-import measr_inp as minp
+import INPUT.input_measurement as minp
 
 
 if __name__=='__main__':
@@ -110,9 +110,6 @@ def meas_asym(input=None):
         
         ofid1.write('%10.6f\n' %msr)
         ofid2.write('%10.6f\n' %msr)
-        
-    #if minp.dohist == True and len(numwins) > 0:
-    #    plot_hist(numwins,minp.out_basename)
     
     ofid1.close()
     ofid2.close()
