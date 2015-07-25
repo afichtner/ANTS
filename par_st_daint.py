@@ -23,7 +23,7 @@ from scipy.signal import hilbert
 
 if __name__=='__main__':
     import par_st_daint as pst
-    rank = os.environ['ALPS_APP_PE']
+    rank = int(os.environ['ALPS_APP_PE'])
     size = int(sys.argv[1])
     
     if inp.update == False and os.path.exists(cfg.datadir+\
@@ -56,8 +56,10 @@ def par_st(size,rank):
     #- broadcasts both to workers    
 #==============================================================================
     corrname = inp.corrname
-    if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
+    try:
         os.mkdir(cfg.datadir+'correlations/'+corrname)
+    except OSError:
+        pass
     
     if rank==0:
         print('The size is '+str(size),file=None)
