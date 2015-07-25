@@ -201,7 +201,9 @@ def ic(content=None):
             continue
         
         #- clean the data merging segments with gap shorter than a specified number of seconds:
+        print(data[0].stats.starttime)
         data=mt.mergetraces(data,Fs_original,mergegap)
+        print(data[0].stats.starttime)
         data.split()
         
         #- initialize stream to 'recollect' the split traces
@@ -210,8 +212,12 @@ def ic(content=None):
       
         #- split traces into shorter segments======================================================
         if inp.split_do == True:
+            print('slice')
+            print(data[0].stats.starttime)
             data=proc.slice_traces(data,seglen,minlen,verbose,ofid)
+            print(data[0].stats.starttime)
         n_traces=len(data)
+            
         if verbose==True:
             print('* contains '+str(n_traces)+' trace(s)',file=ofid)
             
@@ -290,7 +296,10 @@ def ic(content=None):
             k=0
             while k<len(Fs_new):
                 if trace.stats.sampling_rate>Fs_new[k]:
+                    print('Decimate')
+                    print(data[0].stats.starttime)
                     trace=proc.downsample(trace,Fs_new[k],verbose,ofid)
+                    print(data[0].stats.starttime)
                 k+=1
             newtrace = trace.copy()
             del trace
@@ -299,9 +308,11 @@ def ic(content=None):
             #- remove instrument response =========================================================
     
             if inp.remove_response == True:
-    
+                print('IC')
+                print(data[0].stats.starttime)
                 removed,newtrace=proc.remove_response(newtrace,respdir,unit,\
                 freqs,wl,verbose,ofid)
+                print(data[0].stats.starttime)
                 if removed==False:
                     print('** Instrument response could not be removed! \
                     Trace discarded.',file=ofid)
@@ -379,7 +390,7 @@ def getfilepath(mydir,stats,prepname,startonly=False):
         channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
     else:
         filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+\
-        channel+'.' + t1 + '.*.'+prepname+'.'+format
+        channel+'.' + t1 + '..'+prepname+'.'+format
     return filepathnew
         
     

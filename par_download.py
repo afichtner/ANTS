@@ -127,7 +127,6 @@ def par_download():
         if id=='': continue
         
         t = UTCDateTime(t1)
-        
         while t < UTCDateTime(t2):
             
             tstart = UTCDateTime(t).strftime('%Y-%m-%d,%H:%M:%S')

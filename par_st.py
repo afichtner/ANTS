@@ -66,7 +66,7 @@ def par_st():
         if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
             os.mkdir(cfg.datadir+'correlations/'+corrname)
          
-        os.system('cp INPUT/CORRELATION/input_correlation.py '+cfg.datadir+\
+        os.system('cp INPUT/input_correlation.py '+cfg.datadir+\
         '/correlations/input/'+corrname+'.txt')
         print(corrname+'\n',file=None)
         print('Copied input file',file=None)
@@ -613,18 +613,15 @@ def corr_pairs(str1,str2,corrname,geoinf):
         
         if inp.apply_white == True:
             df = 1/(tr1.stats.npts*tr1.stats.delta)
-            print(df)
             freqaxis=np.fft.fftfreq(tr1.stats.npts,tr1.stats.delta)
             ind_fw1 = int(round(inp.white_freqs[0]/df))
             ind_fw2 = int(round(inp.white_freqs[1]/df))
-            print(ind_fw1,ind_fw2)
-            print(freqaxis[ind_fw1])
-            print(freqaxis[ind_fw2])
+
             
             length_taper = int(round((inp.white_freqs[1]-inp.white_freqs[0])*\
             inp.white_tape/df))
             
-            taper_left = np.linspace(0.,np.pi/2,length_taper)
+            taper_left = np.linspace(0,np.pi/2,length_taper)
             taper_left = np.square(np.sin(taper_left))
             
             taper_right = np.linspace(np.pi/2,np.pi,length_taper)
@@ -640,11 +637,11 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
             spec1 = np.fft.fft(tr1.data)
             spec2 = np.fft.fft(tr2.data)
-            print(len(taper))
-            print(len(spec1))
-            spec1 /= np.abs(spec1)
+            tol = 1.e-6*np.max(np.abs(spec1))
+            spec1 /= np.abs(spec1) + tol
             spec1 *= taper
-            spec2 /= np.abs(spec2)
+            tol = 1.e-6*np.max(np.abs(spec2))
+            spec2 /= np.abs(spec2) + tol
             spec2 *= taper
             
             
@@ -764,8 +761,10 @@ def corr_pairs(str1,str2,corrname,geoinf):
                
         #Update starttime
             t1 = t2 - inp.olap
+            timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S') 
+            print('processed window with starttime '+timestring)
         else:
-            #print('Traces have unequal length!',file=None)
+            print('Traces have unequal length!',file=None)
             t1 = t2 - inp.olap
 
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)

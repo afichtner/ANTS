@@ -56,14 +56,11 @@ def par_st(size,rank):
     #- broadcasts both to workers    
 #==============================================================================
     corrname = inp.corrname
+    if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
+        os.mkdir(cfg.datadir+'correlations/'+corrname)
     
     if rank==0:
-        corrname = inp.corrname
         print('The size is '+str(size),file=None)
-        
-        if os.path.exists(cfg.datadir+'correlations/'+corrname) == False:
-            os.mkdir(cfg.datadir+'correlations/'+corrname)
-         
         os.system('cp INPUT/CORRELATION/input_correlation.py '+cfg.datadir+\
         '/correlations/input/'+corrname+'.txt')
         print(corrname+'\n',file=None)
@@ -755,6 +752,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
         else:
             #print('Traces have unequal length!',file=None)
             t1 = t2 - inp.olap
+
 
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
     
