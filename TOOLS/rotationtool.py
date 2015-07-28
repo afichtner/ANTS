@@ -79,7 +79,10 @@ def find_common_segments(str1,str2,verbose=False):
         
     for i in range(len(str1new)):
         numsampnew += len(str1new[i].data)
-    percentkept = numsamp1/numsampnew * 100 
+    if numsampnew > 0:
+        percentkept = numsamp1/numsampnew * 100 
+    else:
+        percentkept = 0.
     
     return(str1new,str2new,percentkept)
     

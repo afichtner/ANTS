@@ -200,10 +200,10 @@ def corrblock(block,dir,corrname,ofid=None):
             id2 = [id2+cha+'Z']
             
         elif comp=='RT' or comp=='R' or comp=='T':
-            id1=[id1+cha+'E', id1+cha+'N', id1+cha+'1', id1+cha+'2']
-            id2=[id2+cha+'E', id2+cha+'N', id2+cha+'1', id2+cha+'2']
-            
-        
+            id1=[id1+cha+'E', id1+cha+'N']
+            id2=[id2+cha+'E', id2+cha+'N']
+            #, id1+cha+'1', id1+cha+'2'
+            #, id2+cha+'1', id2+cha+'2'
 #==============================================================================
         #- check if data for first station is in memory
         #- if it isn't, it needs to be read in
@@ -330,8 +330,7 @@ found, setting distance to zero for station pair:')
                 or len(str2_T) == 0 or len(str2_R) == 0:
                         
                 if inp.verbose==True: 
-                    print('No rotated traces: Original traces \
-                    are components 1, 2. Rotation not implemented yet.',file=ofid)
+                    print('No rotated traces.',file=ofid)
                 continue
         
         
@@ -366,7 +365,7 @@ found, setting distance to zero for station pair:')
         # Hor componets =======================================================
         #- Through all channels
         #======================================================================   
-        elif comp=='RT':
+        elif comp in ('RT','R','T'):
             id1_T=str1_T[0].id
             id1_R=str1_R[0].id
             id2_T=str2_T[0].id
