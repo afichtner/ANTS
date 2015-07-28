@@ -676,7 +676,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 # normalization by trace energy
                 en1 = params[2]
                 en2 = params[3]
-                if inp.normalize_corr == True:
+                if inp.normalize_correlation == True:
                     ccc/=(sqrt(en1)*sqrt(en2))
                 
                 cccstack+=ccc
