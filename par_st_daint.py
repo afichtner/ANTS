@@ -665,14 +665,13 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 continue
         #==============================================================================
         #- Correlations proper 
-        #==============================================================================         #- Taper
+        #==============================================================================        #- Taper
             if inp.taper_traces == True:
                 tr1.taper(type='cosine',max_percentage=inp.perc_taper)
                 tr2.taper(type='cosine',max_percentage=inp.perc_taper)
         
         #- Classical correlation part =====================================
             if inp.corrtype == 'ccc' or inp.corrtype == 'both':
-                
                 #ccc=classic_xcorr(tr1, tr2, mlag)
                 (ccc, params) = cross_covar(tr1.data, \
                 tr2.data, mlag)
