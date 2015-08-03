@@ -63,7 +63,7 @@ def par_st(size,rank):
     
     if rank==0:
         print('The size is '+str(size),file=None)
-        os.system('cp INPUT/CORRELATION/input_correlation.py '+cfg.datadir+\
+        os.system('cp INPUT/input_correlation.py '+cfg.datadir+\
         '/correlations/input/'+corrname+'.txt')
         print(corrname+'\n',file=None)
         print('Copied input file',file=None)
@@ -665,10 +665,14 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 continue
         #==============================================================================
         #- Correlations proper 
-        #==============================================================================       
+        #==============================================================================         #- Taper
+            if inp.taper_traces == True:
+                tr1.taper(type='cosine',max_percentage=inp.perc_taper)
+                tr2.taper(type='cosine',max_percentage=inp.perc_taper)
         
         #- Classical correlation part =====================================
             if inp.corrtype == 'ccc' or inp.corrtype == 'both':
+                
                 #ccc=classic_xcorr(tr1, tr2, mlag)
                 (ccc, params) = cross_covar(tr1.data, \
                 tr2.data, mlag)
