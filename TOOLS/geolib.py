@@ -1,5 +1,4 @@
 import os
-import INPUT.MODELS.wgs84 as wgs84
 from math import exp, pi, cos, sin, sqrt
 from geographiclib import geodesic,geodesicline
 # Can approximate pieces of Earth surface area by spherical earth surface element or by square lat-lon boxes on the ellipsoid. Quite similar results. 
@@ -22,11 +21,12 @@ def area_surfel(dlat,dlon,lat,r):
 
 def len_deg_lon(lat):
     
+    (a,b,e_2) = wgs84()
     # This is the length of one degree of longitude 
     # approx. after WGS84, at latitude lat
     # in m
     lat = pi/180*lat
-    dlon = (pi*wgs84.a*cos(lat))/180*sqrt((1-wgs84.e_2*sin(lat)**2))
+    dlon = (pi*a*cos(lat))/180*sqrt((1-e_2*sin(lat)**2))
     return round(dlon,2)
 
 def len_deg_lat(lat):
@@ -133,3 +133,20 @@ def get_antipode(lat,lon):
     lat_a = -1. * lat
     
     return(lat_a,lon_a)
+    
+    
+def wgs84():
+
+    # semi-major axis, in m
+    a = 6378137.0
+
+    # semi-minor axis, in m
+    b = 6356752.314245
+
+    # inverse flattening f
+
+
+    # squared eccentricity e
+    e_2 = (a**2-b**2)/a**2
+    
+    return(a,b,e_2)

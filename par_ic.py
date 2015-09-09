@@ -230,8 +230,8 @@ def ic(content=None):
         #==================================================================================
         # trace loop
         #==================================================================================
-        for k in np.arange(n_traces):
-            trace=data[k]
+        for trace_index in np.arange(n_traces):
+            trace=data[trace_index]
             
             if check==True:
                 ctr=trace.copy()
@@ -293,14 +293,14 @@ def ic(content=None):
           
             
             #- downsampling =======================================================================
-            k=0
-            while k<len(Fs_new):
-                if trace.stats.sampling_rate>Fs_new[k]:
+            sampling_index=0
+            while sampling_index<len(Fs_new):
+                if trace.stats.sampling_rate>Fs_new[sampling_index]:
                     print('Decimate')
                     print(data[0].stats.starttime)
-                    trace=proc.downsample(trace,Fs_new[k],verbose,ofid)
+                    trace=proc.downsample(trace,Fs_new[sampling_index],verbose,ofid)
                     print(data[0].stats.starttime)
-                k+=1
+                sampling_index+=1
             newtrace = trace.copy()
             del trace
                
@@ -350,16 +350,16 @@ def ic(content=None):
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
 
-        for k in range(len(colloc_data)):
+        for trace_index_2 in range(len(colloc_data)):
             if ((inp.remove_response==True) and \
             (removed==1)) or \
                 inp.remove_response==False:
                 
-                filepathnew = getfilepath(mydir,colloc_data[k].stats,prepname)
+                filepathnew = getfilepath(mydir,colloc_data[trace_index_2].stats,prepname)
                 
                 #- write to file
-                colloc_data[k].write(filepathnew,\
-                format=colloc_data[k].stats._format)
+                colloc_data[trace_index_2].write(filepathnew,\
+                format=colloc_data[trace_index_2].stats._format)
                        
                 if verbose==True:
                     print('* renamed file: '+filepathnew,file=ofid)

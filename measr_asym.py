@@ -390,21 +390,21 @@ def plot_measr(correlation):
         maxlag = (correlation.stats.npts-1)/2/correlation.stats.sampling_rate
         lag = np.linspace(-maxlag,maxlag,len(correlation.data))
         winlen = correlation.stats.sac['user1']
-        (x1,y1) = (-maxlag+100,np.min(correlation.data)/2)
+        (x1,y1) = (-maxlag+50,np.min(correlation.data)*0.75)
         
         plt.plot()
         plt.plot(lag,correlation.data,'k',linewidth=1.7)
         plt.plot(lag,win_signl*np.max(correlation.data),'r--',linewidth=1.5)
-        plt.plot(lag,win_noise*np.max(correlation.data)*0.5,'b--',linewidth=1.5)
+        plt.plot(lag,win_noise*np.max(correlation.data),'b--',linewidth=1.5)
         
         plt.title(id,fontweight='bold')
         plt.xlabel('Lag (sec)',fontsize=16,fontweight='bold')
         plt.ylabel('Correlation',fontsize=16,fontweight='bold')
-        plt.legend(['data','signal window','noise window'])
-        plt.annotate('ln(amplitude ratio): %5.4f\ncausal window s/n: %5.4f\
-        \nacausal window s/n: %5.4f\nnr. of stacked windows: %g\n\
-        window length (s): %g' %(msr,snrc,snra,nw,winlen),\
-        xy=(x1,y1),xytext=(x1,y1),bbox=dict(boxstyle="round", fc="0.8"))
+        plt.legend(['data','signal window','noise window'],loc='lower left')
+        #plt.annotate('ln(amplitude ratio): %5.4f\ncausal window s/n: %5.4f\
+        #\nacausal window s/n: %5.4f\nnr. of stacked windows: %g\n\
+        #window length (s): %g' %(msr,snrc,snra,nw,winlen),\
+        #xy=(x1,y1),xytext=(x1,y1),bbox=dict(boxstyle="round", fc="0.8"))
                                     
                                     
         plt.xlim([-maxlag,maxlag])

@@ -28,7 +28,7 @@ if __name__=='__main__':
     pic.ic(rank,size)
 
 
-def ic(rank,size,content=None):
+def ic(rank,size,content=None,debugfile=None):
     
     """
     
@@ -161,7 +161,8 @@ def ic(rank,size,content=None):
     for fname in mycontent:
         ofid.write(fname+'\n')
     
-    #==============================================================================================
+   if check==True and debugfile is not None:
+       dfile=open(dfile,'w') #==============================================================================================
     #- Input file loop
     #==============================================================================================
     mydir=datadir+'processed/'+prepname+'/rank'+str(rank)
@@ -215,8 +216,8 @@ def ic(rank,size,content=None):
         #==================================================================================
         # trace loop
         #==================================================================================
-        for k in np.arange(n_traces):
-            trace=data[k]
+        for trace_index in np.arange(n_traces):
+            trace=data[trace_index]
             
             if check==True:
                 ctr=trace.copy()
@@ -225,6 +226,10 @@ def ic(rank,size,content=None):
                 ctr.stats.location=''
                 ctr.stats.channel=''
                 cstr=Stream(ctr)
+                dfile.write('Original\n')
+                dfile.write(trace.data[0:20])
+                dfile.write('\n')
+            
             
             if update == True:
                 if len(glob(getfilepath(mydir,trace.stats,prepname,True))) > 0:
@@ -264,10 +269,19 @@ def ic(rank,size,content=None):
     
                 trace=proc.detrend(trace,verbose,ofid)
                 
+                if check == True:
+                    dfile.write('Detrended\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
+                
             if inp.demean == True:
     
                 trace=proc.demean(trace,verbose,ofid)
-            
+                
+                if check == True:
+                    dfile.write('Mean removed\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
     
             #- taper edges ========================================================================
     
@@ -275,18 +289,25 @@ def ic(rank,size,content=None):
     
                 trace=proc.taper(trace,inp.taper_width,verbose,ofid)
                 
-          
+                if check == True:
+                    dfile.write('Tapered\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
             
             #- downsampling =======================================================================
-            k=0
-            while k<len(Fs_new):
-                if trace.stats.sampling_rate>Fs_new[k]:
-                    trace=proc.downsample(trace,Fs_new[k],verbose,ofid)
-                k+=1
+            sampling_rate_index=0
+            while sampling_rate_index<len(Fs_new):
+                if trace.stats.sampling_rate>Fs_new[sampling_rate_index]:
+                    trace=proc.downsample(trace,Fs_new[sampling_rate_index],\
+                    verbose,ofid)
+                sampling_rate_index+=1
             newtrace = trace.copy()
             del trace
                
-               
+            if check == True:
+                dfile.write('(Downsampled), copied\n')
+                dfile.write(newtrace.data[0:20])
+                dfile.write('\n')   
             #- remove instrument response =========================================================
     
             if inp.remove_response == True:
@@ -315,6 +336,9 @@ def ic(rank,size,content=None):
                 cstr.trim(endtime=cstr[0].stats.starttime+3600)
                 cstr.plot(outfile=datadir+'/processed/out/'+\
                 filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
+                dfile.write('Instrument response removed\n')
+                dfile.write(tr.data[0:20])
+                dfile.write('\n')
                 
             #- merge all into final trace =========================================================
             colloc_data+=newtrace
@@ -330,16 +354,16 @@ def ic(rank,size,content=None):
         colloc_data=mt.mergetraces(colloc_data,Fs_new,mergegap,ofid)
         colloc_data._cleanup()
 
-        for k in range(len(colloc_data)):
+        for trace_index_2 in range(len(colloc_data)):
             if ((inp.remove_response==True) and \
             (removed==1)) or \
                 inp.remove_response==False:
                 
-                filepathnew = getfilepath(mydir,colloc_data[k].stats,prepname)
+                filepathnew = getfilepath(mydir,colloc_data[trace_index_2].stats,prepname)
                 
                 #- write to file
-                colloc_data[k].write(filepathnew,\
-                format=colloc_data[k].stats._format)
+                colloc_data[trace_index_2].write(filepathnew,\
+                format=colloc_data[trace_index_2].stats._format)
                        
                 if verbose==True:
                     print('* renamed file: '+filepathnew,file=ofid)
