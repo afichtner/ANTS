@@ -6,7 +6,7 @@ verbose=True
 write_all=True
 
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='noisy'
+corrname='test_horizontal'
 
 # Set to True if updating on a previous run?
 update = False
@@ -21,7 +21,7 @@ npairs = 1
 # channel: LH, BH, VH...
 channel='LH'
 # component: choose between Z, RT, T, R. 'All channels' is not implemented yet
-components='Z'
+components='RT'
 # Mix channels?
 mix_cha=False
 
@@ -30,9 +30,9 @@ mix_cha=False
 #*******************************************************************************
 
 # Input directory containing data. Can only handle one input directory at the moment.
-indir='DATA/processed/noisy/'
+indir='DATA/processed/medi/'
 # Enter preprocessing run name(s). Put * for any preprocessing
-prepname='noisy'
+prepname='medi*'
     #*******************************************************************************
 # Time
 #*******************************************************************************
@@ -62,13 +62,15 @@ apply_onebit=False
 apply_white=False
 white_freqs=(0.002,0.01)
 white_tape=0.1
+taper_traces=True
+perc_taper=0.05
 	
 #Type of correlations
 
 #Autocorrelation yes or no
 autocorr=False
 # Type of correlation: 'ccc' or 'pcc' or 'both'
-corrtype='both'
+corrtype='ccc'
 # Normalize the correlation (otherwise it remains a covariance)?
 normalize_correlation=False
 # Maximum lag in seconds

@@ -9,7 +9,6 @@ import time
 from math import ceil
 from obspy import read, Stream,  Trace, UTCDateTime
 from obspy.signal import filter
-from mpi4py import MPI
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -23,11 +22,20 @@ import antconfig as cfg
 import INPUT.input_correction as inp
 
 if __name__=='__main__':
-    import par_ic as pic
-    pic.ic()
+    import par_proc as pp
+
+    rank = int(os.environ[inp.rankvariable])
+    size=int(sys.argv[1])
+    print(rank,size)
+    
+    inname=cfg.datadir+'/processed/input/ic.'+inp.prepname+'.txt'
+    if os.path.exists(inname)==True and inp.update == False:
+        sys.exit("Choose a new name tag or set update to True. Aborting")
+        
+    pp.ic(rank,size)
 
 
-def ic(content=None):
+def ic(rank,size):
     
     """
     
@@ -35,103 +43,14 @@ def ic(content=None):
     Command line argument 1 must be xml input file.
     
     """
-
-    #==============================================================================================
-    # preliminaries
-    #==============================================================================================
-    
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size=comm.Get_size()
-    t0=time.time()
-   
-    #==============================================================================================
-    #- MASTER process:
-    #- reads in xmlinput
-    #- creates output directory
-    #- creates a list of input files
-    #==============================================================================================
-    
-    if rank==0:
-    
-       datadir=cfg.datadir
-       verbose=inp.verbose
-       update=inp.update
-       check=inp.check
-       prepname=inp.prepname
-       #startyr=int(inp1['input']['startyr'][0:4])
-       #endyr=int(inp1['input']['endyr'][0:4])
-      
-       
-       #- copy the input xml to the output directory for documentation ===============================
-       inname=datadir+'/processed/input/ic.'+prepname+'.txt'
-       
-       if os.path.exists(inname)==True and update == False:
-           print('Name tag already in use! New generic name tag chosen. \
-           Please review tag later to avoid overwriting.',file=None)
-           prepname = UTCDateTime().strftime('proc%Y-%j')
-           inname=datadir+'/processed/input/ic.'+prepname+'.txt'
-           print('New tag is '+prepname,file=None)    
-       
-       if update == False:
-           shutil.copy(os.path.join(cfg.inpdir,'input_correction.py'),inname)
-       
-       
-       #for i in range(startyr-1,endyr+1):
-    #       if os.path.exists(datadir+'/processed/'+str(i)+'/')==False:
-    #       os.mkdir(datadir+'/processed/'+str(i))
-       if os.path.exists(datadir+'processed/'+prepname)==False:
-           os.mkdir(datadir+'processed/'+prepname)
-       
-       #- check what input is, list input from different directories =================================
-       if content==None:
-           indirs=inp.indirs
-           content=list()
-           for indir in indirs:
-               print(indir)
-               content.extend(glob(indir+'/*'))
-           
-       elif type(content)==str: 
-           filename=content
-           content=list()
-           content.append(filename)
-       
-       content.sort()
-           
-       #- If only a check run is performed, then only a couple of files are preprocessed
-       if check==True and len(content)>4:
-           content=[content[0],content[1],content[len(content)-2],\
-           content[len(content)-1]]
-           
-   
-    #==============================================================================================
-    #- All processes:
-    #- receive the input; and the list of files
-    #- read variables from broadcasted input
-    #==============================================================================================
-    
-    else:
-        content=list()
-        prepname=''
-       
-    t1=time.time()-t0
-    content=comm.bcast(content, root=0)
-    prepname=comm.bcast(prepname, root=0)
-    t2=time.time()-t0-t1
-    
+    datadir=cfg.datadir
+    verbose=inp.verbose
+    update=inp.update
+    check=inp.check
+    prepname=inp.prepname
     verbose=inp.verbose
     update=inp.update
     datadir=cfg.datadir
-    
-    if update ==True:
-        ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+\
-        str(rank)+'.txt','w')
-    else:
-        ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+\
-        '.txt','w')
-    
-    check=inp.check
-    debugfile=inp.debugfile
     respdir=inp.respdir
     unit=inp.unit
     freqs=inp.freqs
@@ -143,8 +62,41 @@ def ic(content=None):
     Fs_new=inp.Fs_new
     Fs_new.sort() # Now in ascending order
     Fs_new=Fs_new[::-1] # Now in descending order
+     
+    try:
+        os.mkdir(datadir+'processed/'+prepname)
+    except OSError:
+        pass
     
-    #==============================================================================================
+     
+    #- copy the input xml to the output directory for documentation =========== 
+    if rank==0:
+        inname=datadir+'/processed/input/ic.'+prepname+'.txt'
+        if update == False:
+            shutil.copy(os.path.join(cfg.inpdir,'input_correction.py'),inname)
+       
+        #- check what input is, list input from different directories =================================
+    
+    indirs=inp.indirs
+    content=list()
+    for indir in indirs:
+        print(indir)
+        content.extend(glob(indir+'/*'))
+        
+    content.sort()
+           
+       #- If only a check run is performed, then only a couple of files are preprocessed
+    if check==True and len(content)>4:
+        content=[content[0],content[1],content[len(content)-2],\
+        content[len(content)-1]]
+    
+    if update ==True:
+        ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+\
+        str(rank)+'.txt','w')
+    else:
+        ofid=open(datadir+'/processed/out/proc.'+prepname+'.rank_'+str(rank)+\
+        '.txt','w')
+     #==============================================================================================
     #- Assign each rank its own chunk of input
     #==============================================================================================
     
@@ -155,23 +107,17 @@ def ic(content=None):
     if rank < restfiles:
         mycontent.append(content[size * nfiles + rank])
     del content
-    t3=time.time()-t0-t2
     
     
-    #- Print some nice comments to output file ---------------------------------------- 
-    if rank == 0:      
-        if verbose:
-            print('Time at start was '+UTCDateTime().strftime('%Y.%m.%d, %H:%M')+\
-            ' GMT\n',file=None)
-            print('Rank 0 took '+str(t1)+' seconds to read in input\n',file=None)
-            print('Broadcasting took '+str(t2)+' seconds \n',file=None)
-            
+    
+    #- Print some nice comments to output file ---------------------------------------- ------ 
     print('\nHi I am rank number %d and I am processing the following files for you:\
            \n' %rank,file=ofid)
     for fname in mycontent:
         ofid.write(fname+'\n')
     
-    #==============================================================================================
+    if check==True and inp.debugfile is not None:
+        dfile=open(inp.debugfile,'w') #==============================================================================================
     #- Input file loop
     #==============================================================================================
     mydir=datadir+'processed/'+prepname+'/rank'+str(rank)
@@ -202,9 +148,7 @@ def ic(content=None):
             continue
         
         #- clean the data merging segments with gap shorter than a specified number of seconds:
-        print(data[0].stats.starttime)
         data=mt.mergetraces(data,Fs_original,mergegap)
-        print(data[0].stats.starttime)
         data.split()
         
         #- initialize stream to 'recollect' the split traces
@@ -213,12 +157,8 @@ def ic(content=None):
       
         #- split traces into shorter segments======================================================
         if inp.split_do == True:
-            print('slice')
-            print(data[0].stats.starttime)
             data=proc.slice_traces(data,seglen,minlen,verbose,ofid)
-            print(data[0].stats.starttime)
         n_traces=len(data)
-            
         if verbose==True:
             print('* contains '+str(n_traces)+' trace(s)',file=ofid)
             
@@ -241,6 +181,10 @@ def ic(content=None):
                 ctr.stats.location=''
                 ctr.stats.channel=''
                 cstr=Stream(ctr)
+                dfile.write('Original\n')
+                dfile.write(trace.data[0:20])
+                dfile.write('\n')
+            
             
             if update == True:
                 if len(glob(getfilepath(mydir,trace.stats,prepname,True))) > 0:
@@ -280,10 +224,19 @@ def ic(content=None):
     
                 trace=proc.detrend(trace,verbose,ofid)
                 
+                if check == True:
+                    dfile.write('Detrended\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
+                
             if inp.demean == True:
     
                 trace=proc.demean(trace,verbose,ofid)
-            
+                
+                if check == True:
+                    dfile.write('Mean removed\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
     
             #- taper edges ========================================================================
     
@@ -291,29 +244,31 @@ def ic(content=None):
     
                 trace=proc.taper(trace,inp.taper_width,verbose,ofid)
                 
-          
+                if check == True:
+                    dfile.write('Tapered\n')
+                    dfile.write(trace.data[0:20])
+                    dfile.write('\n')
             
             #- downsampling =======================================================================
-            sampling_index=0
-            while sampling_index<len(Fs_new):
-                if trace.stats.sampling_rate>Fs_new[sampling_index]:
-                    print('Decimate')
-                    print(data[0].stats.starttime)
-                    trace=proc.downsample(trace,Fs_new[sampling_index],verbose,ofid)
-                    print(data[0].stats.starttime)
-                sampling_index+=1
+            sampling_rate_index=0
+            while sampling_rate_index<len(Fs_new):
+                if trace.stats.sampling_rate>Fs_new[sampling_rate_index]:
+                    trace=proc.downsample(trace,Fs_new[sampling_rate_index],\
+                    verbose,ofid)
+                sampling_rate_index+=1
             newtrace = trace.copy()
             del trace
                
-               
+            if check == True:
+                dfile.write('(Downsampled), copied\n')
+                dfile.write(newtrace.data[0:20])
+                dfile.write('\n')   
             #- remove instrument response =========================================================
     
             if inp.remove_response == True:
-                print('IC')
-                print(data[0].stats.starttime)
+    
                 removed,newtrace=proc.remove_response(newtrace,respdir,unit,\
                 freqs,wl,verbose,ofid)
-                print(data[0].stats.starttime)
                 if removed==False:
                     print('** Instrument response could not be removed! \
                     Trace discarded.',file=ofid)
@@ -336,6 +291,9 @@ def ic(content=None):
                 cstr.trim(endtime=cstr[0].stats.starttime+3600)
                 cstr.plot(outfile=datadir+'/processed/out/'+\
                 filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
+                dfile.write('Instrument response removed\n')
+                dfile.write(tr.data[0:20])
+                dfile.write('\n')
                 
             #- merge all into final trace =========================================================
             colloc_data+=newtrace
@@ -391,7 +349,7 @@ def getfilepath(mydir,stats,prepname,startonly=False):
         channel+'.' + t1 + '.' +t2+'.'+prepname+'.'+format 
     else:
         filepathnew=mydir+'/'+network+'.'+station+'.'+location+'.'+\
-        channel+'.' + t1 + '..'+prepname+'.'+format
+        channel+'.' + t1 + '.*.'+prepname+'.'+format
     return filepathnew
         
     
