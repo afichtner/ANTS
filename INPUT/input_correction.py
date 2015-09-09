@@ -8,6 +8,7 @@ verbose = True
 outfile = True
 # If check is set to true, only the first up to four files are preprocessed and images of several stages saved to processed/out in you data directory
 check = False
+debugfile = None
 # If update is set to true, script first controls which files have already been processed, and skips these.
 update = False
 

@@ -131,6 +131,7 @@ def ic(content=None):
         '.txt','w')
     
     check=inp.check
+    debugfile=inp.debugfile
     respdir=inp.respdir
     unit=inp.unit
     freqs=inp.freqs

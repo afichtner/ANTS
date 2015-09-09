@@ -23,12 +23,12 @@ import INPUT.input_correction as inp
 
 if __name__=='__main__':
     import par_ic_daint as pic
-    rank = int(os.environ['ALPS_APP_PE'])
+    rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
     size=int(sys.argv[2])
     pic.ic(rank,size)
 
 
-def ic(rank,size,content=None,debugfile=None):
+def ic(rank,size,content=None):
     
     """
     
@@ -161,8 +161,8 @@ def ic(rank,size,content=None,debugfile=None):
     for fname in mycontent:
         ofid.write(fname+'\n')
     
-   if check==True and debugfile is not None:
-       dfile=open(dfile,'w') #==============================================================================================
+   if check==True and inp.debugfile is not None:
+       dfile=open(inp.debugfile,'w') #==============================================================================================
     #- Input file loop
     #==============================================================================================
     mydir=datadir+'processed/'+prepname+'/rank'+str(rank)
