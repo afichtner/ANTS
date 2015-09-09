@@ -287,12 +287,13 @@ def ic(rank,size):
                 ctr.stats.station=''
                 ctr.stats.location=''
                 ctr.stats.channel=''
-                cstr.append(ctr)
-                cstr.plot(outfile=datadir+'/processed/out/'+\
-                filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
-                cstr.trim(endtime=cstr[0].stats.starttime+3600)
-                cstr.plot(outfile=datadir+'/processed/out/'+\
-                filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
+                if inp.rankvariable != 'ALPS_APP_PE':
+                    cstr.append(ctr)
+                    cstr.plot(outfile=datadir+'/processed/out/'+\
+                    filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
+                    cstr.trim(endtime=cstr[0].stats.starttime+3600)
+                    cstr.plot(outfile=datadir+'/processed/out/'+\
+                    filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
                 dfile.write('Instrument response removed\n')
                 print(newtrace.data[0:20],file=dfile)
                 dfile.write('\n')
