@@ -22,15 +22,15 @@ from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 
 if __name__=='__main__':
-    import par_st_daint as pst
-    rank = int(os.environ['ALPS_APP_PE'])
+    import ant_corr as pc
+    rank = int(os.environ[inp.rankvariable])
     size = int(sys.argv[1])
     
     if inp.update == False and os.path.exists(cfg.datadir+\
     '/correlations/input/'+inp.corrname+'.txt') == True:
         sys.exit('Choose a new correlation name tag or set update=True.\
          Aborting.')
-    pst.par_st(size, rank)
+    pc.par_st(size, rank)
     
 
 def par_st(size,rank):

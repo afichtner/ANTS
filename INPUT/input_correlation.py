@@ -1,3 +1,8 @@
+#*******************************************************************************
+# Environment variable that numbers the rank of the processor in question. 
+# This is a string and on daint, it is 'ALPS_APP_PE', on laptops with OpenMPI, it is 'OMPI_COMM_WORLD_RANK'
+# ******************************************************************************
+rankvariable = 'OMPI_COMM_WORLD_RANK'
 
 # print screen output
 verbose=True
@@ -6,7 +11,7 @@ verbose=True
 write_all=True
 
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='test_horizontal'
+corrname='noisy'
 
 # Set to True if updating on a previous run?
 update = False
@@ -21,7 +26,7 @@ npairs = 1
 # channel: LH, BH, VH...
 channel='LH'
 # component: choose between Z, RT, T, R. 'All channels' is not implemented yet
-components='RT'
+components='Z'
 # Mix channels?
 mix_cha=False
 
@@ -30,9 +35,9 @@ mix_cha=False
 #*******************************************************************************
 
 # Input directory containing data. Can only handle one input directory at the moment.
-indir='DATA/processed/medi/'
+indir='DATA/processed/noisy/'
 # Enter preprocessing run name(s). Put * for any preprocessing
-prepname='medi*'
+prepname='noisy'
     #*******************************************************************************
 # Time
 #*******************************************************************************
