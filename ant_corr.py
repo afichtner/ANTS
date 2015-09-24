@@ -16,7 +16,7 @@ from glob import glob
 from obspy.core import Stats, Trace
 from obspy.noise.correlation import Correlation
 from obspy.noise.correlation_functions import phase_xcorr
-from obspy.signal import xcorr
+from obspy.signal.cross_correlation import xcorr
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
@@ -263,7 +263,7 @@ def corrblock(block,dir,corrname,ofid=None):
 #==============================================================================
            
         if len(str1) == 0 or len(str2) == 0:
-            
+
             if inp.verbose==True:
                 print('No data found for one or both of:\n',file=ofid)
                 print(str(id1)+str(id2),file=ofid)
@@ -340,6 +340,8 @@ found, setting distance to zero for station pair:')
             
             (ccc,pcc,cstack_ccc,cstack_pcc,nccc,npcc)=corr_pairs(str1,str2,\
                 corrname,geoinf)
+            
+            
             
             if npcc != 0:
                 savecorrs(pcc,cstack_pcc,npcc,id_1,\
@@ -627,8 +629,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
             spec1 = np.fft.fft(tr1.data)
             spec2 = np.fft.fft(tr2.data)
-            print(len(taper))
-            print(len(spec1))
+            
             spec1 /= np.abs(spec1)
             spec1 *= taper
             spec2 /= np.abs(spec2)
@@ -685,6 +686,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 cccstack+=ccc
                 ccccnt+=1
                 
+                print('Finished a correlation window')
                 # Make this faster by zero padding
                 
                 
@@ -946,7 +948,7 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
     rms2 = sqrt(ren2 / len(data2)) 
     
     # A further parameter to 'see' impulsive events: range of standard deviations
-    nsmp = len(data1)/4
+    nsmp = int(len(data1)/4)
     std1 = np.zeros(4)
     std2 = np.zeros(4)
     for i in range(4):

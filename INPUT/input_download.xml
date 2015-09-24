@@ -12,16 +12,15 @@
     <user>hugo_bruno@web.de</user>
 	
     <!--File containing all the ids you'd like to download.-->
-    <ids>INPUT/STATION_IDS/sta_noisy.txt</ids>
+    <ids>INPUT/ID_LISTS/sta_ch.txt</ids>
    
 	<!--Quality: B best, Q, R, D.-->
 	<quality>?</quality>
-
     <!--time window where data are requested-->
     <!--Format: YYYY-MM-DD,HH:MM:SS-->
     <time>
-        <starttime>2012-01-01,00:00:00</starttime>
-        <endtime>2013-01-01,00:00:00</endtime>
+        <starttime>2014-07-01,00:00:00</starttime>
+        <endtime>2014-08-01,00:00:00</endtime>
 		<!--Divide up in segments for long or highly sampled data...-->
 		<len>864000</len>
 		<!--minimum length of downloaded segments in seconds-->

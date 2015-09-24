@@ -1,16 +1,17 @@
 #!/bin/bash
-gmt makecpt -Cpolar -T-5./5./0.125 -Z -Di > gmt_scripts/temp/t.cpt
+gmt makecpt -Cpolar -T-2./2./0.125 -Z -Di > gmt_scripts/temp/t.cpt
 
-region=-20/30/30/60
+region=-180/180/-80/80
+#Switzerland-10/20/30/60
 proj=N0/7i
 cpt_val='gmt_scripts/temp/t.cpt'
 cpt_hit='gmt_scripts/temp/haxby100.cpt'
-squaresize=0.25i
-gridding='10g5/10g5'
+squaresize=0.05i
+gridding='g30/30g30'
 outfile=$1
 #'hum_feb.05.ccc'
-coastres='i'
-valueint=1.
+coastres='c'
+valueint=0.5
 
 
 # plot the values themselves

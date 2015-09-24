@@ -3,7 +3,7 @@ import os as os
 import numpy as np
 
 from obspy.core import read
-from obspy.signal import bandpass
+
 from scipy.interpolate import interp1d
 from obspy.core import Trace, Stream, UTCDateTime
 from scipy.signal import cheby2,  cheb2ord,  filtfilt
@@ -138,12 +138,12 @@ def bandpass(data,corners,f_min,f_max,verbose, ofid):
 def antialias(data, freqmax, verbose, ofid=None):
     if isinstance(data,Trace):
         zerophase_chebychev_lowpass_filter(data, freqmax, verbose,ofid)
-    elif isinstance(data,Stream):
-        for trace in data:
-            zerophase_chebychev_lowpass_filter(trace, freqmax, verbose,ofid)      
-    if verbose: 
-        print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
-    
+        if verbose: 
+            print('* Applied low-pass Chebychev filter with corner freq. '+str(freqmax)+'\n',file=ofid)
+    else:
+        msg = 'I only take traces for antialiasing. Regards, your chebycheff filter.'
+        raise TypeError(msg)
+           
     return data
             
 

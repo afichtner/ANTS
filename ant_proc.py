@@ -8,7 +8,6 @@ import time
 
 from math import ceil
 from obspy import read, Stream,  Trace, UTCDateTime
-from obspy.signal import filter
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -29,7 +28,7 @@ if __name__=='__main__':
     print(rank,size)
     
     inname=cfg.datadir+'/processed/input/ic.'+inp.prepname+'.txt'
-    if os.path.exists(inname)==True and inp.update == False:
+    if rank==0 and os.path.exists(inname)==True and inp.update == False:
         sys.exit("Choose a new name tag or set update to True. Aborting")
         
     pp.ic(rank,size)
@@ -48,8 +47,6 @@ def ic(rank,size):
     update=inp.update
     check=inp.check
     prepname=inp.prepname
-    verbose=inp.verbose
-    update=inp.update
     datadir=cfg.datadir
     respdir=inp.respdir
     unit=inp.unit
@@ -172,8 +169,13 @@ def ic(rank,size):
         # trace loop
         #==================================================================================
         for trace_index in np.arange(n_traces):
-            trace=data[trace_index]
             
+            trace=data[trace_index]
+            if trace.stats.npts / inp.Fs_new[-1] < minlen:
+                continue
+            if trace.stats.npts / inp.Fs_new[-1] < 39:
+                continue    
+                
             if check==True:
                 ctr=trace.copy()
                 ctr.stats.network='Original Data'
@@ -239,6 +241,8 @@ def ic(rank,size):
                     dfile.write('Mean removed\n')
                     print(trace.data[0:20],file=dfile)
                     dfile.write('\n')
+           
+                   
     
             #- taper edges ========================================================================
     

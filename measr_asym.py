@@ -135,12 +135,12 @@ def bin_asym(input=None):
             else:
                 areaweight = 1.
             if hits[i,j]>0:
-                ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
+                ofid1.write("%7.2f %7.2f %8.6f\n" %(lons[i], lats[j],\
                             vals[i,j]/hits[i,j]/areaweight))
             else:
                 ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
                             0.))
-            ofid2.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
+            ofid2.write("%7.2f %7.2f %8.6f\n" %(lons[i], lats[j],\
             ceil(hits[i,j]/areaweight)))
         
     ofid3.write('input file: '+input+'\n')
@@ -237,11 +237,11 @@ def seg_measr(input=None,plotstyle='points',plot_off=False):
             for seg in seg1:
                 #write
                 val = mesr*seg[2]   
-                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],-val))
+                ofid1.write("%7.2f %7.2f  %8.5f\n" %(seg[1],seg[0],-val))
                 
             for seg in seg2:
                 val = mesr*seg[2]
-                ofid1.write("%7.2f %7.2f  %7.2f\n" %(seg[1],seg[0],val))
+                ofid1.write("%7.2f %7.2f  %8.5f\n" %(seg[1],seg[0],val))
                 
         if plotstyle == 'gc':
             for i in range(len(seg1)-1):

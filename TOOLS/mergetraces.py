@@ -58,9 +58,9 @@ def mergetraces(data, Fs, maxgap=10.0, ofid=None):
         while trace_list:
             trace = trace_list.pop(0)
             #print('===================')
-            print(cur_trace)
+            #print(cur_trace)
             #print('Next trace:')
-            print(trace)
+            #print(trace)
             # Case 1: Overlap =================================================
             # Overlaps should be removed in any case, as we don't want to correlate the data twice; especially if they differ between traces (which is most likely the case due to different tapering etc.)
             # Case 2: Perfectly adjacent ======================================
