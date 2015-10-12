@@ -955,8 +955,8 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
         std1[i] = np.std(data1[i*nsmp:(i+1)*nsmp])
         std2[i] = np.std(data2[i*nsmp:(i+1)*nsmp])
 
-    rng1 = np.max(std1)/np.mean(std1)
-    rng2 = np.max(std2)/np.mean(std2)
+    rng1 = np.max(std1)/np.min(std1)
+    rng2 = np.max(std2)/np.min(std2)
     
     
     # Obtain correlation via FFT and IFFT
