@@ -32,7 +32,7 @@ if __name__=='__main__':
     else:
         print '\nInvalid input argument!'
         print 'Arguments: measure, bin_values, plot_greatcirc'
-        print 'Input file: measr_inp.py\n'
+        print 'Input file: INPUT/input_measurement.py\n'
 
 def meas_asym(input=None):
     
@@ -138,17 +138,16 @@ def bin_asym(input=None):
                 ofid1.write("%7.2f %7.2f %8.6f\n" %(lons[i], lats[j],\
                             vals[i,j]/hits[i,j]/areaweight))
             else:
-                ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],\
-                            0.))
+                ofid1.write("%7.2f %7.2f %7.4f\n" %(lons[i], lats[j],0.))
             ofid2.write("%7.2f %7.2f %8.6f\n" %(lons[i], lats[j],\
             ceil(hits[i,j]/areaweight)))
         
     ofid3.write('input file: '+input+'\n')
-    #ofid3.write('Q = %6.2f \n' %minp.q)
-    #ofid3.write('freq = %6.2f Hz\n' %minp.f_centr)
-    #ofid3.write('group v = %6.2f m/s\n' %(minp.g_speed))
-    #ofid3.write('snr_min: '+str(minp.snr_min)+'\n')
-    #ofid3.write('sign convention: %6.2f\n' %minp.signconv)
+    ofid3.write('Q = %6.2f \n' %minp.q)
+    ofid3.write('freq = %6.2f Hz\n' %minp.f_centr)
+    ofid3.write('group v = %6.2f m/s\n' %(minp.g_speed))
+    ofid3.write('snr_min: '+str(minp.snr_min)+'\n')
+    ofid3.write('sign convention: %6.2f\n' %minp.signconv)
     ofid3.write('great circle segments of %6.2f km length\n' %minp.segper)
     ofid3.write('latmin, lonmin, latmax, lonmax: %6.2f %6.2f %6.2f %6.2f deg\n'\
      %(minp.latmin,minp.lonmin,minp.latmax,minp.lonmax))

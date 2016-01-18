@@ -1,4 +1,3 @@
-import instaseis
 import os
 import time
 import matplotlib.pyplot as plt
@@ -13,7 +12,6 @@ from obspy.signal.util import nextpow2
 from obspy.core.util import gps2DistAzimuth
 from math import log
 from warnings import warn
-from integ_kernel import plot_kernel
 
 if __name__=='__main__':
     import synthesize_correlation3 as sc
@@ -29,7 +27,7 @@ def synthesize_correlation():
     # Preliminaries
     # =============================================================
     rank = int(os.environ[inp.rankvar])
-    if rank == 0:
+    if rank == 0 and not os.path.exists(inp.outdir):
         os.mkdir(inp.outdir)
         os.system('cp '+inp.mask+' '+inp.outdir)
         os.system('cp synthesize_correlation2.py '+inp.outdir)
@@ -75,14 +73,16 @@ def synthesize_correlation():
     # =============================================================
     # Each entry pair: Extract seismograms on the fly, correlate
     # =============================================================
-    numpairs = int(len(pairs)/inp.size)
+    #numpairs = int(len(pairs)/inp.size)
     
-    mypairs = pairs[rank*numpairs:(rank+1)*numpairs]
-    try:
-        mypairs.append(pairs[numpairs*inp.size+rank])
+    #mypairs = pairs[rank*numpairs:(rank+1)*numpairs]
+    #try:
+    #    mypairs.append(pairs[numpairs*inp.size+rank])
         
-    except IndexError:
-        pass
+    #except IndexError:
+    #   pass
+    
+    mypairs = pairs[rank:len(pairs):inp.size]
     
     for pair in mypairs:
         
@@ -97,6 +97,15 @@ def synthesize_correlation():
         lat2 = float(id2.split()[2])
         lon2 = float(id2.split()[3])
         
+    # =============================================================
+    # Each entry pair: Check if calculating was already done....
+    # =============================================================    
+        filename = inp.outdir +sta1+'--'+sta2+'.SAC'
+        print filename
+        
+        if os.path.exists(filename):
+            continue
+        
         correlation, K = get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask)
         
         
@@ -104,12 +113,13 @@ def synthesize_correlation():
     # =============================================================
     # Each entry pair: Store resulting correlations
     # =============================================================
-        filename = inp.outdir +sta1+'--'+sta2+'.SAC'
-        print filename
+        
         correlation.write(filename=filename,format = 'SAC')
-        filename = inp.outdir +sta1+'--'+sta2+'.pKern.npy'
-        print filename
-        np.save(filename,K) # might introduce to not allow pickling if this is a portability issue
+        
+        # Save the kernel
+        filename_k = inp.outdir +sta1+'--'+sta2+'.pKern.npy'
+        print filename_k
+        np.save(filename_k,K) # might introduce to not allow pickling if this is a portability issue
     
 def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
                 
@@ -170,7 +180,13 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             sigma2 = inp.source_spectrum[1] ** 2 / (2. * log(2.))
             print sigma2
             gauss = np.exp(-(freq-inp.source_spectrum[0])**2 / (2. * sigma2))
-            plt.plot(freq,gauss)
+            plt.plot(freq,gauss,linewidth=1.5)
+            plt.grid()
+            plt.xlabel('Frequency (Hz)',fontsize=16)
+            plt.ylabel('Noise source amplitude (Scaled)',fontsize=16)
+            plt.ylim([0,1.2])
+            plt.xlim([0,0.02])
+            plt.savefig('noise_source_ampspec.eps',format='eps')
             plt.show()
             S = gauss
         else:
@@ -204,7 +220,7 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
         for i in mask_i:
             i = int(i)
             count += 1
-            if count%1000 == 0:
+            if count%10000 == 0:
                 print 'completed source locations: ',count, ' of ', np.size(mask_z)
             # The format of the filenames for seismograms used here is determined by create_noisemask.py !!
             file = 'OUTPUT_FILES/SRC.%08g.' %mask_i[i]
@@ -215,29 +231,47 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             trace1=read(file1)[0]
             trace2=read(file2)[0]
             
-            if inp.cutoff == 'R1':
-                buffer = 300 #samples
-                distance1=gps2dist_azimuth(lat1,lon1,\
-                mask_x[i],mask_y[0])[0]/1000.# in km
-                distance2 = gps2dist_azimuth(lat2,lon2,mask_x[i],mask_y[0])[0]/1000. 
-                cutoff1 = min(int((distance1 / 3.4 ) * test_seism.stats.sampling_rate + buffer),len(trace1.data))
-                cutoff2 = min(int((distance2 / 3.4 ) * test_seism.stats.sampling_rate + buffer),len(trace2.data))
-           
-                win1 = np.zeros(len(trace1.data))
-                win2 = np.zeros(len(trace2.data))
-                win1[0:cutoff1] += tukeywin(cutoff1)
-                win2[0:cutoff2] += tukeywin(cutoff2)
-                win1[0:cutoff1/2] = 1.
-                win2[0:cutoff2/2] = 1.
-                trace1.data = win1*trace1.data
-                trace2.data = win2*trace2.data
             
-            trace1.detrend('linear')
-            trace2.detrend('linear')
-            trace1.taper(type='cosine',max_percentage=0.025)
-            trace2.taper(type='cosine',max_percentage=0.025)
+            #### Temporary fix for ugly sac job on daint !!! ####
+            for trc in (trace1,trace2):
+                trc.stats.starttime=UTCDateTime(2000,01,01)
+                trc.detrend('linear')
+                trc.taper(type='cosine',max_percentage=0.025)
+        
+            #    if trc.stats.sampling_rate > 1.:
+            #        print 'Downsampling from '+str(trc.stats.sampling_rate)
+            #        trc.filter(type='bandpass',freqmin=0.002,freqmax=0.02,\
+            #        corners=3,zerophase=True)
+            #        trc.decimate(4,no_filter=True)
+            #        trc.decimate(4,no_filter=True)
+            #        trc.decimate(4,no_filter=True)
+            
+            #if inp.cutoff == 'R1':
+            #    buffer = 20 #samples
+            #    distance1=gps2DistAzimuth(lat1,lon1,\
+            #    mask_x[i],mask_y[i])[0]/1000.# in km
+            #    distance2 = gps2DistAzimuth(lat2,lon2,mask_x[i],mask_y[i])[0]/1000. 
+            #    cutoff1 = min(int((distance1 / 3.4 ) * test_seism.stats.sampling_rate + buffer),len(trace1.data))
+            #    cutoff2 = min(int((distance2 / 3.4 ) * test_seism.stats.sampling_rate + buffer),len(trace2.data))
+            #
+            #    win1 = np.zeros(len(trace1.data))
+            #    win2 = np.zeros(len(trace2.data))
+            #    win1[0:cutoff1] += tukeywin(cutoff1)
+            #    win2[0:cutoff2] += tukeywin(cutoff2)
+            #    win1[0:cutoff1/2] = 1.
+            #    win2[0:cutoff2/2] = 1.
+            #    trace1.data = win1*trace1.data
+            #    trace2.data = win2*trace2.data
+            
+            
+            
+            trace1.filter('bandpass',freqmin=inp.freq_min,freqmax=inp.freq_max,\
+            corners=5,zerophase=True)
+            trace2.filter('bandpass',freqmin=inp.freq_min,freqmax=inp.freq_max,\
+            corners=5,zerophase=True)
             trace1.data = np.ascontiguousarray(trace1.data, np.float32)
             trace2.data = np.ascontiguousarray(trace2.data, np.float32)
+            
            
             # Transform to freq. domain. use rfft cause it should be faster than fft
             # Confine to the positive (incl 0) frequency axis, as everything should be Hermitian. Hmm.
@@ -245,10 +279,10 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             pos_spec1 = np.fft.rfft(trace1.data)
             pos_spec2 = np.fft.rfft(trace2.data)
             
-            if i%inp.plot_nsteps == 0:
-                plt.plot(freq[ind_f0:ind_f1],np.abs(pos_spec1[ind_f0:ind_f1]))
-                plt.plot(freq[ind_f0:ind_f1],np.abs(pos_spec2[ind_f0:ind_f1]))
-                plt.show()
+            #if i%inp.plot_nsteps == 0:
+            #    plt.plot(freq[ind_f0:ind_f1],np.abs(pos_spec1[ind_f0:ind_f1]))
+            #    plt.plot(freq[ind_f0:ind_f1],np.abs(pos_spec2[ind_f0:ind_f1]))
+            #    plt.show()
             
             # Just for checking once: Store the complex spectral value at f0,
             # at all the locations. 
@@ -260,8 +294,8 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             # Store that for the relevant freq. indices as 'proto-kernel'
             K[2:,i+1] += C[ind_f0:ind_f1]
             # Only once for testing: save the complex phase of the two Greens functions at a certain frequency
-            G1_f0[2,i+1] = pos_spec1[ind_f1]
-            G2_f0[2,i+1] = pos_spec2[ind_f1]
+            G1_f0[2,i+1] = pos_spec1[ind_f0]
+            G2_f0[2,i+1] = pos_spec2[ind_f0]
             # Calculate G1G2*Source (where Source is spectrum * spatial weight)
             C *= S * mask_z[i]
             

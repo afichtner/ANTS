@@ -16,6 +16,7 @@ import numpy as np
 import TOOLS.processing as proc
 import TOOLS.read_xml as rxml 
 import TOOLS.mergetraces as mt
+import TOOLS.event_excluder as ee
 
 import antconfig as cfg
 import INPUT.input_correction as inp
@@ -212,11 +213,11 @@ def ic(rank,size):
     
             #- check infinity
             if True in np.isinf(trace.data):
-                if verbose==True: print('** trace contains infinity, discarded',\
+                if verbose: print('** trace contains infinity, discarded',\
                 file=ofid)
                 continue
     
-            if verbose==True: print('* number of points: '+str(trace.stats.npts)+\
+            if verbose: print('* number of points: '+str(trace.stats.npts)+\
             '\n',file=ofid)
     
             #==================================================================================
@@ -224,25 +225,31 @@ def ic(rank,size):
             #==================================================================================
                               
             #- demean============================================================================
-            if inp.detrend == True:
+            if inp.detrend:
     
                 trace=proc.detrend(trace,verbose,ofid)
                 
-                if check == True:
+                if check:
                     dfile.write('Detrended\n')
                     print(trace.data[0:20],file=dfile)
                     dfile.write('\n')
                 
-            if inp.demean == True:
+            if inp.demean:
     
                 trace=proc.demean(trace,verbose,ofid)
                 
-                if check == True:
+                if check:
                     dfile.write('Mean removed\n')
                     print(trace.data[0:20],file=dfile)
                     dfile.write('\n')
-           
-                   
+         
+         
+#- event exclusion based on energy levels.. ========================================================================                    
+            # This should operate directly on the trace.
+            if inp.exclude_events:
+                ee.event_exclude(trace,inp.exclude_windows,inp.exclude_n,\
+                inp.exclude_freq,inp.exclude_level)
+                
     
             #- taper edges ========================================================================
     

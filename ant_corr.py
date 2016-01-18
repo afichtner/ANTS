@@ -214,12 +214,12 @@ def corrblock(block,dir,corrname,ofid=None):
                     str1 += colltr.split()
                     idlist += id
                     
-                   # if verbose:
-                   #     print('Read in traces for channel '+id,file=ofid)
-                   # del colltr
+                    if verbose:
+                        print('Read in traces for channel '+id,file=ofid)
+                    del colltr
                 else:
-                   # if verbose:
-                   #     print('No traces found for channel '+id,file=ofid)
+                    if verbose:
+                        print('No traces found for channel '+id,file=ofid)
                     continue
             
         
@@ -658,6 +658,13 @@ def corr_pairs(str1,str2,corrname,geoinf):
             if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
                 t1 = t2 - inp.olap
                 continue
+            # Check if too many zeros
+            if np.sum(tr1.data==0) > 0.5*tr1.stats.npts or \
+            np.sum(tr2.data==0) > 0.5*tr2.stats.npts:
+                t1 = t2 - inp.olap
+                if verbose: print('More than half of trace 0, skipping.')
+                continue
+            
             if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
                 t1 = t2 - inp.olap
                 continue
@@ -803,8 +810,8 @@ def addtr(id):
         try:
             newtr=obs.read(filename)
         except:
-            print('Problems opening data file:\n',file=ofid)
-            print(tr,file=ofid)
+            print('Problems opening data file:\n',file=None)
+            print(tr,file=None)
             continue
         
         for tr in newtr:

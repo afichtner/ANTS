@@ -6,7 +6,7 @@ proj=N0/8i
 cpt_val='gmt_scripts/temp/polar1.cpt'
 linewidth='thin'
 gridding='60g10/30g10'
-outfile='gmt_scripts/temp/msr_segments'
+outfile='gmt_scripts/temp/msr_segments.psg'
 coastres='c'
 
 # GMT plot great circles

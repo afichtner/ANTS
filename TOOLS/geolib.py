@@ -1,7 +1,9 @@
 import os
 from math import exp, pi, cos, sin, sqrt
 from geographiclib import geodesic,geodesicline
+import numpy as np
 # Can approximate pieces of Earth surface area by spherical earth surface element or by square lat-lon boxes on the ellipsoid. Quite similar results. 
+
 
 
 def approx_surf_el(dlat,dlon,lat):

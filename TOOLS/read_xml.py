@@ -1,9 +1,10 @@
 import xml.etree.ElementTree as et
 import os
 import obspy as obs
-from obspy.clients.fdsn import Client
+from obspy.fdsn import Client
 from warnings import warn
-from obspy.geodetics.base import gps2DistAzimuth
+#from obspy.geodetics.base import gps2DistAzimuth
+from obspy.core.util import gps2DistAzimuth
 from glob import glob
 import antconfig as cfg
 
@@ -49,7 +50,7 @@ def find_coord(path_to_xml):
 def get_staxml(net,sta):
     client=Client()
     outfile=cfg.datadir+'/stationxml/'+net+'.'+sta+'.xml'
-
+    print outfile
     # Metadata request with obspy
     if os.path.exists(outfile)==False:
         client.get_stations(network=net,station=sta,filename=outfile)
