@@ -8,13 +8,13 @@ rankvariable = 'OMPI_COMM_WORLD_RANK'
 verbose=True
 
 # save intermediate result at every time window (attention, will create ***LOTS*** of files)
-write_all=True
+write_all=False
 
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='noisy'
+corrname='bhutan_jul_1b'
 
 # Set to True if updating on a previous run?
-update = False
+update = True
 	
 #*******************************************************************************
 # Specifics for data distribution to cores
@@ -24,7 +24,7 @@ idfile = 'INPUT/correlationlist.txt'
 # How many station pairs for each core? Typically the number of files opened by that core is about n+1
 npairs = 1
 # channel: LH, BH, VH...
-channel='LH'
+channel='HH'
 # component: choose between Z, RT, T, R. 'All channels' is not implemented yet
 components='Z'
 # Mix channels?
@@ -35,30 +35,30 @@ mix_cha=False
 #*******************************************************************************
 
 # Input directory containing data. Can only handle one input directory at the moment.
-indir='DATA/processed/noisy/'
+indir='/Volumes/cowpox/DATA/processed/bhutan'
 # Enter preprocessing run name(s). Put * for any preprocessing
-prepname='noisy'
+prepname='bhutan'
     #*******************************************************************************
 # Time
 #*******************************************************************************
 # Sampling rate.If different from sampling rate, data will be downsampled before correlation.
-Fs = [0.1]
+Fs = [5.0]
 #Start date. Will only process files from this
-startdate='20120101'
+startdate='20130717'
 #End date. Will only process files until this. Format yyyymmdd
-enddate='20130101'
+enddate='20130731'
 #Length of the time windows to be correlated, in seconds
-winlen = 32768
+winlen = 6553.6
 #Overlap in SECONDS
 #Groos et al. recommend an overlap that is equal to the maximum lag
-olap=6000
+olap=150
     
    
     #*******************************************************************************#Correlations
 #*******************************************************************************
 #apply bandpass before correlating
-apply_bandpass = True
-filter=(0.002,0.05,3)
+apply_bandpass = False
+filter=(0.01,0.3,3)
 
 #apply pretreatment
 cap_glitches=False
@@ -67,6 +67,9 @@ apply_onebit=False
 apply_white=False
 white_freqs=(0.002,0.01)
 white_tape=0.1
+apply_ram=False
+ram_window=50.
+ram_filter=(0.02,0.066667,4)
 taper_traces=True
 perc_taper=0.05
 	
@@ -76,10 +79,10 @@ perc_taper=0.05
 autocorr=False
 # Type of correlation: 'ccc' or 'pcc' or 'both'
 corrtype='ccc'
-# Normalize the correlation (otherwise it remains a covariance)?
+# Normalize the correlation? (otherwise it remains a covariance)
 normalize_correlation=False
 # Maximum lag in seconds
-max_lag=12000
+max_lag=300
 # Obtain a phase weight? (cf Schimmel and Paulssen 2007)
 get_pws=False
 #For phase cross-correlation: Specify exponent (cf Schimmel et al. 2013)
@@ -114,6 +117,10 @@ if type(apply_onebit) != bool:
     raise TypeError(msg)
     
 if type(apply_white) != bool:
+    msg = 'Control input file: apply_white must be boolean'
+    raise TypeError(msg)
+    
+if type(apply_ram) != bool:
     msg = 'Control input file: apply_white must be boolean'
     raise TypeError(msg)
     
@@ -164,6 +171,11 @@ if type(prepname) != str:
 if type(corrtype) != str:
     msg = 'Control input file: corrtype must be str'
     raise TypeError(msg)
+
+if corrtype == 'both' and apply_white == True:
+    msg = 'Are you sure you want to whiten before phase\
+    cross correlation?'
+    warn(msg)
     
 if type(npairs) != int:
     msg = 'Control input file: npairs must be int'
