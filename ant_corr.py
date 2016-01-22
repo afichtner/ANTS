@@ -628,8 +628,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 t1 = t2 - inp.olap
                 continue
             # Check if too many zeros
-            if np.sum(np.abs(tr1.data)<sys.float_info.epsilon) > 0.1*tr1.stats.npts or \
-            np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
+            if np.sum(np.abs(tr1.data)<sys.float_info.min) > 0.1*tr1.stats.npts or \
+            np.sum(np.abs(tr2.data)<sys.float_info.min) > 0.1*tr2.stats.npts:
                 t1 = t2 - inp.olap
                 if inp.verbose: print('More than 10\% of trace equals 0, skipping.')
                 continue
