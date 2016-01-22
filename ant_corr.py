@@ -17,6 +17,7 @@ from obspy.core import Stats, Trace
 from obspy.noise.correlation import Correlation
 from obspy.noise.correlation_functions import phase_xcorr
 from obspy.signal.cross_correlation import xcorr
+from obspy.signal.filter import envelope
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
@@ -600,52 +601,20 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
 #        #- Whitening            ==================================================================
         
-        if inp.apply_white == True:
-            df = 1/(tr1.stats.npts*tr1.stats.delta)
-            print(df)
-            freqaxis=np.fft.fftfreq(tr1.stats.npts,tr1.stats.delta)
-            ind_fw1 = int(round(inp.white_freqs[0]/df))
-            ind_fw2 = int(round(inp.white_freqs[1]/df))
-            print(ind_fw1,ind_fw2)
-            print(freqaxis[ind_fw1])
-            print(freqaxis[ind_fw2])
-            
-            length_taper = int(round((inp.white_freqs[1]-inp.white_freqs[0])*\
-            inp.white_tape/df))
-            
-            taper_left = np.linspace(0.,np.pi/2,length_taper)
-            taper_left = np.square(np.sin(taper_left))
-            
-            taper_right = np.linspace(np.pi/2,np.pi,length_taper)
-            taper_right = np.square(np.sin(taper_right))
-            
-            taper = np.zeros(tr1.stats.npts)
-            taper[ind_fw1:ind_fw2] += 1.
-            taper[ind_fw1:ind_fw1+length_taper] = taper_left
-            taper[ind_fw2-length_taper:ind_fw2] = taper_right
-            
-            tr1.taper(max_percentage=0.05, type='cosine')
-            tr2.taper(max_percentage=0.05, type='cosine')
-            
-            spec1 = np.fft.fft(tr1.data)
-            spec2 = np.fft.fft(tr2.data)
-            
-            spec1 /= np.abs(spec1)
-            spec1 *= taper
-            spec2 /= np.abs(spec2)
-            spec2 *= taper
-            
-            
-            tr1.data = np.real(np.fft.ifft(spec1,n=len(tr1.data)))
-            tr2.data = np.real(np.fft.ifft(spec2,n=len(tr2.data)))
+        if inp.apply_white:
+            tr1 = whiten(tr1)
+            tr2 = whiten(tr2)
             
         #- One-bitting ================================================================
         
-        if inp.apply_onebit == True:
+        if inp.apply_onebit:
             tr1.data = np.sign(tr1.data)
             tr2.data = np.sign(tr2.data)
         
-            
+#- RAM normalization...who wants to do all this stuff!! ================================================================
+        if inp.apply_ram:
+            tr1 = ram_norm(tr1,inp.ram_window,prefilt=inp.ram_filter)
+            tr2 = ram_norm(tr2,inp.ram_window,prefilt=inp.ram_filter)
         #==============================================================================
         #- Checks     
         #============================================================================== 
@@ -659,10 +628,10 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 t1 = t2 - inp.olap
                 continue
             # Check if too many zeros
-            if np.sum(tr1.data==0) > 0.5*tr1.stats.npts or \
-            np.sum(tr2.data==0) > 0.5*tr2.stats.npts:
+            if np.sum(np.abs(tr1.data)<sys.float_info.epsilon) > 0.1*tr1.stats.npts or \
+            np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
                 t1 = t2 - inp.olap
-                if verbose: print('More than half of trace 0, skipping.')
+                if inp.verbose: print('More than 10\% of trace equals 0, skipping.')
                 continue
             
             if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
@@ -967,7 +936,7 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
     
     
     # Obtain correlation via FFT and IFFT
-    ccv = np.correlate(data1,data2,mode='full')
+    ccv = np.correlate(data1,data2,mode='same')
     
     # Cut out the desired samples from the middle...
     i1 = (len(ccv) - (2*max_lag_samples+1))/2
@@ -975,7 +944,63 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
     
     params = (rms1,rms2,ren1,ren2,rng1,rng2)
     
+    
     return ccv[i1:i2], params
     
     
+    
+def whiten(tr):
+    df = 1/(tr.stats.npts*tr.stats.delta)
+    freqaxis=np.fft.fftfreq(tr.stats.npts,tr.stats.delta)
+    
+    ind_fw1 = int(round(inp.white_freqs[0]/df))
+    ind_fw2 = int(round(inp.white_freqs[1]/df))
+    
+    
+    length_taper = int(round((inp.white_freqs[1]-inp.white_freqs[0])*\
+    inp.white_tape/df))
+    
+    taper_left = np.linspace(0.,np.pi/2,length_taper)
+    taper_left = np.square(np.sin(taper_left))
+    
+    taper_right = np.linspace(np.pi/2,np.pi,length_taper)
+    taper_right = np.square(np.sin(taper_right))
+    
+    taper = np.zeros(tr.stats.npts)
+    taper[ind_fw1:ind_fw2] += 1.
+    taper[ind_fw1:ind_fw1+length_taper] = taper_left
+    taper[ind_fw2-length_taper:ind_fw2] = taper_right
+    
+    tr.taper(max_percentage=0.05, type='cosine')
+    
+    spec = np.fft.fft(tr.data)
+    
+    spec /= np.abs(spec)
+    spec *= taper
+   
+    
+    tr.data = np.real(np.fft.ifft(spec,n=len(tr.data)))
+    return tr
+    
+    
+def ram_norm(trace,winlen,prefilt=None):
+    
+    trace_orig = trace.copy()
+    hlen = int(winlen*trace.stats.sampling_rate/2.)
+    weighttrace = np.zeros(trace.stats.npts)
+    
+    if prefilt is not None:
+        trace.filter('bandpass',freqmin=prefilt[0],freqmax=prefilt[1],\
+        corners=prefilt[2],zerophase=True)
+        
+    envlp = envelope(trace.data)
+
+    for n in xrange(hlen,trace.stats.npts-hlen):
+        weighttrace[n] = np.sum(envlp[n-hlen:n+hlen+1]/(2.*hlen+1))
+        
+    weighttrace[0:hlen] = weighttrace[hlen]
+    weighttrace[-hlen:] = weighttrace[-hlen-1]
+    
+    trace_orig.data /= weighttrace
+    return(trace_orig)
 

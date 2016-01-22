@@ -194,6 +194,9 @@ def ic(rank,size):
             if update == True:
                 if len(glob(getfilepath(mydir,trace.stats,prepname,True))) > 0:
                     print('File already processed, proceeding...',file=ofid)
+                    print(trace)
+                    print('File already processed, proceeding...',file=None)
+                    
                     break
                 else:
                     print('Updating...',file=ofid)

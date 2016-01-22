@@ -24,10 +24,12 @@ decimators = [4, 4, 4]
 #        wf.synthetic.decimate(factor=d,no_filter=True)
         
      
-def process(st,lowpasscorner,decimators):
-    if lowpasscorner*2 >= st.\
-    stats.sampling_rate / np.product(decimators):
-        raise ValueError()
+def process(st,inv):
+    
+    for tr in st:
+        if lowpasscorner*2 >= tr.\
+        stats.sampling_rate / np.product(decimators):
+            raise ValueError()
     print st
     st.taper(type='cosine',max_percentage=0.05)
     st.filter('lowpass',freq=lowpasscorner,corners=5)
@@ -37,18 +39,18 @@ def process(st,lowpasscorner,decimators):
 # Make sure to either use a with statement or delete the reference to the
 # data set object at the end. Otherwise it might not be able to properly
 # close the file which will stall MPI.
-#with pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5") as ds:
-#    ds.process(
+with pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5") as ds:
+    ds.process(
 #        # Pass the processing function here.
-#        process_function=process,
-#        # The output filename. Must not yet exist.
-#        output_filename="processed_example.h5",
-#        # Maps the tags. The keys are the tags in the input file and traces
-#        # with that tag will end up in the output file with the corresponding
-#        # value.
-#        # Also note that only data with tags present in this map will be
-#        # processed. Others will be ignored.
-#        tag_map={"synthetic": "synth_decimated"})
+        process_function=process,
+        # The output filename. Must not yet exist.
+        output_filename="test.h5",
+        # Maps the tags. The keys are the tags in the input file and traces
+        # with that tag will end up in the output file with the corresponding
+        # value.
+        # Also note that only data with tags present in this map will be
+        # processed. Others will be ignored.
+        tag_map={"synthetic": "synth_decimated"},cpu_count=1)
 
-ds = pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5")
-ds.process(process_function=process,output_filename='test.h5',tag_map={"synthetic": "synth_decimated"},cpu_count=1)
+#ds = pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5")
+#ds.process(process_function=process,output_filename='test.h5',tag_map={"synthetic": "synth_decimated"},cpu_count=1)
