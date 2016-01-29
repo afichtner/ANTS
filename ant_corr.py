@@ -22,12 +22,13 @@ from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 
+
 if __name__=='__main__':
     import ant_corr as pc
     rank = int(os.environ[inp.rankvariable])
     size = int(sys.argv[1])
     
-    if inp.update == False and os.path.exists(cfg.datadir+\
+    if rank==0 and inp.update == False and os.path.exists(cfg.datadir+\
     '/correlations/input/'+inp.corrname+'.txt') == True:
         sys.exit('Choose a new correlation name tag or set update=True.\
          Aborting.')
@@ -454,11 +455,19 @@ def parlistpairs(corrname):
             if idlist[i]<=idlist[j]:
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' +\
                 idlist[i] + '???.' + idlist[j] + '???.'+corrtype+'.' + corrname + '.SAC'
+                fileid1 = cfg.datadir + 'correlations/' + corrname + '/rank*/' +\
+                idlist[i] + '???.' + idlist[j] + '???.'+corrtype+'.' + corrname + '.SAC'
             else:
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' + \
                 idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
+                fileid = cfg.datadir + 'correlations/' + corrname + '/rank*/' + \
+                idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
             
             if glob(fileid) != [] and inp.update == True:
+                print('Correlation already available, continuing...')
+                continue
+            if glob(fileid1) != [] and inp.update == True:
+                print('Correlation already available, continuing...')
                 continue
             
             #- Autocorrelation?
@@ -533,7 +542,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
     n1=0
     n2=0
     cccstack=np.zeros(tlen)
-    pccstack=np.zeros(tlen)
+    pccstack=np.zeros(tlen,dtype=np.float64)
     cstack_ccc=np.zeros(tlen)
     cstack_pcc=np.zeros(tlen)
     
@@ -566,7 +575,9 @@ def corr_pairs(str1,str2,corrname,geoinf):
         if tr1.stats.npts != tr2.stats.npts:
             t1 = t2 - inp.olap
             continue
-        #==============================================================================
+       # tr1.plot()
+        #tr2.plot()
+         #==============================================================================
         #- Data treatment        
         #==============================================================================
         
@@ -628,10 +639,13 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 t1 = t2 - inp.olap
                 continue
             # Check if too many zeros
-            if np.sum(np.abs(tr1.data)<sys.float_info.min) > 0.1*tr1.stats.npts or \
-            np.sum(np.abs(tr2.data)<sys.float_info.min) > 0.1*tr2.stats.npts:
+            # I use epsilon for this check. That is convenient but not strictly right. It seems to do the job though. min doesn't work.
+            
+            if np.sum(np.abs(tr1.data)<sys.float_info.epsilon) > 0.1*tr1.stats.npts or \
+            np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
                 t1 = t2 - inp.olap
-                if inp.verbose: print('More than 10\% of trace equals 0, skipping.')
+                
+                if inp.verbose: print('More than 10% of trace equals 0, skipping.')
                 continue
             
             if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
@@ -651,8 +665,16 @@ def corr_pairs(str1,str2,corrname,geoinf):
             if inp.corrtype == 'ccc' or inp.corrtype == 'both':
                 #ccc=classic_xcorr(tr1, tr2, mlag)
                 (ccc, params) = cross_covar(tr1.data, \
-                tr2.data, mlag)
+                tr2.data, mlag,inp.normalize_correlation)
                 
+                if ccc.any() == np.nan:
+                    msg='NaN encountered, omitting correlation from stack.'
+                    warn(msg)
+                    print(tr1)
+                    print(tr2)
+                    t1 = t2 - inp.olap
+                    continue
+                    
                 # normalization by trace energy
                 en1 = params[2]
                 en2 = params[3]
@@ -698,7 +720,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
             # To be implemented: Getting trace energy
             
             if inp.corrtype == 'pcc' or inp.corrtype == 'both':
-                pcc=phase_xcorr(tr1, tr2, mlag, inp.pcc_nu)
+                pcc=phase_xcorr(tr1.data, tr2.data, mlag, inp.pcc_nu)
+                print(type(pcc))
                 pccstack+=pcc
                 pcccnt+=1
                 
@@ -759,7 +782,7 @@ def addtr(id):
     traces.sort()
     readone=False
     endday=obs.UTCDateTime(inp.enddate)
-    
+    startday=obs.UTCDateTime(inp.startdate)
     if len(traces) == 0:
         return (Trace(),False)
              
@@ -770,14 +793,16 @@ def addtr(id):
     #- variable number of traces)
     for filename in traces: 
         
-        (ey,em)=filename.split('/')[-1].split('.')[4:6]
+        (sy,sm)=filename.split('/')[-1].split('.')[4:6]
+        (ey,em)=filename.split('/')[-1].split('.')[9:11]
+        sf=obs.UTCDateTime(sy+','+sm)
         ef=obs.UTCDateTime(ey+','+em)
-        
-        if ef>endday:
+        if sf>endday or ef<startday:
             continue
         
         try:
             newtr=obs.read(filename)
+            print(filename)
         except:
             print('Problems opening data file:\n',file=None)
             print(tr,file=None)
@@ -790,7 +815,7 @@ def addtr(id):
             
             
             #- Bandpass filter
-            if inp.apply_bandpass == True:
+            if inp.apply_bandpass:
                 tr.filter('bandpass',freqmin=inp.filter[0],freqmax=inp.filter[1],\
                 corners=inp.filter[2],zerophase=True)
                 
@@ -901,7 +926,7 @@ def classic_xcorr(trace1, trace2, max_lag_samples):
     
     return x_corr
     
-def cross_covar(data1, data2, max_lag_samples, normalize_traces=True):
+def cross_covar(data1, data2, max_lag_samples, normalize_traces):
     
     # Remove mean and normalize; this should have no effect on the energy-normalized correlation result, but may avoid precision issues if trace values are very small
     if normalize_traces == True:

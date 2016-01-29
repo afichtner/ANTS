@@ -1,7 +1,7 @@
 import pyasdf
 import numpy as np
 
-name_dataset = '/Volumes/cowpox/synthetic.h5'
+name_dataset = '/Volumes/cowpox/SYNTHETICS/synthetic.h5'
 lowpasscorner = 0.025 # in Hz
 decimators = [4, 4, 4]
 
@@ -39,12 +39,12 @@ def process(st,inv):
 # Make sure to either use a with statement or delete the reference to the
 # data set object at the end. Otherwise it might not be able to properly
 # close the file which will stall MPI.
-with pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5") as ds:
+with pyasdf.ASDFDataSet(name_dataset) as ds:
     ds.process(
 #        # Pass the processing function here.
         process_function=process,
         # The output filename. Must not yet exist.
-        output_filename="test.h5",
+        output_filename="/Volumes/cowpox/SYNTHETICS/BK.CMB.h5",
         # Maps the tags. The keys are the tags in the input file and traces
         # with that tag will end up in the output file with the corresponding
         # value.

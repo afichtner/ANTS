@@ -66,9 +66,8 @@ def synthesize_correlation():
     # =============================================================
     # plot the noise mask
     # =============================================================
-    if inp.plot_mask == True:
+    if inp.plot_mask == True and rank==0:
         map_xyz(mask[1,:],mask[2,:],mask[3,:])
-    if rank == 0:
         os.system('cp new_map.png '+inp.outdir)
     # =============================================================
     # Each entry pair: Extract seismograms on the fly, correlate
@@ -123,31 +122,39 @@ def synthesize_correlation():
     
 def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
                 
-    if inp.method == 'specfem':
+    if inp.input == 'specfem_sac' or inp.input == 'specfem_mseed':
         
-        mask_i = mask[0,:]
-        mask_x = mask[1,:]
-        mask_y = mask[2,:]
-        mask_z = mask[3,:]
+        mask_i = mask[0,:].reshape(-1)
+        mask_x = mask[1,:].reshape(-1)
+        mask_y = mask[2,:].reshape(-1)
+        mask_z = mask[3,:].reshape(-1)
         
-        if mask_i.ndim > 1:
-            mask_i_temp = []
-            mask_z_temp = []
-            mask_x_temp = []
-            mask_y_temp = []
-            for j in range(len(mask_i[0,:])):
-                for k in range(len(mask_i[:,0])):
-                    mask_i_temp.append(mask_i[k,j])
-                    mask_z_temp.append(mask_z[k,j])
-                    mask_y_temp.append(mask_y[k,j])
-                    mask_x_temp.append(mask_x[k,j])
-            mask_i = np.array(mask_i_temp)
-            mask_z = np.array(mask_z_temp)
-            mask_x = np.array(mask_y_temp)
-            mask_y = np.array(mask_x_temp)
+        #if mask_i.ndim > 1:
             
-        test_seism = read(os.path.join(inp.database,sta1,\
-        'OUTPUT_FILES/SRC.00000000.MXZ.sem.sac'))[0]
+        #    mask_i_temp = []
+        #    mask_z_temp = []
+        #    mask_x_temp = []
+        #    mask_y_temp = []
+        #    for j in range(len(mask_i[0,:])):
+        #        for k in range(len(mask_i[:,0])):
+        #            mask_i_temp.append(mask_i[k,j])
+        #            mask_z_temp.append(mask_z[k,j])
+        #            mask_y_temp.append(mask_y[k,j])
+        #            mask_x_temp.append(mask_x[k,j])
+        #    mask_i = np.array(mask_i_temp)
+        #    mask_z = np.array(mask_z_temp)
+        #    mask_x = np.array(mask_y_temp)
+        #    mask_y = np.array(mask_x_temp)
+         
+        if inp.input == 'specfem_sac':    
+            test_seism = read(os.path.join(inp.database,sta1,\
+            'OUTPUT_FILES/SRC.00000000.MXZ.sem.sac'))[0]
+        else:
+            tr1 = read(os.path.join(inp.database,sta1,\
+            'OUTPUT_FILES',sta1+'.mseed'))
+            tr2 = read(os.path.join(inp.database,sta2,\
+            'OUTPUT_FILES',sta2+'.mseed'))
+            test_seism = tr1[0]
         
         # Determine the length of the frequency axis for one-sided, real-input fft
         if len(test_seism.data)%2 == 0:
@@ -192,7 +199,7 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
         else:
             S = np.ones(n) * inp.source_strength
         
-        # Find the relevant frequency indices to save the kernel for
+        # Find the relevant frequency indices to save the 'proto'kernel for
         ind_f0 = np.abs(freq-inp.freq_min).argmin()
         ind_f1 = np.abs(freq-inp.freq_max).argmin()
         
@@ -219,17 +226,29 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
         count = 0
         for i in mask_i:
             i = int(i)
+            z = mask_z[i]
             count += 1
             if count%10000 == 0:
                 print 'completed source locations: ',count, ' of ', np.size(mask_z)
             # The format of the filenames for seismograms used here is determined by create_noisemask.py !!
-            file = 'OUTPUT_FILES/SRC.%08g.' %mask_i[i]
-            z = mask_z[i]
-            file1 = os.path.join(inp.database,sta1,file+inp.channel+'.sem.sac')
-            file2 = os.path.join(inp.database,sta2,file+inp.channel+'.sem.sac')
-            
-            trace1=read(file1)[0]
-            trace2=read(file2)[0]
+            if inp.input == 'specfem_sac':
+                file = 'OUTPUT_FILES/SRC.%08g.' %mask_i[i]
+                file1 = os.path.join(inp.database,sta1,file+inp.channel+'.sem.sac')
+                file2 = os.path.join(inp.database,sta2,file+inp.channel+'.sem.sac')
+                trace1=read(file1)[0]
+                trace2=read(file2)[0]
+            else:
+                srcname = 'SR.%g.S3.' %i
+                srcname += inp.channel
+                trace1 = tr1[i]#tr1.select(id=srcname)[0]
+                trace2 = tr2[i]#tr2.select(id=srcname)[0]
+                if int(trace1.stats.station) != i or int(trace2.stats.station) != i :
+                    print trace1
+                    print trace2
+                    print i
+                    msg='Inconsistency between Mseed file and source list file.'
+                    raise ValueError(msg)
+                
             
             
             #### Temporary fix for ugly sac job on daint !!! ####
@@ -307,8 +326,8 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             
         
     else: 
-        msg = 'This script works only for specfem synthetics. Older scripts\
-            include instaseis.' 
+        msg = 'This script works only for specfem synthetics in sac or mseed files.\
+         Older versions include instaseis. Look up in ARCH folder' 
         raise NotImplementedError(msg)
             
     # Transform back to time domain.

@@ -11,7 +11,7 @@ verbose=True
 write_all=False
 
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='bhutan_jul_1b'
+corrname='bhutan_pcc_jan'
 
 # Set to True if updating on a previous run?
 update = True
@@ -35,7 +35,7 @@ mix_cha=False
 #*******************************************************************************
 
 # Input directory containing data. Can only handle one input directory at the moment.
-indir='/Volumes/cowpox/DATA/processed/bhutan'
+indir='/Volumes/cowpox/DATA/processed/bhutan/'
 # Enter preprocessing run name(s). Put * for any preprocessing
 prepname='bhutan'
     #*******************************************************************************
@@ -44,9 +44,9 @@ prepname='bhutan'
 # Sampling rate.If different from sampling rate, data will be downsampled before correlation.
 Fs = [5.0]
 #Start date. Will only process files from this
-startdate='20130717'
+startdate='20140101'
 #End date. Will only process files until this. Format yyyymmdd
-enddate='20130731'
+enddate='20140201'
 #Length of the time windows to be correlated, in seconds
 winlen = 6553.6
 #Overlap in SECONDS
@@ -78,7 +78,7 @@ perc_taper=0.05
 #Autocorrelation yes or no
 autocorr=False
 # Type of correlation: 'ccc' or 'pcc' or 'both'
-corrtype='ccc'
+corrtype='pcc'
 # Normalize the correlation? (otherwise it remains a covariance)
 normalize_correlation=False
 # Maximum lag in seconds
