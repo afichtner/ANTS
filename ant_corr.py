@@ -21,12 +21,15 @@ from obspy.signal.filter import envelope
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
-
+from mpi4py import MPI
 
 if __name__=='__main__':
     import ant_corr as pc
-    rank = int(os.environ[inp.rankvariable])
-    size = int(sys.argv[1])
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    #rank = int(os.environ[inp.rankvariable])
+    #size = int(sys.argv[1])
     
     if rank==0 and inp.update == False and os.path.exists(cfg.datadir+\
     '/correlations/input/'+inp.corrname+'.txt') == True:

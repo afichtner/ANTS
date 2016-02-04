@@ -5,28 +5,34 @@ import numpy as np
 from TOOLS.tukey import tukeywin
 from obspy import Trace, read, UTCDateTime
 #from obspy.geodetics import gps2dist_azimuth
-from UTIL.map_xyz import map_xyz
 import INPUT.input_synthetics as inp
+
+from UTIL.map_xyz import map_xyz
 #from obspy.signal.util import next_pow_2
 from obspy.signal.util import nextpow2
 from obspy.core.util import gps2DistAzimuth
 from math import log
 from warnings import warn
+from mpi4py import MPI
 
 if __name__=='__main__':
     import synthesize_correlation3 as sc
-    print 'Rank '+os.environ[inp.rankvar]+' started at: '+\
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    
+    print 'Rank '+rank+' started at: '+\
     time.strftime('%d.%m.%Y., %H.%M')
-    sc.synthesize_correlation()
-    print 'Rank '+os.environ[inp.rankvar]+' finished at: '+\
+    sc.synthesize_correlation(rank,size)
+    print 'Rank '+rank+' finished at: '+\
     time.strftime('%d.%m.%Y., %H.%M')
     
-def synthesize_correlation():
+def synthesize_correlation(rank,size):
     
     # =============================================================
     # Preliminaries
     # =============================================================
-    rank = int(os.environ[inp.rankvar])
     if rank == 0 and not os.path.exists(inp.outdir):
         os.mkdir(inp.outdir)
         os.system('cp '+inp.mask+' '+inp.outdir)
@@ -72,16 +78,16 @@ def synthesize_correlation():
     # =============================================================
     # Each entry pair: Extract seismograms on the fly, correlate
     # =============================================================
-    #numpairs = int(len(pairs)/inp.size)
+    #numpairs = int(len(pairs)/size)
     
     #mypairs = pairs[rank*numpairs:(rank+1)*numpairs]
     #try:
-    #    mypairs.append(pairs[numpairs*inp.size+rank])
+    #    mypairs.append(pairs[numpairs*size+rank])
         
     #except IndexError:
     #   pass
     
-    mypairs = pairs[rank:len(pairs):inp.size]
+    mypairs = pairs[rank:len(pairs):size]
     
     for pair in mypairs:
         
@@ -105,7 +111,7 @@ def synthesize_correlation():
         if os.path.exists(filename):
             continue
         
-        correlation, K = get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask)
+        correlation, K, corr_test = get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask)
         
         
         
@@ -114,6 +120,7 @@ def synthesize_correlation():
     # =============================================================
         
         correlation.write(filename=filename,format = 'SAC')
+        corr_test.write(filename=filename+'_test',format='SAC')
         
         # Save the kernel
         filename_k = inp.outdir +sta1+'--'+sta2+'.pKern.npy'
@@ -172,6 +179,7 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             warn(msg)
             
         correlation = np.zeros(n,dtype='complex')
+        correlation_test = np.zeros(len(test_seism.data),dtype='complex')
         
         test_seism.stats.starttime = UTCDateTime(2000,01,01)
         
@@ -187,14 +195,15 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             sigma2 = inp.source_spectrum[1] ** 2 / (2. * log(2.))
             print sigma2
             gauss = np.exp(-(freq-inp.source_spectrum[0])**2 / (2. * sigma2))
-            plt.plot(freq,gauss,linewidth=1.5)
-            plt.grid()
-            plt.xlabel('Frequency (Hz)',fontsize=16)
-            plt.ylabel('Noise source amplitude (Scaled)',fontsize=16)
-            plt.ylim([0,1.2])
-            plt.xlim([0,0.02])
-            plt.savefig('noise_source_ampspec.eps',format='eps')
-            plt.show()
+            
+            #plt.plot(freq,gauss,linewidth=1.5)
+            #plt.grid()
+            #plt.xlabel('Frequency (Hz)',fontsize=16)
+            #plt.ylabel('Noise source amplitude (Scaled)',fontsize=16)
+            #plt.ylim([0,1.2])
+            #plt.xlim([0,0.02])
+            #plt.savefig('noise_source_ampspec.eps',format='eps')
+            #plt.show()
             S = gauss
         else:
             S = np.ones(n) * inp.source_strength
@@ -308,7 +317,7 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             
             # calculate G1G2*
             C = pos_spec1 * np.conjugate(pos_spec2)
-            
+            C_test = np.correlate(trace1.data,trace2.data,mode='same')
            
             # Store that for the relevant freq. indices as 'proto-kernel'
             K[2:,i+1] += C[ind_f0:ind_f1]
@@ -317,13 +326,13 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
             G2_f0[2,i+1] = pos_spec2[ind_f0]
             # Calculate G1G2*Source (where Source is spectrum * spatial weight)
             C *= S * mask_z[i]
-            
-            if i%inp.plot_nsteps == 0:
+            C_test *= mask_z[i]
+            if i%inp.plot_nsteps == 0 and i!=0:
                 plt.plot(freq,np.abs(C))
                 plt.show()
             # Add that.
             correlation += C
-            
+            correlation_test += C_test
         
     else: 
         msg = 'This script works only for specfem synthetics in sac or mseed files.\
@@ -351,7 +360,8 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
     np.save(inp.outdir+'test_G1_f0.npy',G1_f0)
     np.save(inp.outdir+'test_G2_f0.npy',G2_f0)
     correlation = correlation_temp
-                
+    
+    
     # Determine the distance in meters between the two receivers
     dist_meters = gps2DistAzimuth(lat1,lon1,lat2,lon2)[0]
     corr = Trace()
@@ -362,5 +372,9 @@ def get_synthetic_correlation(sta1,sta2,lat1,lat2,lon1,lon2,mask):
     corr.stats.sac['stla'] = lat1
     corr.stats.sac['stlo'] = lon1
     corr.stats.sac['evla'] = lat2
-    corr.stats.sac['evlo'] = lon2       
-    return corr, K
+    corr.stats.sac['evlo'] = lon2
+    
+    corr_test = corr.copy()
+    corr_test.data = correlation_test
+    
+    return corr, K, corr_test

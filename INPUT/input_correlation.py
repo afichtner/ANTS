@@ -1,8 +1,9 @@
 #*******************************************************************************
 # Environment variable that numbers the rank of the processor in question. 
 # This is a string and on daint, it is 'ALPS_APP_PE', on laptops with OpenMPI, it is 'OMPI_COMM_WORLD_RANK'
+# -- not needed anymore, since working with mpi4py again.
 # ******************************************************************************
-rankvariable = 'OMPI_COMM_WORLD_RANK'
+# rankvariable = 'OMPI_COMM_WORLD_RANK'
 
 # print screen output
 verbose=True
@@ -11,7 +12,7 @@ verbose=True
 write_all=False
 
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='bhutan_pcc_jan'
+corrname='bhutan_pcc_test'
 
 # Set to True if updating on a previous run?
 update = True
@@ -20,7 +21,7 @@ update = True
 # Specifics for data distribution to cores
 # ******************************************************************************
 # station ID list; containing entries in format net.sta.loc.cha
-idfile = 'INPUT/correlationlist.txt'
+idfile = 'INPUT/correlationlist_testbhutan.txt'
 # How many station pairs for each core? Typically the number of files opened by that core is about n+1
 npairs = 1
 # channel: LH, BH, VH...
@@ -44,14 +45,14 @@ prepname='bhutan'
 # Sampling rate.If different from sampling rate, data will be downsampled before correlation.
 Fs = [5.0]
 #Start date. Will only process files from this
-startdate='20140101'
+startdate='20130601'
 #End date. Will only process files until this. Format yyyymmdd
-enddate='20140201'
+enddate='20140701'
 #Length of the time windows to be correlated, in seconds
 winlen = 6553.6
 #Overlap in SECONDS
 #Groos et al. recommend an overlap that is equal to the maximum lag
-olap=150
+olap=100
     
    
     #*******************************************************************************#Correlations
@@ -82,7 +83,7 @@ corrtype='pcc'
 # Normalize the correlation? (otherwise it remains a covariance)
 normalize_correlation=False
 # Maximum lag in seconds
-max_lag=300
+max_lag=200
 # Obtain a phase weight? (cf Schimmel and Paulssen 2007)
 get_pws=False
 #For phase cross-correlation: Specify exponent (cf Schimmel et al. 2013)
