@@ -84,12 +84,7 @@ def integrate_kernel_sources(kernelfile,adjstf,mask,f0,f1,Fs=None):
         print 'High frequency outside available range, reset highest frequency to '\
         +str(freq_kern[-1])
         f1 = freq_kern[-1]
-        
     
-   
-    # what do kernels for single frequencies look like?
-    #plot_kernel(mask_x,mask_y,2*np.real(K[2,1:]))
-
     #===============================================================================
     # Adjoint source
 #===============================================================================
@@ -118,9 +113,7 @@ def integrate_kernel_sources(kernelfile,adjstf,mask,f0,f1,Fs=None):
         
     freq = np.fft.fftfreq(len(f),d = 1./Fs)
     freq = freq[0:n]
-    
-    #plt.plot(freq,np.abs(F[0:n]))
-    #plt.show()
+    dfreq = abs(freq[1]-freq[0])
     
     
     # find the frequencies relevant to K
@@ -147,14 +140,9 @@ def integrate_kernel_sources(kernelfile,adjstf,mask,f0,f1,Fs=None):
         
 
     # Sum up
-        K_int += K[ind_f0_kern+i+2,1:] * F[ind_f0+i]
+        K_int += K[ind_f0_kern+i+2,1:] * F[ind_f0+i] * dfreq
         i+=1
-    
-    # mask contains the coordinates --> plot
-   
-    #plot_kernel(mask_y,mask_x,2*np.real(K_int),norm=True)
-    
-    
+
     #return kernel
     return mask_x,mask_y,K_int
 
