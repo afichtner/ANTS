@@ -22,10 +22,10 @@ if __name__=='__main__':
     size = comm.Get_size()
     
     
-    print 'Rank '+rank+' started at: '+\
+    print 'Rank '+str(rank)+' started at: '+\
     time.strftime('%d.%m.%Y., %H.%M')
     sc.synthesize_correlation(rank,size)
-    print 'Rank '+rank+' finished at: '+\
+    print 'Rank '+str(rank)+' finished at: '+\
     time.strftime('%d.%m.%Y., %H.%M')
     
 def synthesize_correlation(rank,size):

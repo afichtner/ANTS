@@ -14,7 +14,7 @@ import INPUT.input_correlation as inp
 from math import sqrt
 from glob import glob
 from obspy.core import Stats, Trace
-from obspy.noise.correlation import Correlation
+#from obspy.noise.correlation import Correlation
 from obspy.noise.correlation_functions import phase_xcorr
 from obspy.signal.cross_correlation import xcorr
 from obspy.signal.filter import envelope
@@ -98,14 +98,15 @@ def par_st(size,rank):
         print(time.strftime('%H.%M.%S')+'\n',file=None)
        
     #- Each rank determines the part of data it has to work on ----------------
-    n1=int(len(idpairs)/size)
-    n2=len(idpairs)%size
-    ids=list()
+    #n1=int(len(idpairs)/size)
+    #n2=len(idpairs)%size
+    #ids=list()
     
-    for i in range(0,n1):
-        ids.append(idpairs[i*size+rank])
-    if rank<n2:
-        ids.append(idpairs[n1*size+rank])
+    #for i in range(0,n1):
+    #    ids.append(idpairs[i*size+rank])
+    #if rank<n2:
+    #    ids.append(idpairs[n1*size+rank])
+    ids = idpairs[rank:len(idpairs):size]
     
     #- Print info to outfile of this rank --------------------------------------
     if inp.verbose==True:
@@ -134,8 +135,12 @@ def par_st(size,rank):
         if inp.verbose==True:
 	    ofid.flush()
     
+    print('Trying to move computed calculations from ... ',file=None)
+    print(dir+'* ',file=None)
+    print('to...',file=None)
+    print(cfg.datadir+'correlations/'+corrname+'/',file=None)
     
-    os.system('mv '+dir+'/* '+cfg.datadir+'correlations/'+corrname+'/')
+    os.system('mv '+dir+'* '+cfg.datadir+'correlations/'+corrname+'/')
     os.system('rmdir '+dir)
     print('Rank %g finished correlations.' %rank,file=None)
         
