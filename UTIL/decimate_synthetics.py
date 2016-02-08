@@ -1,7 +1,7 @@
 import pyasdf
 import numpy as np
 
-name_dataset = '/Volumes/cowpox/SYNTHETICS/synthetic.h5'
+name_dataset = '/Volumes/cowpox/synthetic.h5'
 lowpasscorner = 0.025 # in Hz
 decimators = [4, 4, 4]
 

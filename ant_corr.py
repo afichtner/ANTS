@@ -1,5 +1,6 @@
-from mpi4py import MPI
 from __future__ import print_function
+from mpi4py import MPI
+
 import time
 import sys
 import os
