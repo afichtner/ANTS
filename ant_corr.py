@@ -1,3 +1,4 @@
+from mpi4py import MPI
 from __future__ import print_function
 import time
 import sys
@@ -21,7 +22,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
-from mpi4py import MPI
+
 
 if __name__=='__main__':
     import ant_corr as pc
@@ -140,7 +141,9 @@ def par_st(size,rank):
     print('to...',file=None)
     print(cfg.datadir+'correlations/'+corrname+'/',file=None)
     
-    os.system('mv '+dir+'* '+cfg.datadir+'correlations/'+corrname+'/')
+    dir1 = os.path.join(dir,'*')
+    dir2 = os.path.join(cfg.datadir,'correlations',corrname)
+    os.system('mv '+dir1+' '+dir2)
     os.system('rmdir '+dir)
     print('Rank %g finished correlations.' %rank,file=None)
         
@@ -468,7 +471,7 @@ def parlistpairs(corrname):
             else:
                 fileid = cfg.datadir + 'correlations/' + corrname + '/' + \
                 idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
-                fileid = cfg.datadir + 'correlations/' + corrname + '/rank*/' + \
+                fileid1 = cfg.datadir + 'correlations/' + corrname + '/rank*/' + \
                 idlist[j] + '???.' + idlist[i] + '???.'+ corrtype + '.' + corrname + '.SAC'
             
             if glob(fileid) != [] and inp.update == True:

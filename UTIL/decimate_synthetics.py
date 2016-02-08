@@ -50,7 +50,7 @@ with pyasdf.ASDFDataSet(name_dataset) as ds:
         # value.
         # Also note that only data with tags present in this map will be
         # processed. Others will be ignored.
-        tag_map={"synthetic": "synth_decimated"},cpu_count=1)
+        tag_map={"synthetic": "synth_decimated"},cpu_count=2)
 
 #ds = pyasdf.ASDFDataSet("/Volumes/cowpox/synthetic.h5")
 #ds.process(process_function=process,output_filename='test.h5',tag_map={"synthetic": "synth_decimated"},cpu_count=1)
