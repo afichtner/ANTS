@@ -631,6 +631,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
         # Check if the traces are both long enough
         if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
             t1 = t2 - inp.olap
+            print('One or both traces too short',file=None)
             continue
         # Check if too many zeros
         # I use epsilon for this check. That is convenient but not strictly right. It seems to do the job though. min doesn't work.
@@ -639,7 +640,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
         np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
             t1 = t2 - inp.olap
             
-            if inp.verbose: print('More than 10% of trace equals 0, skipping.')
+            if inp.verbose: print('More than 10% of trace equals 0, skipping.',file=None)
             continue
         
          #==============================================================================
@@ -710,8 +711,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 
                 cccstack+=ccc
                 ccccnt+=1
-                print(cccstack[0:10])
-                
+               
                 print('Finished a correlation window')
                 # Make this faster by zero padding
                 
