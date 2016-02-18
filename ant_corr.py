@@ -23,7 +23,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.util import nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
-
+from scipy import fftpack
 
 if __name__=='__main__':
     import ant_corr as pc
@@ -128,7 +128,7 @@ def par_st(size,rank):
     #- Run correlation for blocks ----------------------------------------------
     for block in ids:
         
-        corrblock(block,dir,corrname,ofid)
+        corrblock(block,dir,corrname,rank,ofid)
         if rank==0:
             print('Finished a block of correlations',file=None)
             print(time.strftime('%H.%M.%S'),file=None)
@@ -137,10 +137,10 @@ def par_st(size,rank):
         if inp.verbose==True:
 	    ofid.flush()
     
-    print('Trying to move computed calculations from ... ',file=None)
+    print('\nTrying to move computed calculations from: ',file=None)
     print(dir+'* ',file=None)
-    print('to...',file=None)
-    print(cfg.datadir+'correlations/'+corrname+'/',file=None)
+    print('to:',file=None)
+    print(cfg.datadir+'correlations/'+corrname+'/\n\n',file=None)
     
     dir1 = os.path.join(dir,'*')
     dir2 = os.path.join(cfg.datadir,'correlations',corrname)
@@ -148,7 +148,7 @@ def par_st(size,rank):
     os.system('rmdir '+dir)
     print('Rank %g finished correlations.' %rank,file=None)
         
-def corrblock(block,dir,corrname,ofid=None):
+def corrblock(block,dir,corrname,rank,ofid=None):
     """
     Receives a block with station pairs
     Loops through those station pairs
@@ -174,7 +174,9 @@ def corrblock(block,dir,corrname,ofid=None):
     None
     
     """
-   
+    print('Rank %g: Working on a block of station pairs...\n' %rank,file=None)
+    
+    
     datstr=obs.Stream()
     idlist=list()
     verbose=inp.verbose
@@ -218,7 +220,7 @@ def corrblock(block,dir,corrname,ofid=None):
             if id in idlist:
                 str1 += datstr.select(station=station, channel=channel).split()
             else:
-                (colltr,readsuccess) = addtr(id)
+                (colltr,readsuccess) = addtr(id,rank)
         
                 #- add this entire trace (which contains all data of this 
                 #- station that are available in this directory) to datstr and 
@@ -254,7 +256,7 @@ def corrblock(block,dir,corrname,ofid=None):
                     str2 += datstr.select(station=station, \
                         channel=channel).split()
                 else:
-                    (colltr,readsuccess)=addtr(id)
+                    (colltr,readsuccess)=addtr(id,rank)
                     
                     if readsuccess == True:
                         datstr += colltr
@@ -436,6 +438,7 @@ def parlistpairs(corrname):
     station ids
     
     """
+    
     # input...
     infile=inp.idfile
     nf=inp.npairs
@@ -540,6 +543,11 @@ def corr_pairs(str1,str2,corrname,geoinf):
     
     """
     
+    print('Computing correlation stack for:',file=None)
+    print('-------------',file=None)
+    print(str1[0].id)
+    print(str2[0].id)
+    print('-------------',file=None)
     
    
     startday=obs.UTCDateTime(inp.startdate)
@@ -555,8 +563,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
     n2=0
     cccstack=np.zeros(tlen)
     pccstack=np.zeros(tlen,dtype=np.float64)
-    cstack_ccc=np.zeros(tlen)
-    cstack_pcc=np.zeros(tlen)
+    cstack_ccc=np.zeros(tlen,dtype=np.complex128)
+    cstack_pcc=np.zeros(tlen,dtype=np.complex128)
     
     while n1<len(str1) and n2<len(str2):
     
@@ -589,9 +597,6 @@ def corr_pairs(str1,str2,corrname,geoinf):
             continue
        # tr1.plot()
         #tr2.plot()
-         #==============================================================================
-        #- Data treatment        
-        #==============================================================================
         
         #- Downsampling ===============================================================
         if len(tr1.data)>40 and len(tr2.data)>40:
@@ -607,6 +612,40 @@ def corr_pairs(str1,str2,corrname,geoinf):
         else:
             t1 = t2 - inp.olap
             continue   
+        #==============================================================================
+        #- Checks     
+        #============================================================================== 
+        if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
+            t1 = t2 - inp.olap
+            print('Encountered nan, skipping this trace pair...',file=None)
+            continue
+        if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
+            t1 = t2 - inp.olap
+            print('Encountered inf, skipping this trace pair...',file=None)
+            continue
+            
+        if len(tr1.data) == len(tr2.data):
+            mlag = inp.max_lag / tr1.stats.delta
+            mlag=int(mlag)
+            
+        # Check if the traces are both long enough
+        if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
+            t1 = t2 - inp.olap
+            continue
+        # Check if too many zeros
+        # I use epsilon for this check. That is convenient but not strictly right. It seems to do the job though. min doesn't work.
+        
+        if np.sum(np.abs(tr1.data)<sys.float_info.epsilon) > 0.1*tr1.stats.npts or \
+        np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
+            t1 = t2 - inp.olap
+            
+            if inp.verbose: print('More than 10% of trace equals 0, skipping.')
+            continue
+        
+         #==============================================================================
+        #- Data treatment        
+        #==============================================================================
+
 
         #- Glitch correction ==========================================================
         if inp.cap_glitches == True:
@@ -638,34 +677,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
         if inp.apply_ram:
             tr1 = ram_norm(tr1,inp.ram_window,prefilt=inp.ram_filter)
             tr2 = ram_norm(tr2,inp.ram_window,prefilt=inp.ram_filter)
-        #==============================================================================
-        #- Checks     
-        #============================================================================== 
         
-        if len(tr1.data) == len(tr2.data):
-            mlag = inp.max_lag / tr1.stats.delta
-            mlag=int(mlag)
-            
-            # Check if the traces are both long enough
-            if len(tr1.data)<=2*mlag or len(tr2.data)<=2*mlag:
-                t1 = t2 - inp.olap
-                continue
-            # Check if too many zeros
-            # I use epsilon for this check. That is convenient but not strictly right. It seems to do the job though. min doesn't work.
-            
-            if np.sum(np.abs(tr1.data)<sys.float_info.epsilon) > 0.1*tr1.stats.npts or \
-            np.sum(np.abs(tr2.data)<sys.float_info.epsilon) > 0.1*tr2.stats.npts:
-                t1 = t2 - inp.olap
-                
-                if inp.verbose: print('More than 10% of trace equals 0, skipping.')
-                continue
-            
-            if tr1.data.any()==np.nan or tr2.data.any()==np.nan:
-                t1 = t2 - inp.olap
-                continue
-            if tr1.data.any()==np.inf or tr2.data.any()==np.inf:
-                t1 = t2 - inp.olap
-                continue
+       
         #==============================================================================
         #- Correlations proper 
         #==============================================================================        #- Taper
@@ -678,6 +691,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 #ccc=classic_xcorr(tr1, tr2, mlag)
                 (ccc, params) = cross_covar(tr1.data, \
                 tr2.data, mlag,inp.normalize_correlation)
+                
+                
                 
                 if ccc.any() == np.nan:
                     msg='NaN encountered, omitting correlation from stack.'
@@ -695,21 +710,24 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 
                 cccstack+=ccc
                 ccccnt+=1
+                print(cccstack[0:10])
                 
                 print('Finished a correlation window')
                 # Make this faster by zero padding
                 
                 
                 if inp.get_pws == True:
-                    coh_ccc = np.zeros(nextpow2(len(ccc)),dtype=np.complex)
-                    coh_ccc[0:len(ccc)] += ccc*np.hanning(len(ccc))
-                    coh_ccc = hilbert(ccc)
-                    tol = np.max(coh_ccc)/1000.
-                    if tol < 1e-9:
-                        tol = 1e-9
+                    coh_ccc = np.zeros(nextpow2(len(ccc)))
+                    startindex = int(0.5*(len(coh_ccc) - len(ccc)))
+                    coh_ccc[startindex:startindex+len(ccc)] += ccc*np.hanning(len(ccc))
+                    coh_ccc = hilbert(coh_ccc)
+                    tol = np.max(coh_ccc)/10000.
+                    #if tol < 1e-9:
+                    #    tol = 1e-9
                     coh_ccc = coh_ccc/(np.absolute(coh_ccc)+tol)
-                    coh_ccc = coh_ccc[:len(ccc)]
+                    coh_ccc = coh_ccc[startindex:startindex+len(ccc)]
                     cstack_ccc+=coh_ccc
+                    
                 else: 
                     coh_ccc = None
                     cstack_ccc = None
@@ -733,21 +751,21 @@ def corr_pairs(str1,str2,corrname,geoinf):
             
             if inp.corrtype == 'pcc' or inp.corrtype == 'both':
                 pcc=phase_xcorr(tr1.data, tr2.data, mlag, inp.pcc_nu)
-                print(type(pcc))
                 pccstack+=pcc
                 pcccnt+=1
                 
                 
                 
                 if inp.get_pws == True:
-                    coh_pcc = np.zeros(nextpow2(len(pcc)),dtype=np.complex)
-                    coh_pcc[0:len(pcc)] += pcc*np.hanning(len(pcc))
-                    coh_pcc = hilbert(pcc)
-                    tol = np.max(coh_pcc)/1000.
-                    if tol < 1e-9:
-                        tol = 1e-9
+                    coh_pcc = np.zeros(nextpow2(len(pcc)))
+                    startindex = int(0.5*(len(coh_pcc) - len(pcc)))
+                    coh_pcc[startindex:startindex+len(pcc)] += pcc*np.hanning(len(pcc))  # Tapering and zero padding to make hilbert trafo faster
+                    coh_pcc = hilbert(coh_pcc)
+                    tol = np.max(coh_pcc)/10000.
+                    #if tol < 1e-9:
+                    #    tol = 1e-9
                     coh_pcc = coh_pcc/(np.absolute(coh_pcc)+tol)
-                    coh_pcc = coh_pcc[:len(pcc)]
+                    coh_pcc = coh_pcc[startindex:startindex+len(pcc)]
                     cstack_pcc+=coh_pcc
                 else: 
                     coh_pcc = None
@@ -780,7 +798,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
     
     
 
-def addtr(id):
+def addtr(id,rank):
     
     """
     Little reader.
@@ -789,7 +807,7 @@ def addtr(id):
     directory.
     
     """
- 
+    print('Rank %g: Reading noise data...\n' %rank,file=None)
     traces=glob(inp.indir+'/'+id+'.*.'+inp.prepname+'.*')
     traces.sort()
     readone=False
@@ -814,7 +832,6 @@ def addtr(id):
         
         try:
             newtr=obs.read(filename)
-            print(filename)
         except:
             print('Problems opening data file:\n',file=None)
             print(tr,file=None)
@@ -1010,13 +1027,17 @@ def whiten(tr):
     
     tr.taper(max_percentage=0.05, type='cosine')
     
-    spec = np.fft.fft(tr.data)
     
-    spec /= np.abs(spec)
+    
+    spec = fftpack.fft(tr.data)
+    
+    # Don't divide by 0
+    tol = np.max(np.abs(spec)) / 1e5
+    spec /= np.abs(spec+tol)
     spec *= taper
    
     
-    tr.data = np.real(np.fft.ifft(spec,n=len(tr.data)))
+    tr.data = np.real(fftpack.ifft(spec,n=len(tr.data)))
     return tr
     
     
