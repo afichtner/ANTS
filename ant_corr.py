@@ -365,7 +365,8 @@ found, setting distance to zero for station pair:')
             if nccc != 0:
                 savecorrs(ccc,cstack_ccc,nccc,id_1,\
                     id_2,geoinf,corrname,'ccc',dir)
-                if inp.verbose: print('Correlated traces from stations '+id1[0]+\
+            if nccc != 0 or npcc != 0 and inp.verbose:
+                print('Correlated traces from stations '+id1[0]+\
                 ' and '+id2[0],file=ofid)
         
         # Hor componets =======================================================
@@ -571,11 +572,11 @@ def corr_pairs(str1,str2,corrname,geoinf):
         # Check if the end of one of the traces has been reached
         if str1[n1].stats.endtime-t1<inp.winlen-1:
             n1+=1
-            #print('No more windows in trace 1..',file=None)
+            print('No more windows in trace 1..',file=None)
             continue
         elif str2[n2].stats.endtime-t1<inp.winlen-1:
             n2+=1
-            #print('No more windows in trace 2..',file=None)
+            print('No more windows in trace 2..',file=None)
             continue
         
         # Check the starttime of the potentially new trace
@@ -594,6 +595,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
         
         if tr1.stats.npts != tr2.stats.npts:
             t1 = t2 - inp.olap
+            
             continue
        # tr1.plot()
         #tr2.plot()
@@ -683,106 +685,106 @@ def corr_pairs(str1,str2,corrname,geoinf):
         #==============================================================================
         #- Correlations proper 
         #==============================================================================        #- Taper
-            if inp.taper_traces == True:
-                tr1.taper(type='cosine',max_percentage=inp.perc_taper)
-                tr2.taper(type='cosine',max_percentage=inp.perc_taper)
+        if inp.taper_traces == True:
+            tr1.taper(type='cosine',max_percentage=inp.perc_taper)
+            tr2.taper(type='cosine',max_percentage=inp.perc_taper)
         
-        #- Classical correlation part =====================================
-            if inp.corrtype == 'ccc' or inp.corrtype == 'both':
-                #ccc=classic_xcorr(tr1, tr2, mlag)
-                (ccc, params) = cross_covar(tr1.data, \
-                tr2.data, mlag,inp.normalize_correlation)
-                
-                
-                
-                if ccc.any() == np.nan:
-                    msg='NaN encountered, omitting correlation from stack.'
-                    warn(msg)
-                    print(tr1)
-                    print(tr2)
-                    t1 = t2 - inp.olap
-                    continue
-                    
-                # normalization by trace energy
-                en1 = params[2]
-                en2 = params[3]
-                if inp.normalize_correlation == True:
-                    ccc/=(sqrt(en1)*sqrt(en2))
-                
-                cccstack+=ccc
-                ccccnt+=1
-               
-                print('Finished a correlation window')
-                # Make this faster by zero padding
-                
-                
-                if inp.get_pws == True:
-                    coh_ccc = np.zeros(nextpow2(len(ccc)))
-                    startindex = int(0.5*(len(coh_ccc) - len(ccc)))
-                    coh_ccc[startindex:startindex+len(ccc)] += ccc*np.hanning(len(ccc))
-                    coh_ccc = hilbert(coh_ccc)
-                    tol = np.max(coh_ccc)/10000.
-                    #if tol < 1e-9:
-                    #    tol = 1e-9
-                    coh_ccc = coh_ccc/(np.absolute(coh_ccc)+tol)
-                    coh_ccc = coh_ccc[startindex:startindex+len(ccc)]
-                    cstack_ccc+=coh_ccc
-                    
-                else: 
-                    coh_ccc = None
-                    cstack_ccc = None
-                    
-                if inp.write_all==True:
-                    id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
-                    id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
-                    win_dir = cfg.datadir+'/correlations/interm/'+id1+\
-                        '_'+id2+'/'
-                    
-                    if os.path.exists(win_dir)==False:
-                        os.mkdir(win_dir)
-                    
-                    timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
-                    savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'ccc',win_dir,params,timestring,startday=t1,endday=t2)
-                            
-                    
-            #- Phase correlation part =========================================
-            # To be implemented: Getting trace energy
+    #-   Classical correlation part =====================================
+        if inp.corrtype == 'ccc' or inp.corrtype == 'both':
+            #ccc=classic_xcorr(tr1, tr2, mlag)
+            (ccc, params) = cross_covar(tr1.data, \
+            tr2.data, mlag,inp.normalize_correlation)
             
-            if inp.corrtype == 'pcc' or inp.corrtype == 'both':
-                pcc=phase_xcorr(tr1.data, tr2.data, mlag, inp.pcc_nu)
-                pccstack+=pcc
-                pcccnt+=1
+            
+            
+            if ccc.any() == np.nan:
+                msg='NaN encountered, omitting correlation from stack.'
+                warn(msg)
+                print(tr1)
+                print(tr2)
+                t1 = t2 - inp.olap
+                continue
                 
+            # normalization by trace energy
+            en1 = params[2]
+            en2 = params[3]
+            if inp.normalize_correlation == True:
+                ccc/=(sqrt(en1)*sqrt(en2))
+            
+            cccstack+=ccc
+            ccccnt+=1
+           
+            print('Finished a correlation window',file=None)
+            # Make this faster by zero padding
+            
+            
+            if inp.get_pws == True:
+                coh_ccc = np.zeros(nextpow2(len(ccc)))
+                startindex = int(0.5*(len(coh_ccc) - len(ccc)))
+                coh_ccc[startindex:startindex+len(ccc)] += ccc*np.hanning(len(ccc))
+                coh_ccc = hilbert(coh_ccc)
+                tol = np.max(coh_ccc)/10000.
+                #if tol < 1e-9:
+                #    tol = 1e-9
+                coh_ccc = coh_ccc/(np.absolute(coh_ccc)+tol)
+                coh_ccc = coh_ccc[startindex:startindex+len(ccc)]
+                cstack_ccc+=coh_ccc
                 
+            else: 
+                coh_ccc = None
+                cstack_ccc = None
                 
-                if inp.get_pws == True:
-                    coh_pcc = np.zeros(nextpow2(len(pcc)))
-                    startindex = int(0.5*(len(coh_pcc) - len(pcc)))
-                    coh_pcc[startindex:startindex+len(pcc)] += pcc*np.hanning(len(pcc))  # Tapering and zero padding to make hilbert trafo faster
-                    coh_pcc = hilbert(coh_pcc)
-                    tol = np.max(coh_pcc)/10000.
-                    #if tol < 1e-9:
-                    #    tol = 1e-9
-                    coh_pcc = coh_pcc/(np.absolute(coh_pcc)+tol)
-                    coh_pcc = coh_pcc[startindex:startindex+len(pcc)]
-                    cstack_pcc+=coh_pcc
-                else: 
-                    coh_pcc = None
-                    cstack_pcc = None
-                if inp.write_all==True:
-                    id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
-                    id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
-                    win_dir = cfg.datadir+'/correlations/interm/'+id1+\
-                        '_'+id2+'/'
-                    
-                    if os.path.exists(win_dir)==False:
-                        os.mkdir(win_dir)
-                    timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
-                    savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
-                    corrname,'pcc',win_dir,None,timestring,startday=t1,endday=t2)
-                       
-               
+            if inp.write_all==True:
+                id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
+                id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
+                win_dir = cfg.datadir+'/correlations/interm/'+id1+\
+                    '_'+id2+'/'
+                
+                if os.path.exists(win_dir)==False:
+                    os.mkdir(win_dir)
+                
+                timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
+                savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
+                corrname,'ccc',win_dir,params,timestring,startday=t1,endday=t2)
+                        
+                
+        #- Phase correlation part =========================================
+        # To be implemented: Getting trace energy
+        
+        if inp.corrtype == 'pcc' or inp.corrtype == 'both':
+            pcc=phase_xcorr(tr1.data, tr2.data, mlag, inp.pcc_nu)
+            pccstack+=pcc
+            pcccnt+=1
+            
+            
+            
+            if inp.get_pws == True:
+                coh_pcc = np.zeros(nextpow2(len(pcc)))
+                startindex = int(0.5*(len(coh_pcc) - len(pcc)))
+                coh_pcc[startindex:startindex+len(pcc)] += pcc*np.hanning(len(pcc))  # Tapering and zero padding to make hilbert trafo faster
+                coh_pcc = hilbert(coh_pcc)
+                tol = np.max(coh_pcc)/10000.
+                #if tol < 1e-9:
+                #    tol = 1e-9
+                coh_pcc = coh_pcc/(np.absolute(coh_pcc)+tol)
+                coh_pcc = coh_pcc[startindex:startindex+len(pcc)]
+                cstack_pcc+=coh_pcc
+            else: 
+                coh_pcc = None
+                cstack_pcc = None
+            if inp.write_all==True:
+                id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
+                id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
+                win_dir = cfg.datadir+'/correlations/interm/'+id1+\
+                    '_'+id2+'/'
+                
+                if os.path.exists(win_dir)==False:
+                    os.mkdir(win_dir)
+                timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
+                savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
+                corrname,'pcc',win_dir,None,timestring,startday=t1,endday=t2)
+                   
+           
         #Update starttime
             t1 = t2 - inp.olap
         else:
