@@ -5,7 +5,7 @@ import time
 import sys
 import os
  
-import obspy as obs
+#import obspy as obs
 import TOOLS.read_xml as rxml
 import antconfig as cfg
 import numpy as np
@@ -15,9 +15,9 @@ import INPUT.input_correlation as inp
 
 from math import sqrt
 from glob import glob
-from obspy.core import Stats, Trace
+from obspy.core import Stats, Trace, Stream, UTCDateTime, read
 #from obspy.noise.correlation import Correlation
-from obspy.noise.correlation_functions import phase_xcorr
+#from obspy.noise.correlation_functions import phase_xcorr
 from obspy.signal.cross_correlation import xcorr
 from obspy.signal.filter import envelope
 from obspy.signal.util import nextpow2
@@ -35,8 +35,10 @@ if __name__=='__main__':
     
     if rank==0 and inp.update == False and os.path.exists(cfg.datadir+\
     '/correlations/input/'+inp.corrname+'.txt') == True:
-        sys.exit('Choose a new correlation name tag or set update=True.\
-         Aborting.')
+        print('Choose a new correlation name tag or set update=True.\
+         Aborting all processes.',file=None)
+        # sys.exit did NOT work properly here. 
+        MPI.COMM_WORLD.Abort(1)
     pc.par_st(size, rank)
     
 
@@ -177,7 +179,7 @@ def corrblock(block,dir,corrname,rank,ofid=None):
     print('Rank %g: Working on a block of station pairs...\n' %rank,file=None)
     
     
-    datstr=obs.Stream()
+    datstr=Stream()
     idlist=list()
     verbose=inp.verbose
     
@@ -192,8 +194,8 @@ def corrblock(block,dir,corrname,rank,ofid=None):
     
 
     for pair in block:
-        str1=obs.Stream()
-        str2=obs.Stream()
+        str1=Stream()
+        str2=Stream()
         id1 = pair[0]
         id2 = pair[1]
         
@@ -551,8 +553,8 @@ def corr_pairs(str1,str2,corrname,geoinf):
     print('-------------',file=None)
     
    
-    startday=obs.UTCDateTime(inp.startdate)
-    endday=obs.UTCDateTime(inp.enddate)
+    startday=UTCDateTime(inp.startdate)
+    endday=UTCDateTime(inp.enddate)
     t1=startday
     Fs_new=inp.Fs
     tlen=int(inp.max_lag*Fs_new[-1])*2+1
@@ -567,6 +569,52 @@ def corr_pairs(str1,str2,corrname,geoinf):
     cstack_ccc=np.zeros(tlen,dtype=np.complex128)
     cstack_pcc=np.zeros(tlen,dtype=np.complex128)
     
+    # Collect intermediate traces in a binary file.
+    if inp.write_all:
+        if inp.get_pws:
+            msg = 'Saving intermediate windows of phase weighted stack\
+is not implemented yet. Intermediate windows will be saved as linear stack.'
+        
+        # set the size of float
+        
+        # set size of character array for processing string
+        
+        # format of file:
+        # header consisting of float, float, float, string of 256, string of 256
+        # traces, traces, traces...
+        # header values: Sampling rate Fs, number of samples in each trace,  Nr. of windows in intermediate stacks, Endianness, preprocessing string
+        interm_fs = Fs_new[-1]
+        interm_nsam = tlen
+        interm_nwin = inp.interm_nstack
+        
+        if cccstack.dtype.byteorder == '=':
+            interm_endian = sys.byteorder
+        elif cccstack.dtype.byteorder == '<':
+            interm_endian = 'little'
+        elif cccstack.dtype.byteorder == '>':
+            interm_endian = 'big'
+            
+        interm_preproc = get_prepstring()
+        
+        # open the file(s)
+        if inp.corrtype in ['both','pcc','ccc']:
+            
+            outdir = os.path.join(cfg.datadir,'correlations',inp.corrname)
+            interm_file=os.path.join(outdir,str1[0].id+'.'+str2[0].id+'.'+inp.corrtype+'.'+\
+            inp.corrname+'.windows.bin')
+            interm_file = open(interm_file,'wb')
+            header_1 = np.array([interm_fs,interm_nsam,interm_nwin],dtype='f4')
+            header_2 = np.array([interm_endian,interm_preproc],dtype='S256')
+            header_1.tofile(interm_file)
+            header_2.tofile(interm_file)
+            
+        else:
+            print('Correlation type not recognized. Correlation types are:\
+ccc, pcc or both.')
+            MPI.COMM_WORLD.Abort(1)
+            
+            
+         
     while n1<len(str1) and n2<len(str2):
     
         # Check if the end of one of the traces has been reached
@@ -583,7 +631,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
         t1=max(t1,str1[n1].stats.starttime,str2[n2].stats.starttime)
         #print(t1,file=None)
         t2=t1+inp.winlen
-        
+        print(t1)
         # Check if the end of the desired stacking window is reached
         if t2>endday: 
             #print('At end of correlation time',file=None)
@@ -708,7 +756,7 @@ def corr_pairs(str1,str2,corrname,geoinf):
             # normalization by trace energy
             en1 = params[2]
             en2 = params[3]
-            if inp.normalize_correlation == True:
+            if inp.normalize_correlation:
                 ccc/=(sqrt(en1)*sqrt(en2))
             
             cccstack+=ccc
@@ -734,24 +782,26 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 coh_ccc = None
                 cstack_ccc = None
                 
-            if inp.write_all==True:
-                id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
-                id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
-                win_dir = cfg.datadir+'/correlations/interm/'+id1+\
-                    '_'+id2+'/'
+            if inp.write_all==True and ccccnt % inp.interm_nstack == 0:
+                ccc = np.array(ccc,dtype='f4')
+                ccc.tofile(interm_file)
+                #id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
+                #id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
+                #win_dir = cfg.datadir+'/correlations/interm/'+id1+\
+                #    '_'+id2+'/'
                 
-                if os.path.exists(win_dir)==False:
-                    os.mkdir(win_dir)
+                #if os.path.exists(win_dir)==False:
+                #    os.mkdir(win_dir)
                 
-                timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
-                savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
-                corrname,'ccc',win_dir,params,timestring,startday=t1,endday=t2)
+                #timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')
+                #savecorrs(ccc,coh_ccc,1,tr1.id,tr2.id,geoinf,\
+                #corrname,'ccc',win_dir,params,timestring,startday=t1,endday=t2)
                         
                 
-        #- Phase correlation part =========================================
-        # To be implemented: Getting trace energy
+                #- Phase correlation part =========================================
+                # To be implemented: Getting trace energy
         
-        if inp.corrtype == 'pcc' or inp.corrtype == 'both':
+        elif inp.corrtype == 'pcc' or inp.corrtype == 'both':
             pcc=phase_xcorr(tr1.data, tr2.data, mlag, inp.pcc_nu)
             pccstack+=pcc
             pcccnt+=1
@@ -773,25 +823,24 @@ def corr_pairs(str1,str2,corrname,geoinf):
                 coh_pcc = None
                 cstack_pcc = None
             if inp.write_all==True:
-                id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
-                id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
-                win_dir = cfg.datadir+'/correlations/interm/'+id1+\
-                    '_'+id2+'/'
-                
-                if os.path.exists(win_dir)==False:
-                    os.mkdir(win_dir)
-                timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
-                savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
-                corrname,'pcc',win_dir,None,timestring,startday=t1,endday=t2)
+                pcc = np.array(pcc,dtype='f4')
+                pcc.tofile(interm_file)
+                #id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
+                #id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
+                #win_dir = cfg.datadir+'/correlations/interm/'+id1+\
+                #    '_'+id2+'/'
+                #
+                #if os.path.exists(win_dir)==False:
+                #    os.mkdir(win_dir)
+                #timestring = tr1.stats.starttime.strftime('.%Y.%j.%H.%M.%S')  
+                #savecorrs(pcc,coh_pcc,1,tr1.id,tr2.id,geoinf,\
+                #corrname,'pcc',win_dir,None,timestring,startday=t1,endday=t2)
                    
            
         #Update starttime
-            t1 = t2 - inp.olap
-        else:
-            #print('Traces have unequal length!',file=None)
-            t1 = t2 - inp.olap
-
-
+        t1 = t2 - inp.olap
+        
+    interm_file.close()
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
     
     
@@ -813,8 +862,8 @@ def addtr(id,rank):
     traces=glob(inp.indir+'/'+id+'.*.'+inp.prepname+'.*')
     traces.sort()
     readone=False
-    endday=obs.UTCDateTime(inp.enddate)
-    startday=obs.UTCDateTime(inp.startdate)
+    endday=UTCDateTime(inp.enddate)
+    startday=UTCDateTime(inp.startdate)
     if len(traces) == 0:
         return (Trace(),False)
              
@@ -827,13 +876,14 @@ def addtr(id,rank):
         
         (sy,sm)=filename.split('/')[-1].split('.')[4:6]
         (ey,em)=filename.split('/')[-1].split('.')[9:11]
-        sf=obs.UTCDateTime(sy+','+sm)
-        ef=obs.UTCDateTime(ey+','+em)
+        sf=UTCDateTime(sy+','+sm)
+        ef=UTCDateTime(ey+','+em)
         if sf>endday or ef<startday:
             continue
         
         try:
-            newtr=obs.read(filename)
+            newtr=read(filename)
+            print(newtr[0].stats.starttime)
         except:
             print('Problems opening data file:\n',file=None)
             print(tr,file=None)
@@ -879,25 +929,23 @@ def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
 #==============================================================================
 
     
-    tr=obs.Trace(data=correlation)
+    tr=Trace(data=correlation)
     tr.stats.sac={}
     
     if startday == None:
-        startday=obs.UTCDateTime(inp.startdate)
+        startday=UTCDateTime(inp.startdate)
     if endday == None:
-        endday=obs.UTCDateTime(inp.enddate)
+        endday=UTCDateTime(inp.enddate)
         
     (lat1, lon1, lat2, lon2, dist, az, baz)=geoinf
     
     
     # Add a preprocessing string:
-    prepstring = ' '
-    if inp.cap_glitches == True: prepstring += 'g'
-    if inp.apply_white == True: prepstring += 'w'
-    if inp.apply_onebit == True: prepstring += 'o'
+    prepstring = get_prepstring()
+    
 
     tr.stats.sampling_rate=inp.Fs[-1]
-    tr.stats.starttime=obs.UTCDateTime(2000, 01, 01)-inp.max_lag*inp.Fs[-1]
+    tr.stats.starttime=UTCDateTime(2000, 01, 01)-inp.max_lag*inp.Fs[-1]
     tr.stats.network=id1.split('.')[0]
     tr.stats.station=id1.split('.')[1]
     tr.stats.location=id1.split('.')[2]
@@ -940,8 +988,6 @@ def savecorrs(correlation,phaseweight,n_stack,id1,id2,geoinf,\
     tr.write(fileid,format='SAC')
     
     if phaseweight is not None:
-        if corrtype == 'pcc': corr_type = 'pcs'
-        if corrtype == 'ccc': corr_type = 'ccs'
         
         fileid_cwt=outdir+id1+'.'+id2+'.'+corrtype+\
         '.'+corrname+timestring+'.npy'
@@ -1064,3 +1110,28 @@ def ram_norm(trace,winlen,prefilt=None):
     trace_orig.data /= weighttrace
     return(trace_orig)
 
+def get_prepstring():
+    
+    prepstring = ''
+    if inp.apply_bandpass: 
+        prepstring +='b'
+    else:
+        prepstring += '-'
+    if inp.cap_glitches: 
+        prepstring += 'g'
+    else:
+        prepstring += '-'    
+    if inp.apply_white: 
+        prepstring += 'w'
+    else:
+        prepstring += '-'
+    if inp.apply_onebit: 
+        prepstring += 'o'
+    else:
+        prepstring += '-'
+    if inp.apply_ram: 
+        prepstring += 'r'
+    else:
+        prepstring += '-'
+    
+    return prepstring
