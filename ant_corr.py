@@ -783,8 +783,12 @@ ccc, pcc or both.')
                 cstack_ccc = None
                 
             if inp.write_all==True and ccccnt % inp.interm_nstack == 0:
+                trcname = t2.strftime("end%Y.%j.%H.%M.%S")
+                trcname = np.array([trcname],dtype='S24')
+                trcname.tofile(interm_file)
                 ccc = np.array(ccc,dtype='f4')
                 ccc.tofile(interm_file)
+                
                 #id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
                 #id2=str2[n2].id.split('.')[0]+'.'+str2[n2].id.split('.')[1]
                 #win_dir = cfg.datadir+'/correlations/interm/'+id1+\
@@ -823,6 +827,9 @@ ccc, pcc or both.')
                 coh_pcc = None
                 cstack_pcc = None
             if inp.write_all==True:
+                trcname = t2.strftime("end%Y.%j.%H.%M.%S")
+                trcname = np.array([trcname],dtype='S24')
+                trcname.tofile(interm_file)
                 pcc = np.array(pcc,dtype='f4')
                 pcc.tofile(interm_file)
                 #id1=str1[n1].id.split('.')[0]+'.'+str1[n1].id.split('.')[1]
