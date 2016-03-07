@@ -8,24 +8,25 @@
 # print screen output
 verbose=True
 
-# save intermediate result at every time window (attention, will create ***LOTS*** of files)
+# save intermediate result at every time window or every couple of windows as determined by the next parameter interm_nstack (attention, this needs some storage space and is also slower.)
 write_all=False
-
+# save intermediate windows not after every time window, but after this many single windows have been stacked:
+interm_nstack = 1
 # provide a name that will appear as 'stamp' on all correlations calculated in this run
-corrname='bhutan_pcc_test'
+corrname='noisy'
 
 # Set to True if updating on a previous run?
-update = True
+update = False
 	
 #*******************************************************************************
 # Specifics for data distribution to cores
 # ******************************************************************************
 # station ID list; containing entries in format net.sta.loc.cha
-idfile = 'INPUT/correlationlist_testbhutan.txt'
+idfile = 'INPUT/correlationlist.txt'
 # How many station pairs for each core? Typically the number of files opened by that core is about n+1
 npairs = 1
 # channel: LH, BH, VH...
-channel='HH'
+channel='LH'
 # component: choose between Z, RT, T, R. 'All channels' is not implemented yet
 components='Z'
 # Mix channels?
@@ -36,54 +37,54 @@ mix_cha=False
 #*******************************************************************************
 
 # Input directory containing data. Can only handle one input directory at the moment.
-indir='/Volumes/cowpox/DATA/processed/bhutan/'
+indir='/Volumes/cowpox/DATA/processed/noisy'
 # Enter preprocessing run name(s). Put * for any preprocessing
-prepname='bhutan'
+prepname='noisy'
     #*******************************************************************************
 # Time
 #*******************************************************************************
 # Sampling rate.If different from sampling rate, data will be downsampled before correlation.
-Fs = [5.0]
+Fs = [0.5]
 #Start date. Will only process files from this
-startdate='20130601'
+startdate='20140101'
 #End date. Will only process files until this. Format yyyymmdd
-enddate='20140701'
+enddate='20150101'
 #Length of the time windows to be correlated, in seconds
-winlen = 6553.6
+winlen = 32768#6553.6
 #Overlap in SECONDS
 #Groos et al. recommend an overlap that is equal to the maximum lag
-olap=100
+olap=6000
     
    
     #*******************************************************************************#Correlations
 #*******************************************************************************
 #apply bandpass before correlating
-apply_bandpass = False
-filter=(0.01,0.3,3)
+apply_bandpass = True
+filter=(0.003,0.01,3)
 
 #apply pretreatment
 cap_glitches=False
-glitch_thresh = 10.
+glitch_thresh = 15.
 apply_onebit=False
 apply_white=False
-white_freqs=(0.002,0.01)
-white_tape=0.1
+white_freqs=(0.01,2.)
+white_tape=0.02
 apply_ram=False
 ram_window=50.
 ram_filter=(0.02,0.066667,4)
 taper_traces=True
-perc_taper=0.05
+perc_taper=0.02
 	
 #Type of correlations
 
 #Autocorrelation yes or no
 autocorr=False
 # Type of correlation: 'ccc' or 'pcc' or 'both'
-corrtype='pcc'
+corrtype='ccc'
 # Normalize the correlation? (otherwise it remains a covariance)
-normalize_correlation=False
+normalize_correlation=True
 # Maximum lag in seconds
-max_lag=200
+max_lag=12000
 # Obtain a phase weight? (cf Schimmel and Paulssen 2007)
 get_pws=False
 #For phase cross-correlation: Specify exponent (cf Schimmel et al. 2013)
@@ -99,6 +100,10 @@ if type(verbose) != bool:
     
 if type(write_all) != bool:
     msg = 'Control input file: write_all must be boolean'
+    raise TypeError(msg)
+
+if type(interm_nstack) != int and type(interm_nstack) != float:
+    msg = 'Control input file: interm_nstack must be str or float'
     raise TypeError(msg)
     
 if type(update) != bool:

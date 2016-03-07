@@ -846,8 +846,8 @@ ccc, pcc or both.')
            
         #Update starttime
         t1 = t2 - inp.olap
-        
-    interm_file.close()
+    if 'interm_file' in locals():  
+        interm_file.close()
     return(cccstack,pccstack,cstack_ccc,cstack_pcc,ccccnt,pcccnt)
     
     

@@ -1,6 +1,7 @@
 # A script to process ambient vibration records
 from __future__ import print_function
 # Use the print function to be able to switch easily between stdout and a file
+from mpi4py import MPI
 import os
 import sys
 import shutil
@@ -24,14 +25,14 @@ import INPUT.input_correction as inp
 if __name__=='__main__':
     import ant_proc as pp
 
-    rank = int(os.environ[inp.rankvariable])
-    size=int(sys.argv[1])
-    print(rank,size)
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
     
     inname=cfg.datadir+'/processed/input/ic.'+inp.prepname+'.txt'
     if rank==0 and os.path.exists(inname)==True and inp.update == False:
         sys.exit("Choose a new name tag or set update to True. Aborting")
-        
+        MPI.COMM_WORLD.Abort(1)
     pp.ic(rank,size)
 
 
@@ -202,7 +203,7 @@ def ic(rank,size):
                     print('Updating...',file=ofid)
             
             if verbose==True: print('-----------------------------------------\
-            ------------------',file=ofid)
+------------------',file=ofid)
     
             #==================================================================================
             # basic quality checks
