@@ -1,6 +1,6 @@
 # configuration for ants
 
-datadir='/Volumes/cowpox/DATA/'
+datadir='./DATA/'
 testdir='./TEST/'
 resdir='./RES/'
 inpdir='./INPUT/'
