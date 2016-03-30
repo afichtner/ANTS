@@ -1,13 +1,20 @@
 from glob import glob
-import antconfig as cfg
+from ANTS import antconfig as cfg
 import os
+import sys
 
+if __name__=='__main__':
+    from UTIL import prepare_corr_ids as pp
+   
+    indir = sys.argv[1]
+    prepname = sys.argv[2]
+    
+    pp.prepare_corr_ids(indir,prepname)
+    
 def prepare_corr_ids(indir,prepname):
+ 
     
-    if os.path.exists('INPUT/ID_LISTS')==False:
-        os.mkdir('INPUT/ID_LISTS')
-    
-    outfile='INPUT/correlationlist_new.txt'
+    outfile=os.path.join(cfg.inpdir,'correlationlist_new.txt')
     fid = open(outfile,'w')
     
     idlist = glob(indir+'/*.'+prepname+'.mseed')

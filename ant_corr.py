@@ -4,14 +4,14 @@ from mpi4py import MPI
 import time
 import sys
 import os
+import numpy as np 
  
 #import obspy as obs
-import TOOLS.read_xml as rxml
-import antconfig as cfg
-import numpy as np
-import TOOLS.processing as proc
-import TOOLS.rotationtool as rt
-import INPUT.input_correlation as inp
+from ANTS.TOOLS import read_xml as rxml
+from ANTS import antconfig as cfg
+from ANTS.TOOLS import processing as proc
+from ANTS.TOOLS import rotationtool as rt
+from ANTS.INPUT import input_correlation as inp
 
 from math import sqrt
 from glob import glob
@@ -26,7 +26,7 @@ from scipy.signal import hilbert
 from scipy import fftpack
 
 if __name__=='__main__':
-    import ant_corr as pc
+    from ANTS import ant_corr as pc
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -301,10 +301,12 @@ def corrblock(block,dir,corrname,rank,ofid=None):
             lat2 = str2[0].stats['lat']
             lon2 = str2[0].stats['lon']
         except KeyError:
-            (lat1,lon1,lat2,lon2) = rxml.get_coord_staxml(id1[0].\
-            split('.')[0],id1[0].split('.')[1],\
-            id2[0].split('.')[0],id2[0].split('.')[1])
-            if (lat1,lon1,lat2,lon2) ==(0,0,0,0):
+            (lat1,lon1) = rxml.get_coord_staxml(id1[0].\
+            split('.')[0],id1[0].split('.')[1])
+            (lat2,lon2) = rxml.get_coord_staxml(id2[0].\
+            split('.')[0],id2[0].split('.')[1])
+                        
+            if (lat1,lon1) == (0,0) or (lat2,lon2) == (0,0):
                 print('Problems with metadata: No station coordinates \
 found, setting distance to zero for station pair:')
                 print(id1[0].\

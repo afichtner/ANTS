@@ -1,11 +1,19 @@
 import xml.etree.ElementTree as et
 import os
 import obspy as obs
-from obspy.fdsn import Client
 from warnings import warn
-#from obspy.geodetics.base import gps2DistAzimuth
-from obspy.core.util import gps2DistAzimuth
 from glob import glob
+from obspy import read_inventory
+try:
+    from obspy.core.util import gps2DistAzimuth
+except ImportError:
+    from obspy.geodetics import gps2dist_azimuth
+try:
+    from obspy.fdsn import Client
+except ImportError:
+    from obspy.clients.fdsn import Client
+
+
 import antconfig as cfg
 
 #==============================================================================================
@@ -27,17 +35,18 @@ def find_coord(path_to_xml):
     sta = path_to_xml.split('/')[-1].split('.')[1]
     
     try:
-        inf = read_xml(path_to_xml)
-        
-    except IOError: 
+        #inf = read_xml(path_to_xml)
+        inv = read_inventory(path_to_xml)
+    except IOError, TypeError: 
         get_staxml(path_to_xml.split('/')[-1].split('.')[0], sta)
         msg = 'stationxml file not found, trying to download...'
         warn(msg)
-        
-    try:
-        lat=inf[1]['Network']['Station']['Latitude']
-        lon=inf[1]['Network']['Station']['Longitude']
-        return sta, float(lat),float(lon)
+        inv = read_inventory(path_to_xml)
+        sta = inv[0][0]
+        staname = sta.code
+        lat=sta.latitude
+        lon=sta.longitude
+        return str(staname), float(lat),float(lon)
     
     except KeyError: 
         msg='Faulty stationxml file: Could not retrieve coordinates.'
@@ -57,7 +66,7 @@ def get_staxml(net,sta):
 
 #==============================================================================================
 
-def get_coord_staxml(net1, sta1, net2, sta2):
+def get_coord_staxml(net1, sta1):
 
     try:
         stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
@@ -66,25 +75,13 @@ def get_coord_staxml(net1, sta1, net2, sta2):
         print 'Trying to download stationxml nr. 1...'
         try:
             get_staxml(net1,sta1)
-        except:
-            return(0,0,0,0)
-        
-    
-    try:
-        stafile2=glob(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'*.xml')[0]    
-        (staname2,lat2,lon2)=find_coord(cfg.datadir+'/stationxml/'+net2+'.'+sta2+'.xml')
-    except IndexError:
-        print 'Trying to download stationxml nr. 2...'
-        try:
-            get_staxml(net2,sta2)
+            stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
+            (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
         except:
             return(0,0,0,0)
             
     
-    if staname1 =='000' or staname2 =='000':
-        return(0,0,0,0)
-    
-    return (lat1,lon1,lat2,lon2)
+    return (lat1,lon1)
 
 #==============================================================================
 def get_geoinf(x1,y1,x2,y2,inp='coord'):

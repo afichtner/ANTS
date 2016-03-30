@@ -14,16 +14,15 @@ from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 
-import TOOLS.processing as proc
-import TOOLS.read_xml as rxml 
-import TOOLS.mergetraces as mt
-import TOOLS.event_excluder as ee
+from ANTS.TOOLS import processing as proc
+from ANTS.TOOLS import mergetraces as mt
+from ANTS.TOOLS import event_excluder as ee
 
-import antconfig as cfg
-import INPUT.input_correction as inp
+from ANTS import antconfig as cfg
+from ANTS.INPUT import input_correction as inp
 
 if __name__=='__main__':
-    import ant_proc as pp
+    from ANTS import ant_proc as pp
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

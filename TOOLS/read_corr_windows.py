@@ -3,7 +3,7 @@ import os
 
 def read_corr_windows(inputfile,size_of_float=4,nbytes_stringhead=256,nbytes_windowname=24):
     """
-    Intermediate correlation windows are saved in a specific binary format.
+    Intermediate correlation windows from ant_corr are saved in a specific binary format.
     The header contains: sampling rate (4 byte), number of samples per trace (4 byte), 
     number of subwindows per substack (4 byte), endianness (256 byte), preprocessing string(256 byte)
     Then the data follow in 4-byte floats.
