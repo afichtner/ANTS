@@ -78,7 +78,7 @@ def get_coord_staxml(net1, sta1):
             stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
             (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
         except:
-            return(0,0,0,0)
+            return(0,0)
             
     
     return (lat1,lon1)
