@@ -14,7 +14,7 @@ except ImportError:
     from obspy.clients.fdsn import Client
 
 
-import antconfig as cfg
+from ANTS import antconfig as cfg
 
 #==============================================================================================
 
@@ -34,24 +34,32 @@ def read_xml(filename):
 def find_coord(path_to_xml):
     sta = path_to_xml.split('/')[-1].split('.')[1]
     
-    try:
+    if not os.path.exists(path_to_xml):
+        try:
+            msg = 'stationxml file not found, trying to download...'
+            warn(msg)
+            get_staxml(path_to_xml.split('/')[-1].split('.')[0], sta)
+            inv = read_inventory(path_to_xml)
+            sta = inv[0][0]
+            staname = sta.code
+            lat=sta.latitude
+            lon=sta.longitude
+            return str(staname), float(lat),float(lon)
+        except:
+            msg='Could not download stationxml file: Could not retrieve coordinates.'
+            warn(msg)       
+            return '000',0,0  
+        
         #inf = read_xml(path_to_xml)
-        inv = read_inventory(path_to_xml)
-    except IOError, TypeError: 
-        get_staxml(path_to_xml.split('/')[-1].split('.')[0], sta)
-        msg = 'stationxml file not found, trying to download...'
-        warn(msg)
-        inv = read_inventory(path_to_xml)
-        sta = inv[0][0]
-        staname = sta.code
-        lat=sta.latitude
-        lon=sta.longitude
-        return str(staname), float(lat),float(lon)
-    
-    except KeyError: 
-        msg='Faulty stationxml file: Could not retrieve coordinates.'
-        warn(msg)       
-        return '000',0,0
+        
+    else:
+        try:
+            inv = read_inventory(path_to_xml)
+
+        except KeyError: 
+            msg='Faulty stationxml file: Could not retrieve coordinates.'
+            warn(msg)       
+            return '000',0,0
 
     
 #==============================================================================================
