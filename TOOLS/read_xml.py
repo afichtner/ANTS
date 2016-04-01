@@ -9,9 +9,9 @@ try:
 except ImportError:
     from obspy.geodetics import gps2dist_azimuth
 try:
-    from obspy.fdsn import Client
+    from obspy import fdsn
 except ImportError:
-    from obspy.clients.fdsn import Client
+    from obspy.clients import fdsn
 
 
 from ANTS import antconfig as cfg
@@ -36,10 +36,12 @@ def find_coord(path_to_xml):
     
     if not os.path.exists(path_to_xml):
         try:
-            msg = 'stationxml file not found, trying to download...'
+            msg = 'stationxml file not found, trying to download from FDSN...'
             warn(msg)
-            get_staxml(path_to_xml.split('/')[-1].split('.')[0], sta)
+            get_staxml(path_to_xml.split('/')[-1].split('.')[0],sta)
+            
             inv = read_inventory(path_to_xml)
+        
             sta = inv[0][0]
             staname = sta.code
             lat=sta.latitude
@@ -55,7 +57,7 @@ def find_coord(path_to_xml):
     else:
         try:
             inv = read_inventory(path_to_xml)
-
+            print inv
         except KeyError: 
             msg='Faulty stationxml file: Could not retrieve coordinates.'
             warn(msg)       
@@ -65,28 +67,22 @@ def find_coord(path_to_xml):
 #==============================================================================================
     
 def get_staxml(net,sta):
-    client=Client()
+    client=fdsn.Client()
     outfile=cfg.datadir+'/stationxml/'+net+'.'+sta+'.xml'
     print outfile
     # Metadata request with obspy
     if os.path.exists(outfile)==False:
-        client.get_stations(network=net,station=sta,filename=outfile)
+        client.get_stations(network=net,station=sta,filename=outfile,level='station')
 
 #==============================================================================================
 
 def get_coord_staxml(net1, sta1):
 
     try:
-        stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
         (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
-    except IndexError:
-        print 'Trying to download stationxml nr. 1...'
-        try:
-            get_staxml(net1,sta1)
-            stafile1=glob(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'*.xml')[0]
-            (staname1,lat1,lon1)=find_coord(cfg.datadir+'/stationxml/'+net1+'.'+sta1+'.xml')
-        except:
-            return(0,0)
+    
+    except:
+        return(0,0)
             
     
     return (lat1,lon1)
