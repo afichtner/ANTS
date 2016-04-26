@@ -20,7 +20,10 @@ from obspy.core import Stats, Trace, Stream, UTCDateTime, read
 #from obspy.noise.correlation_functions import phase_xcorr
 from obspy.signal.cross_correlation import xcorr
 from obspy.signal.filter import envelope
-from obspy.signal.util import nextpow2
+try:
+    from obspy.signal.util import nextpow2
+except ImportError:
+    from obspy.signal.util import next_pow_2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 from scipy import fftpack
