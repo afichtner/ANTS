@@ -27,7 +27,7 @@ except ImportError:
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 from scipy import fftpack
-from scipy.signal.signaltools import _centered
+
 
 if __name__=='__main__':
     from ANTS import ant_corr as pc
