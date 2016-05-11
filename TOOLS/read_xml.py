@@ -91,9 +91,14 @@ def get_coord_staxml(net1, sta1):
 def get_geoinf(x1,y1,x2,y2,inp='coord'):
     
     if inp == 'coord':
-        dist=gps2DistAzimuth(x1, y1, x2, y2)[0]
-        az=gps2DistAzimuth(x1, y1, x2, y2)[1]
-        baz=gps2DistAzimuth(x1, y1, x2, y2)[2]
+        try:
+            dist=gps2DistAzimuth(x1, y1, x2, y2)[0]
+            az=gps2DistAzimuth(x1, y1, x2, y2)[1]
+            baz=gps2DistAzimuth(x1, y1, x2, y2)[2]
+        except NameError:
+            dist=gps2dist_azimuth(x1, y1, x2, y2)[0]
+            az=gps2dist_azimuth(x1, y1, x2, y2)[1]
+            baz=gps2dist_azimuth(x1, y1, x2, y2)[2]
    
     return (x1, y1, x2, y2, dist, az, baz)
 

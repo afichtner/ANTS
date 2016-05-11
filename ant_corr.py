@@ -20,10 +20,14 @@ from obspy.core import Stats, Trace, Stream, UTCDateTime, read
 #from obspy.noise.correlation_functions import phase_xcorr
 from obspy.signal.cross_correlation import xcorr
 from obspy.signal.filter import envelope
-from obspy.signal.util import nextpow2
+try:
+    from obspy.signal.util import nextpow2
+except ImportError:
+    from obspy.signal.util import next_pow_2 as nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
 from scipy import fftpack
+from scipy.signal.signaltools import _centered
 
 if __name__=='__main__':
     from ANTS import ant_corr as pc
@@ -1015,11 +1019,11 @@ def classic_xcorr(trace1, trace2, max_lag_samples):
 def cross_covar(data1, data2, max_lag_samples, normalize_traces):
     
     # Remove mean and normalize; this should have no effect on the energy-normalized correlation result, but may avoid precision issues if trace values are very small
-    if normalize_traces == True:
-        data1-=np.mean(data1)
-        data2-=np.mean(data2)
-        data1/=np.max(np.abs(data1))
-        data2/=np.max(np.abs(data2))
+    #if normalize_traces == True:
+    #    data1-=np.mean(data1)
+    #    data2-=np.mean(data2)
+    #    data1/=np.max(np.abs(data1))
+    #    data2/=np.max(np.abs(data2))
     
     # Make the data more convenient for C function np.correlate
     data1 = np.ascontiguousarray(data1, np.float32)
@@ -1046,18 +1050,19 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces):
     rng2 = np.max(std2)/np.min(std2)
     
     
-    # Obtain correlation via FFT and IFFT
-    ccv = np.correlate(data1,data2,mode='same')
-    
+    # Obtain correlation via np.correlate (relatively fast)
+    #ccv = np.correlate(data1,data2,mode='same')
+    ccv = np.fft.ifftshift(fftconvolve(data1,data2[::-1],mode='same'))
+     
     # Cut out the desired samples from the middle...
-    i1 = (len(ccv) - (2*max_lag_samples+1))/2
-    i2 = i1 + 2 * max_lag_samples + 1
+    #i1 = (len(ccv) - (2*max_lag_samples+1))/2
+    #i2 = i1 + 2 * max_lag_samples + 1
     
     params = (rms1,rms2,ren1,ren2,rng1,rng2)
     
     
-    return ccv[i1:i2], params
-    
+    #return ccv[i1:i2], params
+    return my_centered(ccv,2*max_lag_samples+1),params
     
     
 def whiten(tr):
@@ -1144,3 +1149,12 @@ def get_prepstring():
         prepstring += '-'
     
     return prepstring
+
+def my_centered(arr, newsize):
+    # get the center portion of a 1-dimensional array correctly
+    n = len(arr)
+    i0 = (n - newsize) // 2
+    if n%2 == 0:
+        i0 += 1
+    i1 = i0 + newsize
+    return arr[i0:i1]
