@@ -85,8 +85,8 @@ def ic(rank,size):
            
        #- If only a check run is performed, then only a couple of files are preprocessed
     if check==True and len(content)>4:
-        content=[content[0],content[1],content[len(content)-2],\
-        content[len(content)-1]]
+        content=[content[0],content[1],content[-2],\
+        content[-1]
     
     if update ==True:
         ofid=open(datadir+'/processed/out/update.'+prepname+'.rank_'+\
@@ -245,6 +245,14 @@ def ic(rank,size):
                     dfile.write('Mean removed\n')
                     print(trace.data[0:20],file=dfile)
                     dfile.write('\n')
+            
+            if inp.cap_glitches:
+                
+                std = np.std(trace.data/1.e6)
+                gllow = inp.cap_threshold * -std
+                glupp = inp.cap_threshold * std
+                trace.data = np.clip(trace.data/1.e6,gllow,glupp)*1.e6
+                
          
          
 #- event exclusion based on energy levels.. ========================================================================                    
@@ -301,12 +309,12 @@ def ic(rank,size):
                 ctr.stats.station=''
                 ctr.stats.location=''
                 ctr.stats.channel=''
-                if inp.rankvariable != 'ALPS_APP_PE':
-                    cstr.append(ctr)
-                    cstr.plot(outfile=datadir+'/processed/out/'+\
+                
+                cstr.append(ctr)
+                cstr.plot(outfile=datadir+'/processed/out/'+\
                     filepath.split('/')[-1]+'.'+prepname+'.png',equal_scale=False)
-                    cstr.trim(endtime=cstr[0].stats.starttime+3600)
-                    cstr.plot(outfile=datadir+'/processed/out/'+\
+                cstr.trim(endtime=cstr[0].stats.starttime+3600)
+                cstr.plot(outfile=datadir+'/processed/out/'+\
                     filepath.split('/')[-1]+'.'+prepname+'.1hr.png',equal_scale=False)
                 dfile.write('Instrument response removed\n')
                 print(newtrace.data[0:20],file=dfile)

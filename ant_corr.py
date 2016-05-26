@@ -26,8 +26,7 @@ except ImportError:
     from obspy.signal.util import next_pow_2 as nextpow2
 from obspy.signal.tf_misfit import cwt
 from scipy.signal import hilbert
-from scipy import fftpack
-
+from scipy.signal.signaltools import fftconvolve
 
 if __name__=='__main__':
     from ANTS import ant_corr as pc
@@ -705,7 +704,7 @@ ccc, pcc or both.')
 
 
         #- Glitch correction ==========================================================
-        if inp.cap_glitches == True:
+        if inp.cap_glitches:
             std1 = np.std(tr1.data*1.e6)
             gllow = inp.glitch_thresh * -std1
             glupp = inp.glitch_thresh * std1
@@ -1018,17 +1017,29 @@ def classic_xcorr(trace1, trace2, max_lag_samples):
     
 def cross_covar(data1, data2, max_lag_samples, normalize_traces):
     
-    # Remove mean and normalize; this should have no effect on the energy-normalized correlation result, but may avoid precision issues if trace values are very small
-    #if normalize_traces == True:
-    #    data1-=np.mean(data1)
-    #    data2-=np.mean(data2)
-    #    data1/=np.max(np.abs(data1))
-    #    data2/=np.max(np.abs(data2))
     
+    
+# remove mean and normalize; this should have no effect on the energy-normalized #correlation result, but may avoid precision issues if trace values are very small
+    if normalize_traces:
+        scale1 = 1./np.max(np.abs(data1))
+        scale2 = 1./np.max(np.abs(data2))
+        data1*=scale1
+        data2*=scale2
+        
+    data1-=np.mean(data1)
+    data2-=np.mean(data2)
+        
     # Make the data more convenient for C function np.correlate
     data1 = np.ascontiguousarray(data1, np.float32)
     data2 = np.ascontiguousarray(data2, np.float32)
     
+    # Obtain correlation via np.correlate (relatively fast)
+    #ccv = np.correlate(data1,data2,mode='same')
+    # scipy.fftconvolve is way faster!
+    ccv = fftconvolve(data1,data2[::-1],mode='same')
+    if normalize_traces:
+        ccv /= (scale1*scale2) 
+   
     # Get the signal energy; most people normalize by the square root of that
     ren1 = np.correlate(data1,data1,mode='valid')[0]
     ren2 = np.correlate(data2,data2,mode='valid')[0]
@@ -1048,16 +1059,6 @@ def cross_covar(data1, data2, max_lag_samples, normalize_traces):
 
     rng1 = np.max(std1)/np.min(std1)
     rng2 = np.max(std2)/np.min(std2)
-    
-    
-    # Obtain correlation via np.correlate (relatively fast)
-    #ccv = np.correlate(data1,data2,mode='same')
-    ccv = np.fft.ifftshift(fftconvolve(data1,data2[::-1],mode='same'))
-     
-    # Cut out the desired samples from the middle...
-    #i1 = (len(ccv) - (2*max_lag_samples+1))/2
-    #i2 = i1 + 2 * max_lag_samples + 1
-    
     params = (rms1,rms2,ren1,ren2,rng1,rng2)
     
     
@@ -1151,7 +1152,7 @@ def get_prepstring():
     return prepstring
 
 def my_centered(arr, newsize):
-    # get the center portion of a 1-dimensional array correctly
+    # get the center portion of a 1-dimensional array
     n = len(arr)
     i0 = (n - newsize) // 2
     if n%2 == 0:

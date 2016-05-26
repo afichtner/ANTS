@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import hann
-from obspy.signal.invsim import cosTaper
+from obspy.signal.invsim import cosine_taper
 from math import ceil
 import matplotlib.pyplot as plt
 
